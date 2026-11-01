@@ -25,12 +25,3 @@ Start with scalar input/output, a compute fixture, finite replay, recording,
 and independent run lifetime. Use `i64`, `bool`, and `str` to expose zero,
 false, and empty-text publications. This is an exercise profile, not a claim
 that the remaining inventory is optional for eventual HGL conformance.
-
-## Open
-
-- Exact scalar domains, temporal shapes, arithmetic policy, and native value ABI.
-- Whether scheduling needs separate alarm and queryable scheduler interfaces.
-- The graph-description/builder API and ownership across that boundary.
-- Recordable state versus cache, and the boundary of optional persistence.
-- Public core declarations versus prelude forms and test-host privileges.
-- Conditions under which a row is native-required or implementable in HGL.
