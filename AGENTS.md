@@ -1,0 +1,18 @@
+# Core rules
+
+- Keep documents and discussions terse. Avoid extended dialogue.
+- Read the [foundation](spec/foundation.md). Separate agreed, proposed, and open
+  text; do not turn proposed API rows into requirements without a decision.
+- Use `spec/` for rules, examples/APIs, and useful diagrams. Add explanations
+  under `explanations/` only when a concept needs detailed justification.
+- Put runtime native declarations in `hgl/native/`; core HGL bodies and required
+  native implementation parts in `hgl/core/`. Add target source only as required.
+- Keep portable conformance in `tests/conformance/`; ordinary implementation
+  tests in `tests/implementation/`. Do not claim execution for a document example.
+- Define observable obligations before target symbols or internal layouts.
+  Native adapters must preserve shared expected results.
+- Core has no optional-library dependency. Keep the test host's privileges
+  separate from the API available to ordinary HGL programs.
+- Use the [language specification](https://github.com/hhenson/hgl_spec) directly.
+  Require no historical repository or experiment record to understand core.
+- Report the exact tests run, skipped scope, and unresolved capabilities.
