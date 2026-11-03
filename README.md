@@ -7,6 +7,7 @@ portable implementations, required native support, and runtime conformance.
 - [Minimal API inventory](spec/minimal-api.md)
 - [Testing and eval contract](spec/testing-and-eval.md)
 - [Language specification](https://github.com/hhenson/hgl_spec)
+- [Open decisions](https://github.com/hhenson/hgl_core/issues/1)
 
 ## Resources
 

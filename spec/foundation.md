@@ -23,16 +23,11 @@ Date: 2026-11-01. Status: agreed ownership; API details remain proposed.
 - **CORE-7 — Independence.** Core stands alone with the
   [language specification](https://github.com/hhenson/hgl_spec). Rules require
   no historical implementation or experiment record. Keep writing terse.
+- **CORE-8 — Decisions.** Track open questions and pending decisions in issues,
+  outside specification and explanation documents.
 
 ## Proposed next scope
 
 Use the [minimal API inventory](minimal-api.md) to implement one
 [dense scalar eval slice](testing-and-eval.md). Choose public names and native
 signatures only as practical examples establish their necessity.
-
-## Open
-
-- Exact mandatory types, operations, native signatures, and capability phases.
-- Portable bodies versus facilities that every target must supply natively.
-- Adapter protocol and versioning of the API and conformance pack.
-- Which host observations need a test-only interface.

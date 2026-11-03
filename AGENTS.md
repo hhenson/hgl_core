@@ -1,8 +1,10 @@
 # Core rules
 
 - Keep documents and discussions terse. Avoid extended dialogue.
-- Read the [foundation](spec/foundation.md). Separate agreed, proposed, and open
-  text; do not turn proposed API rows into requirements without a decision.
+- Read the [foundation](spec/foundation.md). Label agreed and proposed text.
+  Keep open questions and decision checklists in this repository's issue tracker,
+  outside specification and explanation documents. Do not turn proposed API rows
+  into requirements without a decision.
 - Use `spec/` for rules, examples/APIs, and useful diagrams. Add explanations
   under `explanations/` only when a concept needs detailed justification.
 - Put runtime native declarations in `hgl/native/`; core HGL bodies and required

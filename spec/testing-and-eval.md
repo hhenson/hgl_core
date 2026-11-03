@@ -61,11 +61,3 @@ owns source checking, trace notation, and harness comparison. Core proposes:
 Add controls for outputless targets, unequal input horizons, a failed run,
 and missing recording state. Use target instrumentation when an observation
 cannot be expressed in HGL. No cases are implemented by this document.
-
-## Open
-
-- Replay/record declarations, storage operations, key preparation, and cleanup.
-- Test-host controls for failure injection, seeds, and native observations.
-- Portable result schema, test selection, manifest, profiles, and completeness.
-- Source-error catalogue and the location of language-only rejection fixtures.
-- Timed traces, source-only eval bounds, structural deltas, and references.
