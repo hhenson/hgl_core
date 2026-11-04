@@ -1,0 +1,65 @@
+# Value-function lifting observations
+
+Status: agreed admission, binding, aggregate, and ownership observations.
+Executable conformance is planned; this document supplies no native API.
+
+The [language rules FN-6 and FN-11 through FN-13](https://github.com/hhenson/hgl_spec/blob/main/spec/language/functions-and-phases.md)
+own source interpretation. Core owns the following runtime expectations.
+Ordinary validity comes from each input type's contract; lifting adds no
+recursive full-validity or fixed-size condition to an unsized list.
+
+## Defaulted temporal argument
+
+Accepted value-function fragment:
+
+```hgl
+const fn scale(value: f64, factor: f64 = 2.0) -> f64 => value * factor
+```
+
+In composition, supply temporal inputs for both parameters. Initially both
+are invalid; a dash below means no publication, not invalidation. Valid inputs
+retain their values across silence.
+
+| Cycle | Value publication | Factor publication | Expected output |
+| --- | --- | --- | --- |
+| 0 | 1.0 | — | 2.0, using the default factor |
+| 1 | — | 4.0 | 4.0, using retained value 1.0 |
+| 2 | 3.0 | — | 12.0, using retained factor 4.0 |
+| 3 | 3.0 | — | 12.0, including the repeated publication |
+
+## Aggregate argument
+
+Accepted value-function fragment:
+
+```hgl
+const fn total(values: list<f64>) -> f64 {
+    var result: f64 = 0.0
+    for value in values {
+        result += value
+    }
+    return result
+}
+```
+
+For a temporal list input, invoke `total` with the current ordinary list when
+`valid(list_value)` holds. A valid `[1.0, 2.0, 3.0]` yields 6.0. A later
+second-element change giving a valid `[1.0, 5.0, 3.0]` yields 9.0. The helper
+is invoked once with the list; no per-element lifting is introduced.
+
+## Further conformance observations
+
+| Condition | Expected observation |
+| --- | --- |
+| Required non-nullable input without a default is invalid | No helper invocation or output publication |
+| Nullable input without a default is invalid, other required inputs valid | Invoke with null |
+| Defaulted input is invalid, other required inputs valid | Invoke with the declared default |
+| An input admitting null has a default and publishes a valid null | Invoke with null, without selecting the default |
+| No input notification to an existing lifted node, but a fallback is available | Fallback alone creates no evaluation or tick |
+| Valid unsized list changes length | Use the current list; no required N is inferred |
+| Valid empty unsized list passed to `total` | Invoke and publish 0.0 |
+| Fixed-size list or window has not met its type's readiness contract | Preserve that contract; lifting does not admit unreadable required data |
+| Temporal input changes after a returned value is retained | Earlier retained result remains unchanged |
+| Helper uses an admitted borrowed view | View stays within its permitted lifetime; lifting does not grant ownership |
+
+Nullable cases refer to admitted value contracts and introduce no new nullable
+type spelling. Test packaging, replay, and recordings retain their own status.
