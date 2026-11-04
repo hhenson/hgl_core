@@ -61,5 +61,29 @@ is invoked once with the list; no per-element lifting is introduced.
 | Temporal input changes after a returned value is retained | Earlier retained result remains unchanged |
 | Helper uses an admitted borrowed view | View stays within its permitted lifetime; lifting does not grant ownership |
 
-Nullable cases refer to admitted value contracts and introduce no new nullable
-type spelling. Test packaging, replay, and recordings retain their own status.
+## Explicit nullable values
+
+Accepted value-function fragment using the language's `T?` annotation:
+
+```hgl
+const fn nullable_probe(value: f64? = 2.0, trigger: i64) -> f64? => value
+```
+
+Supply temporal arguments for both parameters. `trigger` provides the indicated
+notification while `value` exercises nullable/default binding:
+
+| Value input at a trigger publication | Expected published result |
+| --- | --- |
+| Invalid | 2.0 from the declared default |
+| Valid null | A present null value |
+| Valid 3.0 | 3.0 |
+
+With the same nullable parameter and no default, invalid value input binds and
+publishes null on an admitted trigger publication. A valid null publication is
+data, not silence or invalidity. A guarded helper returning f64 instead may
+map it to a non-null value, as in the language's `value_or_zero` illustration.
+
+The language distinguishes `list<f64?>` from `list<f64>?`; type syntax does not
+add a recursive `all_valid` condition to ordinary unsized-list admission.
+Test packaging, replay, and recordings retain their own status. Executable
+conformance remains planned.
