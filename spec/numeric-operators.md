@@ -78,6 +78,12 @@ abs(a - b) <= max(abs_tolerance,
   follows the language contract: return the same error from an enclosing value
   function, or propagate it to node failure in `when`. A returned Err alone
   cannot satisfy an escaping-error assertion.
+- **NUM-11.** The built-in `abs` and `rel` tolerance options are scalar f64
+  configuration. In temporal composition they bind during graph construction;
+  in a value function or runtime hook they are values for the current
+  invocation. They create no temporal dependency. A temporal tolerance requires
+  an explicitly admitted temporal parameter. Configuration order and phase
+  checking follow EXPR-12 through EXPR-14 in the language specification.
 
 | Numeric expression | Full-comparison outcomes producing true |
 | --- | --- |
@@ -125,6 +131,11 @@ NaN/infinity names in the table describe outcomes, not source literal syntax.
 | Same signed infinities compared with a tolerance | true |
 | `1e308 =={rel: 1.9} -1e308` | false, despite overflow in a naive difference/threshold calculation |
 | Tolerance 1 applied to 0/0.75, 0.75/1.5, and 0/1.5 | true; true; false |
+| `left() =={abs: tolerance()} right()` with value helpers recording their names | Invocation order left, tolerance, right; each once |
+| `eq_(left(), right(), abs: tolerance())` with the same value helpers | Invocation order left, right, tolerance; each once |
+| Scalar tolerance helper configuring a temporal comparison over several ticks | Helper called once during graph construction; bound tolerance reused |
+| Tolerance helper inside a runtime-hook comparison evaluated several times | Helper called for each reached comparison evaluation |
+| Temporal endpoint supplied to the scalar `abs` option in composition | Source rejection; no implicit extra temporal input |
 
 ## Checked-division examples
 
