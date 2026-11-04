@@ -4,6 +4,8 @@ Status: proposed capability inventory. No native signatures are accepted yet.
 
 Each row must gain a contract, examples, and conformance observations before it
 becomes mandatory. API names and representation choices remain open.
+The [numeric operator contract](numeric-operators.md) now defines the agreed
+numeric baseline and policy behavior; other inventory rows retain their status.
 
 | Capability | HGL-facing need | Implementation-facing obligation |
 | --- | --- | --- |
