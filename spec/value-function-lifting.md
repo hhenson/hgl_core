@@ -87,3 +87,23 @@ The language distinguishes `list<f64?>` from `list<f64>?`; type syntax does not
 add a recursive `all_valid` condition to ordinary unsized-list admission.
 Test packaging, replay, and recordings retain their own status. Executable
 conformance remains planned.
+
+## Aggregate validity and retention controls
+
+For the language's `count_items(values: list<f64>) -> i64` value helper, use a
+fixture exposing a valid unsized list of length 2 with one invalid child.
+`all_valid` is false. One invocation reads only length and publishes 2. When
+that child becomes valid, another invocation publishes 2 again; adding a valid
+third child later publishes 3. No invalid child payload is read, no fixed size
+is inferred, and no elementwise calls replace the whole-list invocation.
+
+For the language's `keep_value(values: list<i64>) -> list<i64>` helper,
+retain R0 from complete valid input `[1, 2]`, then publish `[1, 7]` and retain
+R1. R0 remains `[1, 2]`; R1 is `[1, 7]`. The retained results must not alias
+subsequently changing producer storage.
+
+A provider-declared view limited to its supplying invocation cannot itself be
+retained beyond that invocation. Source/provider lifetime checking must reject
+such an escape; retaining a permitted independent owning value is accepted.
+These controls introduce no public native/view API. Executable conformance is
+planned.
