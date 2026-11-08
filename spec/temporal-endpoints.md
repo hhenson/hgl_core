@@ -1,8 +1,7 @@
 # Scalar temporal endpoint observations
 
-Status: agreed scalar timestamp rule (END-6); the rest of the core slice is
-proposed. The language's publication, phase, and guarded read rules retain
-their agreed status.
+Status: scalar delta (END-3) and timestamp (END-6) are agreed. The other core
+rules are proposed.
 
 ## Scope and API
 
@@ -17,7 +16,7 @@ owns endpoint interpretation, handler selection, and phase admission.
 | `valid(value)` | bool; may inspect an invalid endpoint |
 | `modified(value)` | bool; whether the endpoint published in the current cycle |
 | Runtime parameter payload | T; requires readable valid input, subject to declared nullable/default argument binding |
-| `delta_value(value)` | T for this scalar slice; requires that particular endpoint valid and modified |
+| `delta_value(value)` | Agreed `T` for scalar inputs. See END-3. |
 | `last_modified(value)` | Agreed `datetime?`; see END-6 |
 
 These are semantic interfaces, not native declarations. Runtime metadata reads
@@ -33,10 +32,6 @@ selectors follow the language contract rather than this one-endpoint table.
   evaluation time, including when its value equals the previous value. In a
   later idle cycle it is unmodified while its value remains retained. A fixed
   directly bound input observes its output's state.
-- **END-3.** Scalar delta access returns the current publication's value,
-  including a present null for T?. It does not substitute a retained value for
-  an unmodified endpoint. The source must prove valid and modified for the
-  particular endpoint; an any-input notification alone is insufficient.
 - **END-4.** Invalidation clears validity. The endpoint is unmodified and has
   no readable ordinary payload or scalar delta. Invalidation still notifies
   active subscribers and can cause scheduling without a modified input.
@@ -47,8 +42,11 @@ selectors follow the language contract rather than this one-endpoint table.
   without additional publication notifications. Normal graph scheduling still
   evaluates each node at most once per cycle.
 
-## Agreed timestamp rule
+## Agreed rules
 
+- **END-3.** `delta_value(x)` returns the scalar value `x` published this cycle,
+  including a published null. The checker must prove `x` is valid and modified
+  at the call.
 - **END-6.** `last_modified(value)` returns `datetime?`. It returns null while
   the endpoint is invalid, including before its first publication and after
   invalidation. While valid, it returns the retained publication's UTC
@@ -72,18 +70,19 @@ The last row demonstrates the nullable scalar case, not a type change to an
 existing i64 endpoint. A payload guard and a metadata-presence guard observe
 different facts. False, zero, and empty text need the same presence controls.
 
-Proposed compute fixture using the agreed guarded-delta source form:
+Either input can wake this function. It forwards publications from `a`.
 
 ```hgl
-fn scalar_copy(value: i64) -> i64 {
-    when valid(value) && modified(value) {
-        return delta_value(value)
+module examples.scalar_delta
+
+fn forward_a(a: i64, b: i64) -> i64 {
+    when {
+        if valid(a) && modified(a) {
+            return delta_value(a)
+        }
     }
 }
 ```
 
-Its publications preserve equal input ticks. A required invalid input prevents
-the handler's payload read. Deliberate source rejection: in a two-input handler,
-reading one endpoint's scalar delta with only an any-input activation guarantee
-and no proof that this endpoint is valid and modified. Core owns executable
-cases and expected observations; implementation and conformance remain planned.
+With both inputs valid, a tick from `b` alone leaves the output silent.
+Removing the guard makes the delta read a source error.
