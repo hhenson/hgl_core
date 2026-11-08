@@ -1,8 +1,8 @@
 # Scalar temporal endpoint observations
 
-Status: proposed core slice. The language's publication, phase, and guarded
-read baseline retains its agreed status. The nullable timestamp API below is
-proposed; this document accepts no native ABI or executable conformance claim.
+Status: agreed scalar timestamp rule (END-6); the rest of the core slice is
+proposed. The language's publication, phase, and guarded read rules retain
+their agreed status.
 
 ## Scope and API
 
@@ -12,13 +12,13 @@ references, sampled/rebound inputs, and source scheduling retain their separate
 contracts. The [language temporal model](https://github.com/hhenson/hgl_spec/blob/main/spec/language/temporal-model.md)
 owns endpoint interpretation, handler selection, and phase admission.
 
-| HGL observation | Proposed runtime result / admission |
+| HGL observation | Runtime result / admission |
 | --- | --- |
 | `valid(value)` | bool; may inspect an invalid endpoint |
 | `modified(value)` | bool; whether the endpoint published in the current cycle |
 | Runtime parameter payload | T; requires readable valid input, subject to declared nullable/default argument binding |
 | `delta_value(value)` | T for this scalar slice; requires that particular endpoint valid and modified |
-| `last_modified(value)` | Proposed datetime?; latest publication time, or null while invalid |
+| `last_modified(value)` | Agreed `datetime?`; see END-6 |
 
 These are semantic interfaces, not native declarations. Runtime metadata reads
 create no graph nodes. Composition forms and empty/multi-argument handler
@@ -31,32 +31,35 @@ selectors follow the language contract rather than this one-endpoint table.
   of whether a value is false, zero, empty text, null, NaN, or infinity.
 - **END-2.** A publication marks the owned endpoint modified at the current
   evaluation time, including when its value equals the previous value. In a
-  later idle cycle it is unmodified while its value and publication time remain
-  retained. A fixed directly bound input observes its output's state.
+  later idle cycle it is unmodified while its value remains retained. A fixed
+  directly bound input observes its output's state.
 - **END-3.** Scalar delta access returns the current publication's value,
   including a present null for T?. It does not substitute a retained value for
   an unmodified endpoint. The source must prove valid and modified for the
   particular endpoint; an any-input notification alone is insufficient.
-- **END-4.** Invalidation clears validity and the publication-time observation.
-  The endpoint is unmodified and has no readable ordinary payload or scalar
-  delta. Invalidation still notifies active subscribers. Notification can
-  therefore cause scheduling without a modified input; required validity and
-  declared nullable/default bindings independently determine admission.
+- **END-4.** Invalidation clears validity. The endpoint is unmodified and has
+  no readable ordinary payload or scalar delta. Invalidation still notifies
+  active subscribers and can cause scheduling without a modified input.
+  Required validity and nullable/default bindings determine admission.
 - **END-5.** Active/passive status affects scheduling, not the observations
   above. An equal publication still notifies. Repeated writes while already
   modified in one producer evaluation expose the final value/delta downstream
   without additional publication notifications. Normal graph scheduling still
   evaluates each node at most once per cycle.
-- **END-6.** The proposed `last_modified` result is null before the first
-  publication and after invalidation, otherwise the latest publication's UTC
-  datetime. This null describes absent metadata, not a published null payload.
-  While valid, the timestamp never decreases; invalidation resets its presence.
+
+## Agreed timestamp rule
+
+- **END-6.** `last_modified(value)` returns `datetime?`. It returns null while
+  the endpoint is invalid, including before its first publication and after
+  invalidation. While valid, it returns the retained publication's UTC
+  evaluation time. Silence preserves that time and an equal publication
+  supplies its own time. A publication with a null payload has a timestamp.
 
 ## Proposed examples and conformance observations
 
 Bounded scalar-output trace at increasing evaluation times:
 
-| Event | valid | modified | Retained payload | Proposed last_modified |
+| Event | valid | modified | Retained payload | last_modified |
 | --- | --- | --- | --- | --- |
 | Initial invalid state | false | false | Unreadable | null |
 | Publish 7 at t1 | true | true | 7 | t1 |
