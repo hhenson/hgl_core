@@ -36,6 +36,10 @@ selectors follow the language contract rather than this one-endpoint table.
   no readable ordinary payload or scalar delta. Invalidation still notifies
   active subscribers and can cause scheduling without a modified input.
   Required validity and nullable/default bindings determine admission.
+  Invalidating an already invalid endpoint changes nothing and notifies no
+  subscriber. Within one producer evaluation the last action decides the
+  final state: publish then invalidate ends invalid; invalidate then publish
+  ends valid and modified.
 - **END-5.** Active/passive status affects scheduling, not the observations
   above. An equal publication still notifies. Repeated writes while already
   modified in one producer evaluation expose the final value/delta downstream
