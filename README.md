@@ -24,6 +24,7 @@ portable implementations, required native support, and runtime conformance.
 | `tests/conformance/` | Shared runtime cases, fixtures, and expected results |
 | `tests/implementation/` | Ordinary tests of core implementation code |
 
-Code directories are reserved; practical examples will populate them. This
-foundation contains documents only and makes no conformance claim. A target
-supplies an adapter and runs the shared expectations unchanged.
+[`tests/conformance/`](tests/conformance/README.md) holds the proposed scalar
+cases; the other code directories are reserved. No runner or adapter exists
+and no conformance claim is made. A target supplies an adapter and runs the
+shared expectations unchanged.

@@ -1,0 +1,67 @@
+module conformance part scalar_eval
+
+# Proposed dense scalar eval cases. Status and rule map: README.md.
+
+fn pass_i64(value: i64) -> i64 {
+    when { return delta_value(value) }
+}
+
+fn pass_bool(value: bool) -> bool {
+    when { return delta_value(value) }
+}
+
+fn pass_str(value: str) -> str {
+    when { return delta_value(value) }
+}
+
+# Forwards publications of a. A tick from b alone leaves the output silent.
+fn forward_a(a: i64, b: i64) -> i64 {
+    when {
+        if valid(a) && modified(a) {
+            return delta_value(a)
+        }
+    }
+}
+
+# Publishes the number of admitted evaluations in this run.
+fn count_ticks(value: i64) -> i64 {
+    state count: i64 = 0
+    when {
+        count += 1
+        return count
+    }
+}
+
+test equal_publications_remain_ticks {
+    assert eval(pass_i64, value: [7, _, 7, 9]) == [7, _, 7, 9]
+}
+
+test silent_horizon_survives {
+    assert eval(pass_i64, value: [_, _, _]) == [_, _, _]
+}
+
+test empty_input_remains_empty {
+    assert eval(pass_i64, value: []) == []
+}
+
+test leading_and_trailing_silence_survive {
+    assert eval(pass_i64, value: [_, 7, _, _]) == [_, 7, _, _]
+}
+
+test zero_false_and_empty_text_are_present {
+    assert eval(pass_i64, value: [0, _, 0]) == [0, _, 0]
+    assert eval(pass_bool, value: [false, _, false, true]) == [false, _, false, true]
+    assert eval(pass_str, value: ["", _, "", "a"]) == ["", _, "", "a"]
+}
+
+test horizon_is_the_longest_input {
+    assert eval(forward_a, a: [7], b: [1]) == [7]
+    assert eval(forward_a, a: [7], b: [1, _, _, 2]) == [7, _, _, _]
+}
+
+test runs_are_independent {
+    assert eval(pass_i64, value: [7, 9]) == [7, 9]
+    assert eval(pass_i64, value: []) == []
+    assert eval(count_ticks, value: [5, 5, _, 5]) == [1, 2, _, 3]
+    assert eval(count_ticks, value: [5, 5, _, 5]) == [1, 2, _, 3]
+}
