@@ -6,6 +6,8 @@ portable implementations, required native support, and runtime conformance.
 - [Foundation charter](spec/foundation.md)
 - [Minimal API inventory](spec/minimal-api.md)
 - [Numeric operators and policies](spec/numeric-operators.md)
+- [Value-function lifting observations](spec/value-function-lifting.md)
+- [Scalar temporal endpoints (proposed)](spec/temporal-endpoints.md)
 - [Testing and eval contract](spec/testing-and-eval.md)
 - [Language specification](https://github.com/hhenson/hgl_spec)
 - [Open decisions](https://github.com/hhenson/hgl_core/issues/1)
