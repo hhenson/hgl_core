@@ -24,7 +24,7 @@ portable implementations, required native support, and runtime conformance.
 | `tests/conformance/` | Shared runtime cases, fixtures, and expected results |
 | `tests/implementation/` | Ordinary tests of core implementation code |
 
-[`tests/conformance/`](tests/conformance/README.md) holds the proposed scalar
-cases; the other code directories are reserved. No runner or adapter exists
-and no conformance claim is made. A target supplies an adapter and runs the
-shared expectations unchanged.
+[`tests/conformance/`](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/README.md)
+holds the proposed scalar cases; the other code directories are reserved. No
+runner or adapter exists and no conformance claim is made. A target supplies
+an adapter and runs the shared expectations unchanged.
