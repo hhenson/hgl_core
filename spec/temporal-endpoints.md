@@ -1,6 +1,6 @@
 # Scalar temporal endpoint observations
 
-Status: END-3 through END-6 are agreed. END-1 and END-2 are proposed.
+Status: END-1 and END-3 through END-6 are agreed. END-2 is proposed.
 
 ## Scope and API
 
@@ -24,9 +24,6 @@ selectors follow the language contract rather than this one-endpoint table.
 
 ## Proposed rules
 
-- **END-1.** A scalar publication establishes validity and a retained value.
-  Until invalidation, later silence preserves both. Validity is independent
-  of whether a value is false, zero, empty text, null, NaN, or infinity.
 - **END-2.** A publication marks the owned endpoint modified at the current
   evaluation time, including when its value equals the previous value. In a
   later idle cycle it is unmodified while its value remains retained. A fixed
@@ -34,6 +31,9 @@ selectors follow the language contract rather than this one-endpoint table.
 
 ## Agreed rules
 
+- **END-1.** A scalar publication makes the endpoint valid and retains its
+  payload, including false, zero, empty text, null, NaN, or infinity.
+  Silence preserves validity and the retained payload.
 - **END-3.** `delta_value(x)` returns the scalar value `x` published this cycle,
   including a published null. The checker must prove `x` is valid and modified
   at the call.
@@ -53,6 +53,42 @@ selectors follow the language contract rather than this one-endpoint table.
   invalidation. While valid, it returns the retained publication's UTC
   evaluation time. Silence preserves that time and an equal publication
   supplies its own time. A publication with a null payload has a timestamp.
+
+## Publication and silence
+
+`P` is the output of `publish_nullable` and `V` is the output of
+`read_validity`. A probe tick lets `read_validity` inspect `P` at every cycle.
+
+```hgl
+module examples.scalar_validity
+
+fn publish_nullable(command: i64) -> i64? {
+    when {
+        if command == 0 { return null }
+        return command
+    }
+}
+
+fn read_validity(watched: i64?, probe: bool) -> bool {
+    when modified(probe) && valid() { return valid(watched) }
+}
+
+fn observe_validity(command: i64, probe: bool) -> bool =>
+    read_validity(publish_nullable(command), probe)
+
+test publication_establishes_validity {
+    assert eval(observe_validity,
+                command: [_, 0, _, 7],
+                probe: [true, true, true, true]) == [false, true, true, true]
+}
+```
+
+| Cycle | Command tick | Probe tick | `P` tick | `P` retained payload | `V` tick |
+| --- | --- | --- | --- | --- | --- |
+| `t1` | `_` | `true` | `_` | Unavailable | `false` |
+| `t2` | `0` | `true` | `null` | `null` | `true` |
+| `t3` | `_` | `true` | `_` | `null` | `true` |
+| `t4` | `7` | `true` | `7` | `7` | `true` |
 
 ## Invalidation and recovery
 
