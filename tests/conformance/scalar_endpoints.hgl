@@ -10,14 +10,14 @@ fn watched_valid(watched: i64, probe: bool) -> bool {
 }
 
 fn watched_modified(watched: i64, probe: bool) -> bool {
-    when valid([]) {
+    when modified() && valid([]) {
         return modified(watched)
     }
 }
 
-# Only probe is subscribed. Default validity still requires both inputs.
+# Only probe is subscribed. valid() requires both inputs to be valid.
 fn sample_on_probe(watched: i64, probe: bool) -> i64 {
-    when modified(probe) {
+    when modified(probe) && valid() {
         return watched
     }
 }
