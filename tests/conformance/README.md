@@ -9,6 +9,7 @@ are private functions that publish or wire their own output.
 | Part | Test | Rules observed |
 | --- | --- | --- |
 | `scalar_eval` | `equal_publications_remain_ticks` | CEVAL-3, END-2 (agreed), TST-6 |
+| `scalar_eval` | `replay_preserves_equal_ticks` | CEVAL-3 (agreed), TST-6 |
 | `scalar_eval` | `silent_horizon_survives` | CEVAL-5, TST-6 |
 | `scalar_eval` | `empty_input_remains_empty` | CEVAL-4, TST-6, TST-8 |
 | `scalar_eval` | `leading_and_trailing_silence_survive` | CEVAL-5, TST-6 |

@@ -24,12 +24,17 @@ fn forward_a(a: i64, b: i64) -> i64 {
 }
 
 # Publishes the number of admitted evaluations in this run.
-fn count_ticks(value: i64) -> i64 {
+fn count_publications(value: i64) -> i64 {
     state count: i64 = 0
     when {
         count += 1
         return count
     }
+}
+
+test replay_preserves_equal_ticks {
+    assert eval(count_publications, value: [7, _, 7, 7, _]) ==
+        [1, _, 2, 3, _]
 }
 
 test equal_publications_remain_ticks {
@@ -62,6 +67,6 @@ test horizon_is_the_longest_input {
 test runs_are_independent {
     assert eval(pass_i64, value: [7, 9]) == [7, 9]
     assert eval(pass_i64, value: []) == []
-    assert eval(count_ticks, value: [5, 5, _, 5]) == [1, 2, _, 3]
-    assert eval(count_ticks, value: [5, 5, _, 5]) == [1, 2, _, 3]
+    assert eval(count_publications, value: [5, 5, _, 5]) == [1, 2, _, 3]
+    assert eval(count_publications, value: [5, 5, _, 5]) == [1, 2, _, 3]
 }

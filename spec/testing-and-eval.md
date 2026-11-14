@@ -1,6 +1,6 @@
 # Core testing and eval
 
-Status: test ownership, eval wiring, and replay data (CEVAL-1 and CEVAL-2)
+Status: test ownership, eval wiring, and replay (CEVAL-1 through CEVAL-3)
 are agreed.
 The remaining eval profile and pack mechanics are proposed.
 
@@ -26,6 +26,9 @@ The remaining eval profile and pack mechanics are proposed.
   from a common run origin. For dense traces, it retains the longest supplied
   input length separately, including silent slots. Silence adds no replay
   entry.
+- **CEVAL-3.** Replay publishes each scalar entry at its timestamp, including
+  repeated values. Silent slots publish nothing. Replay applies collection
+  entries under their shape's publication rules.
 
 ## Proposed eval boundary
 
@@ -40,8 +43,6 @@ flowchart LR
 The [language specification](https://github.com/hhenson/hgl_spec/blob/main/spec/language/tests-and-eval.md)
 owns source checking, trace notation, and harness comparison. Core proposes:
 
-- **CEVAL-3.** Replay publishes present entries, including equal scalar values.
-  Silence publishes nothing. A compute fixture writes its own output.
 - **CEVAL-4.** A started recorder initializes an empty recording and independently
   retains each output publication and evaluation time. Later writes cannot
   change an earlier capture.
@@ -70,6 +71,38 @@ test scalar_trace {
     assert eval(copy_tick, value: [7, _, 7]) == [7, _, 7]
 }
 ```
+
+### Repeated scalar replay
+
+Eval wires replay to `count_publications` and records the counter's output.
+
+```hgl
+module examples.replay_ticks
+
+fn count_publications(value: i64) -> i64 {
+    state count: i64 = 0
+    when {
+        count += 1
+        return count
+    }
+}
+
+test replay_preserves_equal_ticks {
+    assert eval(count_publications, value: [7, _, 7, 7, _]) ==
+        [1, _, 2, 3, _]
+}
+```
+
+| Cycle | Replay tick to `value` | `count_publications` output tick |
+| --- | --- | --- |
+| `t1` | `7` | `1` |
+| `t2` | `_` | `_` |
+| `t3` | `7` | `2` |
+| `t4` | `7` | `3` |
+| `t5` | `_` | `_` |
+
+The [core fixture](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/scalar_eval.hgl)
+checks the recorded counter trace.
 
 ### Multiple inputs and const configuration
 
