@@ -33,11 +33,11 @@ Accepted value-function fragment:
 
 ```hgl
 const fn total(values: list<f64>) -> f64 {
-    var result: f64 = 0.0
+    var sum: f64 = 0.0
     for value in values {
-        result += value
+        sum += value
     }
-    return result
+    return sum
 }
 ```
 

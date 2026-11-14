@@ -20,7 +20,9 @@ Core owns numerical domains, public configuration, results, and errors.
   preserves IEEE special values, including signed zero and overflow infinity.
   Mixed numeric comparison must not first round an i64 operand to f64 and
   thereby lose a distinction between the operand values.
-- **NUM-3.** True division `/`, whose numeric result is f64, defaults to the
+- **NUM-3.** The `zero` option of division is an enum with members `ieee`,
+  `nan`, and `error`, written `.ieee`, `.nan`, and `.error` where the option
+  is given. True division `/`, whose numeric result is f64, defaults to the
   `ieee` zero policy:
   a finite nonzero numerator divided by signed zero produces signed infinity;
   zero divided by zero produces NaN. The infinity sign combines both operand
@@ -63,9 +65,10 @@ abs(a - b) <= max(abs_tolerance,
   lifting, validity, publication, and error rules. A NaN/infinity publication
   is present data. Required-constant errors and optional folding follow the
   language's error-phase contract.
-- **NUM-9.** Division with `zero: ieee` or `zero: nan` returns f64; division
-  with `zero: error` returns `result<f64, error>`. Resolve the zero policy during
-  source checking because it determines the result type. For the error policy,
+- **NUM-9.** Division with `zero: .ieee` or `zero: .nan` returns f64; division
+  with `zero: .error` returns `result<f64, error>`. Resolve the zero policy
+  during source checking because it determines the result type. For the error
+  policy,
   either signed zero divisor produces `err(...)` carrying error code
   `numeric.division_by_zero`; every nonzero divisor produces `ok(value)` from
   ordinary IEEE division. This includes successful NaN/infinity results where
@@ -96,13 +99,13 @@ abs(a - b) <= max(abs_tolerance,
 
 ## Examples and conformance observations
 
-Accepted expression fragments; the policy names `ieee` and `nan` denote core
-configuration values in scope, not new numeric literals:
+Accepted expression fragments; `.ieee` and `.nan` name members of the `zero`
+option's enum, not new numeric literals:
 
 ```hgl
 1.0 / 0.0
-1.0 /{zero: ieee} 0.0
-1.0 /{zero: nan} 0.0
+1.0 /{zero: .ieee} 0.0
+1.0 /{zero: .nan} 0.0
 1.0 =={abs: 0.01} 1.005
 1.0 <=> 2.0
 ```
@@ -116,11 +119,11 @@ NaN/infinity names in the table describe outcomes, not source literal syntax.
 | Maximum i64 plus one; negation of minimum i64 | HGL errors, without wrapping |
 | `9007199254740993 == 9007199254740992.0` | false |
 | `1.0 / 0.0`; `1.0 / -0.0`; `0.0 / 0.0` | Positive infinity; negative infinity; NaN |
-| `1.0 /{zero: nan} 0.0` | NaN |
-| `6.0 /{zero: error} 2.0` | `ok(3.0)` |
-| `1.0 /{zero: error} 0.0`; `0.0 /{zero: error} -0.0` | Err with code `numeric.division_by_zero` in both cases |
-| NaN divided by a nonzero value with `zero: error` | Ok containing NaN |
-| NaN divided by zero with `zero: error` | Err with code `numeric.division_by_zero` |
+| `1.0 /{zero: .nan} 0.0` | NaN |
+| `6.0 /{zero: .error} 2.0` | `ok(3.0)` |
+| `1.0 /{zero: .error} 0.0`; `0.0 /{zero: .error} -0.0` | Err with code `numeric.division_by_zero` in both cases |
+| NaN divided by a nonzero value with `zero: .error` | Ok containing NaN |
+| NaN divided by zero with `zero: .error` | Err with code `numeric.division_by_zero` |
 | Checked division publishes Err, then Ok on a later admitted evaluation | Two atomic result publications; no implicit node failure |
 | `?` in a value function returning `result<f64, error>` receives checked-division Err | Same error returned; later statements are not executed |
 | `?` inside `when` receives checked-division Err | Node failure with the same error; no successful result publication |
@@ -139,14 +142,14 @@ NaN/infinity names in the table describe outcomes, not source literal syntax.
 
 ## Checked-division examples
 
-Accepted value-function fragments, with the core `error` policy value in scope:
+Accepted value-function fragments:
 
 ```hgl
 const fn ratio(a: f64, b: f64) -> result<f64, error> =>
-    a /{zero: error} b
+    a /{zero: .error} b
 
 const fn percentage(a: f64, b: f64) -> result<f64, error> {
-    let quotient = (a /{zero: error} b)?
+    let quotient = (a /{zero: .error} b)?
     return ok(quotient * 100.0)
 }
 ```
