@@ -1,6 +1,7 @@
 # Core testing and eval
 
-Status: test ownership and eval wiring (CEVAL-1) are agreed.
+Status: test ownership, eval wiring, and replay (CEVAL-1 through CEVAL-3)
+are agreed.
 The remaining eval profile and pack mechanics are proposed.
 
 ## Agreed
@@ -19,6 +20,15 @@ The remaining eval profile and pack mechanics are proposed.
   designated core record to the target output, if present. It binds const
   arguments once for the run as ordinary values. Imports and overloads
   cannot replace the designated replay or record.
+- **CEVAL-2.** Each temporal input has a typed replay list of present
+  publications. Each entry pairs its absolute evaluation time with the
+  publication delta for that input's temporal shape. Eval derives all times
+  from a common run origin. For dense traces, it retains the longest supplied
+  input length separately, including silent slots. Silence adds no replay
+  entry.
+- **CEVAL-3.** Replay publishes each scalar entry at its timestamp, including
+  repeated values. Silent slots publish nothing. Replay applies collection
+  entries under their shape's publication rules.
 
 ## Proposed eval boundary
 
@@ -33,12 +43,6 @@ flowchart LR
 The [language specification](https://github.com/hhenson/hgl_spec/blob/main/spec/language/tests-and-eval.md)
 owns source checking, trace notation, and harness comparison. Core proposes:
 
-- **CEVAL-2.** Typed ordinary input data omits silent cells. Preserve the dense
-  input horizon separately. `TimedValue<T>` carries an absolute time and the
-  publication delta for originating temporal shape T; its exact declaration
-  and admitted profile remain to be accepted.
-- **CEVAL-3.** Replay publishes present entries, including equal scalar values.
-  Silence publishes nothing. A compute fixture writes its own output.
 - **CEVAL-4.** A started recorder initializes an empty recording and independently
   retains each output publication and evaluation time. Later writes cannot
   change an earlier capture.
@@ -67,6 +71,38 @@ test scalar_trace {
     assert eval(copy_tick, value: [7, _, 7]) == [7, _, 7]
 }
 ```
+
+### Repeated scalar replay
+
+Eval wires replay to `count_publications` and records the counter's output.
+
+```hgl
+module examples.replay_ticks
+
+fn count_publications(value: i64) -> i64 {
+    state count: i64 = 0
+    when {
+        count += 1
+        return count
+    }
+}
+
+test replay_preserves_equal_ticks {
+    assert eval(count_publications, value: [7, _, 7, 7, _]) ==
+        [1, _, 2, 3, _]
+}
+```
+
+| Cycle | Replay tick to `value` | `count_publications` output tick |
+| --- | --- | --- |
+| `t1` | `7` | `1` |
+| `t2` | `_` | `_` |
+| `t3` | `7` | `2` |
+| `t4` | `7` | `3` |
+| `t5` | `_` | `_` |
+
+The [core fixture](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/scalar_eval.hgl)
+checks the recorded counter trace.
 
 ### Multiple inputs and const configuration
 
@@ -107,33 +143,65 @@ test scalar_value {
 }
 ```
 
-### Collection input
+### Scalar and collection replay
 
-In this proposed set profile, replay applies each input cell as a delta.
-Record captures the output deltas.
+Eval wires separate replay sources to `enabled` and `members`, then records
+the output of `relay_members`. This example uses the proposed set delta profile.
 
 ```hgl
-module examples.eval_set
+module examples.eval_mixed_replay
 
-fn copy_set_delta(members: set<i64>) -> set<i64> {
-    when { return delta_value(members) }
+fn relay_members(enabled: bool, members: set<i64>) -> set<i64> {
+    when {
+        if enabled && modified(members) {
+            return delta_value(members)
+        }
+    }
 }
 
-test set_delta_trace {
-    assert eval(copy_set_delta, members: [
+test mixed_replay {
+    assert eval(relay_members,
+                enabled: [true, _, true],
+                members: [
+                    _,
+                    delta<set<i64>>(added: [1, 2]),
+                    _,
+                    delta<set<i64>>(added: [3], removed: [1]),
+                    _,
+                    _
+                ]) == [
+        _,
         delta<set<i64>>(added: [1, 2]),
         _,
-        delta<set<i64>>(added: [3], removed: [1])
-    ]) == [
-        delta<set<i64>>(added: [1, 2]),
+        delta<set<i64>>(added: [3], removed: [1]),
         _,
-        delta<set<i64>>(added: [3], removed: [1])
+        _
     ]
 }
 ```
 
-The final set is `{2, 3}`. Its last recorded tick adds `3` and removes `1`.
-Member `2` stays in the set through both updates.
+`t1` is run start. Each following slot advances one engine step. The replay
+entries carry the corresponding absolute times.
+
+| Input | Dense slots | Replay entries |
+| --- | ---: | --- |
+| `enabled` | 3 | `(t1, true)`, `(t3, true)` |
+| `members` | 6 | `(t2, add {1, 2})`, `(t4, add {3}, remove {1})` |
+
+| Cycle | `enabled` tick | `members` tick | Retained `members` | Recorded output |
+| --- | --- | --- | --- | --- |
+| `t1` | `true` | `_` | Invalid | `_` |
+| `t2` | `_` | Add `{1, 2}` | `{1, 2}` | Add `{1, 2}` |
+| `t3` | `true` | `_` | `{1, 2}` | `_` |
+| `t4` | `_` | Add `{3}`, remove `{1}` | `{2, 3}` | Add `{3}`, remove `{1}` |
+| `t5` | `_` | `_` | `{2, 3}` | `_` |
+| `t6` | `_` | `_` | `{2, 3}` | `_` |
+
+At `t3` the repeated `true` wakes `relay_members`, which stays silent
+because `members` has no delta. At `t4` it uses the retained `true`.
+The dense horizon is six slots, including the two silent slots after the
+last replay entry. The [core fixture](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/mixed_eval.hgl)
+checks the recorded output.
 
 ### Sink
 
@@ -189,5 +257,5 @@ publications and finishes after the second yield.
 | Runs are independent | Nonempty run, then empty run | Second recording is empty |
 
 The [shared fixtures](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/README.md)
-cover dense scalar traces. Target adapters supply observations that require
+cover dense traces. Target adapters supply observations that require
 test-host access.
