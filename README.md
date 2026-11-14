@@ -7,7 +7,7 @@ portable implementations, required native support, and runtime conformance.
 - [Minimal API inventory](spec/minimal-api.md)
 - [Numeric operators and policies](spec/numeric-operators.md)
 - [Value-function lifting observations](spec/value-function-lifting.md)
-- [Scalar temporal endpoints (proposed)](spec/temporal-endpoints.md)
+- [Scalar temporal endpoints](spec/temporal-endpoints.md)
 - [Testing and eval contract](spec/testing-and-eval.md)
 - [Language specification](https://github.com/hhenson/hgl_spec)
 - [Open decisions](https://github.com/hhenson/hgl_core/issues/1)
@@ -25,6 +25,5 @@ portable implementations, required native support, and runtime conformance.
 | `tests/implementation/` | Ordinary tests of core implementation code |
 
 [`tests/conformance/`](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/README.md)
-holds the proposed scalar cases; the other code directories are reserved. No
-runner or adapter exists and no conformance claim is made. A target supplies
-an adapter and runs the shared expectations unchanged.
+holds the scalar fixtures. The other code directories are reserved. A target
+adapter and eval runner are needed to run the shared expectations.

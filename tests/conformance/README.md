@@ -1,11 +1,10 @@
 # Runtime conformance cases
 
-Status: proposed. These cases observe proposed eval and endpoint rules. They
-become conformance when those rules are agreed. No runner or adapter is
-supplied and no conformance claim is made.
+Status: fixtures cover agreed and proposed behavior. The eval contract and
+its runner remain pending.
 
 Each file is a part of the test-only module `conformance` (CONF-3). Fixtures
-are private functions that publish their own output.
+are private functions that publish or wire their own output.
 
 | Part | Test | Rules observed |
 | --- | --- | --- |
@@ -19,6 +18,7 @@ are private functions that publish their own output.
 | `scalar_endpoints` | `silence_preserves_validity` | END-1, TIME-1, TIME-3 |
 | `scalar_endpoints` | `equal_publication_is_modified_and_idle_is_not` | END-2, TIME-3 |
 | `scalar_endpoints` | `retained_value_is_read_without_a_new_tick` | END-1, FN-7, TIME-3 |
+| `scalar_endpoints` | `publish_invalidate_recover` | END-4 (agreed), TIME-3, TST-6 |
 
 CEVAL, CONF, and END rules are in this repository's `spec/`. FN, TIME, and TST
 rules are in the [language specification](https://github.com/hhenson/hgl_spec).

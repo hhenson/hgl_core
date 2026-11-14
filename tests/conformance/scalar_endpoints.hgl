@@ -1,8 +1,7 @@
 module conformance part scalar_endpoints
 
-# Proposed scalar endpoint observations. Status and rule map: README.md.
-# Each observer runs on a probe tick so it can report an idle or invalid
-# watched input.
+# Scalar endpoint observations. Status and rule map: README.md.
+# Probe ticks let the observers read an idle or invalid watched input.
 
 fn watched_valid(watched: i64, probe: bool) -> bool {
     when valid() {
@@ -39,4 +38,22 @@ test retained_value_is_read_without_a_new_tick {
     assert eval(sample_on_probe,
                 watched: [_, 7, _, _, 9, _],
                 probe: [true, _, true, true, _, true]) == [_, _, 7, 7, _, 9]
+}
+
+fn produce(command: i64) -> i64 {
+    inject out
+    when {
+        if command != 0 { return command }
+        invalidate(out)
+    }
+}
+
+fn watch(input: i64) -> bool {
+    when valid() { return valid(input) }
+}
+
+fn observe(command: i64) -> bool => watch(produce(command))
+
+test publish_invalidate_recover {
+    assert eval(observe, command: [7, 0, 0, 7]) == [true, false, _, true]
 }
