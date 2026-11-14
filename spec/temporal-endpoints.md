@@ -1,7 +1,7 @@
 # Scalar temporal endpoint observations
 
-Status: scalar delta (END-3) and timestamp (END-6) are agreed. The other core
-rules are proposed.
+Status: scalar delta (END-3), invalidation (END-4), and timestamp (END-6)
+are agreed. The other core rules are proposed.
 
 ## Scope and API
 
@@ -32,14 +32,6 @@ selectors follow the language contract rather than this one-endpoint table.
   evaluation time, including when its value equals the previous value. In a
   later idle cycle it is unmodified while its value remains retained. A fixed
   directly bound input observes its output's state.
-- **END-4.** Invalidation clears validity. The endpoint is unmodified and has
-  no readable ordinary payload or scalar delta. Invalidation still notifies
-  active subscribers and can cause scheduling without a modified input.
-  Required validity and nullable/default bindings determine admission.
-  Invalidating an already invalid endpoint changes nothing and notifies no
-  subscriber. Within one producer evaluation the last action decides the
-  final state: publish then invalidate ends invalid; invalidate then publish
-  ends valid and modified.
 - **END-5.** Active/passive status affects scheduling, not the observations
   above. An equal publication still notifies. Repeated writes while already
   modified in one producer evaluation expose the final value/delta downstream
@@ -51,11 +43,53 @@ selectors follow the language contract rather than this one-endpoint table.
 - **END-3.** `delta_value(x)` returns the scalar value `x` published this cycle,
   including a published null. The checker must prove `x` is valid and modified
   at the call.
+- **END-4.** Invalidation clears validity, modification, payload, and delta.
+  The transition to invalid notifies active subscribers. Each handler's
+  validity requirements still apply. Repeated invalidation while invalid is
+  silent. Within a producer evaluation the last action determines the state:
+  publish then invalidate leaves the endpoint invalid. Invalidate then publish
+  leaves it valid and modified.
 - **END-6.** `last_modified(value)` returns `datetime?`. It returns null while
   the endpoint is invalid, including before its first publication and after
   invalidation. While valid, it returns the retained publication's UTC
   evaluation time. Silence preserves that time and an equal publication
   supplies its own time. A publication with a null payload has a timestamp.
+
+## Invalidation and recovery
+
+`C` is the command input, `P` is the output of `produce`, and `W` is the
+output of `watch`. The empty validity selector allows `watch` to report an
+invalid input.
+
+```hgl
+module examples.scalar_invalidation
+
+fn produce(command: i64) -> i64 {
+    inject out
+    when {
+        if command != 0 { return command }
+        invalidate(out)
+    }
+}
+
+fn watch(input: i64) -> bool {
+    when valid() { return valid(input) }
+}
+
+fn observe(command: i64) -> bool => watch(produce(command))
+```
+
+| Cycle | `C` tick | Action on `P` | `valid(P)` | `modified(P)` | `delta_value(P)` | `last_modified(P)` | `W` tick |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `t1` | `7` | Publish `7` | true | true | `7` | `t1` | `true` |
+| `t2` | `0` | Invalidate | false | false | Unavailable | `null` | `false` |
+| `t3` | `0` | Invalidate again | false | false | Unavailable | `null` | `_` |
+| `t4` | `7` | Publish `7` | true | true | `7` | `t4` | `true` |
+
+The `false` tick shows that invalidation wakes `watch`. The `_` shows
+silence on repeated invalidation. The
+[core eval case](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/scalar_endpoints.hgl)
+checks the `W` trace.
 
 ## Proposed examples and conformance observations
 
