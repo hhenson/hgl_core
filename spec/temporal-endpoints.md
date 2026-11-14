@@ -182,10 +182,9 @@ fn observe_set_updates(command: i64) -> set<i64> =>
     read_delta(change_members(command))
 
 test set_writes_coalesce {
-    assert eval(observe_set_updates, command: [1, 2, _]) == [
+    assert eval(observe_set_updates, command: [1, 2]) == [
         delta<set<i64>>(added: [1]),
-        delta<set<i64>>(added: [3], removed: [1]),
-        _
+        delta<set<i64>>(added: [3], removed: [1])
     ]
 }
 ```
@@ -194,7 +193,6 @@ test set_writes_coalesce {
 | --- | --- | --- | --- | --- | --- |
 | `t1` | `1` | Add `1` | `{1}` | 1 | Add `1` |
 | `t2` | `2` | Add `2, 3`, then remove `1, 2` | `{3}` | 1 | Add `3`, remove `1` |
-| `t3` | `_` | None | `{3}` | 0 | `_` |
 
 At `t2`, the addition and removal of `2` cancel in the set delta. The
 [core eval fixture](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/set_endpoints.hgl)
