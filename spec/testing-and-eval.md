@@ -1,7 +1,6 @@
 # Core testing and eval
 
-Status: test ownership, eval wiring, replay, and recording retention
-(CEVAL-1 through CEVAL-4) are agreed.
+Status: test ownership and CEVAL-1 through CEVAL-5 are agreed.
 The remaining eval profile and pack mechanics are proposed.
 
 ## Agreed
@@ -32,6 +31,8 @@ The remaining eval profile and pack mechanics are proposed.
 - **CEVAL-4.** Record initializes an empty recording at start. Each output
   publication adds an entry with its evaluation time and an independently
   retained delta. Later writes leave earlier entries intact.
+- **CEVAL-5.** Each eval creates a fresh run with independent node state and
+  recording. Eval constructs a dense result from that recording under TST-6.
 
 ## Proposed eval boundary
 
@@ -46,8 +47,6 @@ flowchart LR
 The [language specification](https://github.com/hhenson/hgl_spec/blob/main/spec/language/tests-and-eval.md)
 owns source checking, trace notation, and harness comparison. Core proposes:
 
-- **CEVAL-5.** Each eval creates a fresh run and recording. Dense results
-  are constructed from the recording using TST-6.
 - **CEVAL-6.** Failure and missing recording data are errors. Neither becomes a
   successful empty result. Internal recorder keys must not collide with source
   or owner-supplied state.
@@ -251,6 +250,37 @@ A recorder that borrows a reused delta buffer could return `[D2, _, D2]`.
 The [core fixtures](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/record_eval.hgl)
 check both cases.
 
+### Run isolation
+
+Each call wires its own replay, `count_publications`, and recorder.
+
+```hgl
+module examples.eval_isolation
+
+fn count_publications(value: i64) -> i64 {
+    state count: i64 = 0
+    when {
+        count += 1
+        return count
+    }
+}
+
+test runs_are_independent {
+    assert eval(count_publications, value: [7, _, 7]) == [1, _, 2]
+    assert eval(count_publications, value: []) == []
+    assert eval(count_publications, value: [7, _, 7]) == [1, _, 2]
+}
+```
+
+| Eval call | Replay input | Dense result | Observation |
+| --- | --- | --- | --- |
+| First | `[7, _, 7]` | `[1, _, 2]` | The counter publishes twice. |
+| Second | `[]` | `[]` | The recording starts empty. |
+| Third | `[7, _, 7]` | `[1, _, 2]` | The counter starts at zero again. |
+
+The [core fixture](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/scalar_eval.hgl)
+checks all three calls.
+
 ### Sink
 
 ```hgl
@@ -301,7 +331,6 @@ publications and finishes after the second yield.
 | Empty input remains empty | `[]` | `[]` |
 | Leading silence locates the publication | `[_, 7, _, _]` | `[_, 7]` |
 | Zero, false, and empty text are present | Typed present cells | Same present cells |
-| Runs are independent | Nonempty run, then empty run | Second recording is empty |
 
 The [shared fixtures](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/README.md)
 cover dense traces. Target adapters supply observations that require

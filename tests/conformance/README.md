@@ -15,7 +15,7 @@ are private functions that publish or wire their own output.
 | `scalar_eval` | `leading_silence_locates_a_tick` | CEVAL-2 (agreed), TST-6 |
 | `scalar_eval` | `zero_false_and_empty_text_are_present` | CEVAL-3, END-1, TST-9 |
 | `scalar_eval` | `dense_result_ends_at_last_publication` | END-3, TIME-3, TST-6 |
-| `scalar_eval` | `runs_are_independent` | CEVAL-5, TIME-5, TST-8 |
+| `scalar_eval` | `runs_are_independent` | CEVAL-5 (agreed), TIME-5, TST-6, TST-8 |
 | `mixed_eval` | `mixed_replay` | CEVAL-2 (agreed), TST-6, TST-9. Set delta profile is proposed. |
 | `record_eval` | `record_retains_each_delta` | CEVAL-4 (agreed), TST-6. Set delta profile is proposed. |
 | `record_eval` | `record_can_be_empty` | CEVAL-4 (agreed), TST-6. Set delta profile is proposed. |

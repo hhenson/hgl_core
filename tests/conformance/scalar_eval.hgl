@@ -66,8 +66,7 @@ test dense_result_ends_at_last_publication {
 }
 
 test runs_are_independent {
-    assert eval(pass_i64, value: [7, 9]) == [7, 9]
-    assert eval(pass_i64, value: []) == []
-    assert eval(count_publications, value: [5, 5, _, 5]) == [1, 2, _, 3]
-    assert eval(count_publications, value: [5, 5, _, 5]) == [1, 2, _, 3]
+    assert eval(count_publications, value: [7, _, 7]) == [1, _, 2]
+    assert eval(count_publications, value: []) == []
+    assert eval(count_publications, value: [7, _, 7]) == [1, _, 2]
 }
