@@ -4,20 +4,20 @@ module conformance part scalar_endpoints
 # Probe ticks let the observers read an idle or invalid watched input.
 
 fn watched_valid(watched: i64, probe: bool) -> bool {
-    when valid() {
+    when valid([]) {
         return valid(watched)
     }
 }
 
 fn watched_modified(watched: i64, probe: bool) -> bool {
-    when valid() {
+    when modified() && valid([]) {
         return modified(watched)
     }
 }
 
-# Only probe is subscribed. Default validity still requires both inputs.
+# Only probe is subscribed. valid() requires both inputs to be valid.
 fn sample_on_probe(watched: i64, probe: bool) -> i64 {
-    when modified(probe) {
+    when modified(probe) && valid() {
         return watched
     }
 }
@@ -49,11 +49,48 @@ fn produce(command: i64) -> i64 {
 }
 
 fn watch(input: i64) -> bool {
-    when valid() { return valid(input) }
+    when valid([]) { return valid(input) }
 }
 
 fn observe(command: i64) -> bool => watch(produce(command))
 
 test publish_invalidate_recover {
     assert eval(observe, command: [7, 0, 0, 7]) == [true, false, _, true]
+}
+
+fn publish_nullable(command: i64) -> i64? {
+    when {
+        if command == 0 { return null }
+        return command
+    }
+}
+
+fn read_validity(watched: i64?, probe: bool) -> bool {
+    when modified(probe) && valid([]) { return valid(watched) }
+}
+
+fn observe_validity(command: i64, probe: bool) -> bool =>
+    read_validity(publish_nullable(command), probe)
+
+test publication_establishes_validity {
+    assert eval(observe_validity,
+                command: [_, 0, _, 7],
+                probe: [true, true, true, true]) == [false, true, true, true]
+}
+
+fn publish_value(value: i64) -> i64 {
+    when { return value }
+}
+
+fn read_modified(watched: i64, probe: bool) -> bool {
+    when modified(probe) && valid([]) { return modified(watched) }
+}
+
+fn observe_modified(value: i64, probe: bool) -> bool =>
+    read_modified(publish_value(value), probe)
+
+test equal_publications_are_modified {
+    assert eval(observe_modified,
+                value: [_, 7, _, 7],
+                probe: [true, true, true, true]) == [false, true, false, true]
 }
