@@ -1,7 +1,7 @@
 # Core testing and eval
 
-Status: test ownership, eval wiring, and replay (CEVAL-1 through CEVAL-3)
-are agreed.
+Status: test ownership, eval wiring, replay, and recording retention
+(CEVAL-1 through CEVAL-4) are agreed.
 The remaining eval profile and pack mechanics are proposed.
 
 ## Agreed
@@ -29,6 +29,9 @@ The remaining eval profile and pack mechanics are proposed.
 - **CEVAL-3.** Replay publishes each scalar entry at its timestamp, including
   repeated values. Silent slots publish nothing. Replay applies collection
   entries under their shape's publication rules.
+- **CEVAL-4.** Record initializes an empty recording at start. Each output
+  publication adds an entry with its evaluation time and an independently
+  retained delta. Later writes leave earlier entries intact.
 
 ## Proposed eval boundary
 
@@ -43,9 +46,6 @@ flowchart LR
 The [language specification](https://github.com/hhenson/hgl_spec/blob/main/spec/language/tests-and-eval.md)
 owns source checking, trace notation, and harness comparison. Core proposes:
 
-- **CEVAL-4.** A started recorder initializes an empty recording and independently
-  retains each output publication and evaluation time. Later writes cannot
-  change an earlier capture.
 - **CEVAL-5.** Each eval creates a fresh run and recording. Dense results
   are constructed from the recording using TST-6.
 - **CEVAL-6.** Failure and missing recording data are errors. Neither becomes a
@@ -197,6 +197,60 @@ Both replay sources are exhausted after `t4`. The
 [core fixture](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/mixed_eval.hgl)
 checks the recorded output.
 
+### Recording retention
+
+Eval wires replay to `update_members` and attaches record to its output.
+This example uses the proposed set delta profile.
+
+```hgl
+module examples.record_retention
+
+fn update_members(command: i64) -> set<i64> {
+    when {
+        if command == 1 {
+            return delta<set<i64>>(added: [1, 2])
+        }
+        if command == 2 {
+            return delta<set<i64>>(added: [3], removed: [1])
+        }
+    }
+}
+
+test record_retains_each_delta {
+    assert eval(update_members, command: [1, _, 2]) == [
+        delta<set<i64>>(added: [1, 2]),
+        _,
+        delta<set<i64>>(added: [3], removed: [1])
+    ]
+}
+
+test record_can_be_empty {
+    assert eval(update_members, command: []) == []
+    assert eval(update_members, command: [0]) == []
+}
+```
+
+`D1` is `delta<set<i64>>(added: [1, 2])` and `D2` is
+`delta<set<i64>>(added: [3], removed: [1])`.
+
+| Slot | `command` tick | `update_members` output tick | Recording after the slot |
+| --- | --- | --- | --- |
+| Start | — | — | `[]` |
+| `t1` | `1` | `D1` | `[(t1, D1)]` |
+| `t2` | `_` | `_` | `[(t1, D1)]` |
+| `t3` | `2` | `D2` | `[(t1, D1), (t3, D2)]` |
+
+`t2` locates the next publication. It schedules no evaluation.
+A recorder that borrows a reused delta buffer could return `[D2, _, D2]`.
+
+| Empty case | What runs | Dense result |
+| --- | --- | --- |
+| `command: []` | Replay schedules no events. | `[]` |
+| `command: [0]` | `update_members` evaluates once without publishing. | `[]` |
+
+The [core fixtures](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/record_eval.hgl)
+check both cases.
+
 ### Sink
 
 ```hgl
@@ -247,7 +301,6 @@ publications and finishes after the second yield.
 | Empty input remains empty | `[]` | `[]` |
 | Leading silence locates the publication | `[_, 7, _, _]` | `[_, 7]` |
 | Zero, false, and empty text are present | Typed present cells | Same present cells |
-| Captures are independent | Publish A, then B | First capture remains A |
 | Runs are independent | Nonempty run, then empty run | Second recording is empty |
 
 The [shared fixtures](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/README.md)
