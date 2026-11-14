@@ -10,11 +10,11 @@ are private functions that publish or wire their own output.
 | --- | --- | --- |
 | `scalar_eval` | `equal_publications_remain_ticks` | CEVAL-3, END-2 (agreed), TST-6 |
 | `scalar_eval` | `replay_preserves_equal_ticks` | CEVAL-3 (agreed), TST-6 |
-| `scalar_eval` | `silent_horizon_survives` | CEVAL-5, TST-6 |
+| `scalar_eval` | `all_silent_input_is_empty` | CEVAL-2 (agreed), TST-6 |
 | `scalar_eval` | `empty_input_remains_empty` | CEVAL-4, TST-6, TST-8 |
-| `scalar_eval` | `leading_and_trailing_silence_survive` | CEVAL-5, TST-6 |
+| `scalar_eval` | `leading_silence_locates_a_tick` | CEVAL-2 (agreed), TST-6 |
 | `scalar_eval` | `zero_false_and_empty_text_are_present` | CEVAL-3, END-1, TST-9 |
-| `scalar_eval` | `horizon_is_the_longest_input` | END-3, TIME-3, TST-6 |
+| `scalar_eval` | `dense_result_ends_at_last_publication` | END-3, TIME-3, TST-6 |
 | `scalar_eval` | `runs_are_independent` | CEVAL-5, TIME-5, TST-8 |
 | `mixed_eval` | `mixed_replay` | CEVAL-2 (agreed), TST-6, TST-9. Set delta profile is proposed. |
 | `scalar_endpoints` | `silence_preserves_validity` | END-1 (agreed), TIME-1, TIME-3 |

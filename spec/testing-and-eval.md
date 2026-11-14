@@ -23,9 +23,9 @@ The remaining eval profile and pack mechanics are proposed.
 - **CEVAL-2.** Each temporal input has a typed replay list of present
   publications. Each entry pairs its absolute evaluation time with the
   publication delta for that input's temporal shape. Eval derives all times
-  from a common run origin. For dense traces, it retains the longest supplied
-  input length separately, including silent slots. Silence adds no replay
-  entry.
+  from a common run origin. A dense placeholder locates any later entries
+  and adds no replay entry or run bound. An empty replay schedules no work.
+  Simulation stops when scheduled work is exhausted (RUN-3).
 - **CEVAL-3.** Replay publishes each scalar entry at its timestamp, including
   repeated values. Silent slots publish nothing. Replay applies collection
   entries under their shape's publication rules.
@@ -46,8 +46,8 @@ owns source checking, trace notation, and harness comparison. Core proposes:
 - **CEVAL-4.** A started recorder initializes an empty recording and independently
   retains each output publication and evaluation time. Later writes cannot
   change an earlier capture.
-- **CEVAL-5.** Each eval creates a fresh run and recording. Preserve the input
-  horizon and any later output ticks when constructing a dense result.
+- **CEVAL-5.** Each eval creates a fresh run and recording. Dense results
+  are constructed from the recording using TST-6.
 - **CEVAL-6.** Failure and missing recording data are errors. Neither becomes a
   successful empty result. Internal recorder keys must not collide with source
   or owner-supplied state.
@@ -89,7 +89,7 @@ fn count_publications(value: i64) -> i64 {
 
 test replay_preserves_equal_ticks {
     assert eval(count_publications, value: [7, _, 7, 7, _]) ==
-        [1, _, 2, 3, _]
+        [1, _, 2, 3]
 }
 ```
 
@@ -99,7 +99,8 @@ test replay_preserves_equal_ticks {
 | `t2` | `_` | `_` |
 | `t3` | `7` | `2` |
 | `t4` | `7` | `3` |
-| `t5` | `_` | `_` |
+
+The trailing placeholder schedules no work at `t5`.
 
 The [core fixture](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/scalar_eval.hgl)
 checks the recorded counter trace.
@@ -115,11 +116,11 @@ fn scaled_sum(left: i64, right: i64, const factor: i64) -> i64 {
     when { return (left + right) * factor }
 }
 
-test unequal_input_horizons {
+test unequal_input_lengths {
     assert eval(scaled_sum,
                 left: [2, _, 5],
-                right: [_, 3, _, 4, _],
-                factor: 2) == [_, 10, 16, 18, _]
+                right: [_, 3, _, 4],
+                factor: 2) == [_, 10, 16, 18]
 }
 ```
 
@@ -129,7 +130,6 @@ test unequal_input_horizons {
 | `t2` | `_` | `3` | `10` using retained `left = 2` |
 | `t3` | `5` | `_` | `16` using retained `right = 3` |
 | `t4` | `_` | `4` | `18` using retained `left = 5` |
-| `t5` | `_` | `_` | `_` in the longer input's horizon |
 
 Call an ordinary value helper directly for an all-scalar test.
 
@@ -166,16 +166,12 @@ test mixed_replay {
                     _,
                     delta<set<i64>>(added: [1, 2]),
                     _,
-                    delta<set<i64>>(added: [3], removed: [1]),
-                    _,
-                    _
+                    delta<set<i64>>(added: [3], removed: [1])
                 ]) == [
         _,
         delta<set<i64>>(added: [1, 2]),
         _,
-        delta<set<i64>>(added: [3], removed: [1]),
-        _,
-        _
+        delta<set<i64>>(added: [3], removed: [1])
     ]
 }
 ```
@@ -183,10 +179,10 @@ test mixed_replay {
 `t1` is run start. Each following slot advances one engine step. The replay
 entries carry the corresponding absolute times.
 
-| Input | Dense slots | Replay entries |
-| --- | ---: | --- |
-| `enabled` | 3 | `(t1, true)`, `(t3, true)` |
-| `members` | 6 | `(t2, add {1, 2})`, `(t4, add {3}, remove {1})` |
+| Input | Replay entries |
+| --- | --- |
+| `enabled` | `(t1, true)`, `(t3, true)` |
+| `members` | `(t2, add {1, 2})`, `(t4, add {3}, remove {1})` |
 
 | Cycle | `enabled` tick | `members` tick | Retained `members` | Recorded output |
 | --- | --- | --- | --- | --- |
@@ -194,13 +190,11 @@ entries carry the corresponding absolute times.
 | `t2` | `_` | Add `{1, 2}` | `{1, 2}` | Add `{1, 2}` |
 | `t3` | `true` | `_` | `{1, 2}` | `_` |
 | `t4` | `_` | Add `{3}`, remove `{1}` | `{2, 3}` | Add `{3}`, remove `{1}` |
-| `t5` | `_` | `_` | `{2, 3}` | `_` |
-| `t6` | `_` | `_` | `{2, 3}` | `_` |
 
 At `t3` the repeated `true` wakes `relay_members`, which stays silent
 because `members` has no delta. At `t4` it uses the retained `true`.
-The dense horizon is six slots, including the two silent slots after the
-last replay entry. The [core fixture](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/mixed_eval.hgl)
+Both replay sources are exhausted after `t4`. The
+[core fixture](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/mixed_eval.hgl)
 checks the recorded output.
 
 ### Sink
@@ -249,9 +243,9 @@ publications and finishes after the second yield.
 | Observation | Input | Expected output |
 | --- | --- | --- |
 | Equal publications remain ticks | `[7, _, 7, 9]` | `[7, _, 7, 9]` |
-| Silent horizon survives | `[_, _, _]` | `[_, _, _]` |
+| All-silent input supplies no replay entries | `[_, _, _]` | `[]` |
 | Empty input remains empty | `[]` | `[]` |
-| Leading/trailing silence survives | `[_, 7, _, _]` | `[_, 7, _, _]` |
+| Leading silence locates the publication | `[_, 7, _, _]` | `[_, 7]` |
 | Zero, false, and empty text are present | Typed present cells | Same present cells |
 | Captures are independent | Publish A, then B | First capture remains A |
 | Runs are independent | Nonempty run, then empty run | Second recording is empty |

@@ -17,15 +17,11 @@ test mixed_replay {
                     _,
                     delta<set<i64>>(added: [1, 2]),
                     _,
-                    delta<set<i64>>(added: [3], removed: [1]),
-                    _,
-                    _
+                    delta<set<i64>>(added: [3], removed: [1])
                 ]) == [
         _,
         delta<set<i64>>(added: [1, 2]),
         _,
-        delta<set<i64>>(added: [3], removed: [1]),
-        _,
-        _
+        delta<set<i64>>(added: [3], removed: [1])
     ]
 }
