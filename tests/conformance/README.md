@@ -19,6 +19,7 @@ are private functions that publish or wire their own output.
 | `scalar_endpoints` | `equal_publication_is_modified_and_idle_is_not` | END-2, TIME-3 |
 | `scalar_endpoints` | `retained_value_is_read_without_a_new_tick` | END-1, FN-7, TIME-3 |
 | `scalar_endpoints` | `publish_invalidate_recover` | END-4 (agreed), TIME-3, TST-6 |
+| `set_endpoints` | `set_writes_coalesce` | END-5 (agreed), TIME-2, TST-6. Set delta syntax and semantics are proposed. |
 
 CEVAL, CONF, and END rules are in this repository's `spec/`. FN, TIME, and TST
 rules are in the [language specification](https://github.com/hhenson/hgl_spec).

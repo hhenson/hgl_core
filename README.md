@@ -25,5 +25,5 @@ portable implementations, required native support, and runtime conformance.
 | `tests/implementation/` | Ordinary tests of core implementation code |
 
 [`tests/conformance/`](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/README.md)
-holds the scalar fixtures. The other code directories are reserved. A target
-adapter and eval runner are needed to run the shared expectations.
+holds the endpoint and eval fixtures. The other code directories are reserved.
+A target adapter and eval runner are needed to run the shared expectations.

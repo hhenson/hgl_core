@@ -1,7 +1,6 @@
 # Scalar temporal endpoint observations
 
-Status: scalar delta (END-3), invalidation (END-4), and timestamp (END-6)
-are agreed. The other core rules are proposed.
+Status: END-3 through END-6 are agreed. END-1 and END-2 are proposed.
 
 ## Scope and API
 
@@ -32,11 +31,6 @@ selectors follow the language contract rather than this one-endpoint table.
   evaluation time, including when its value equals the previous value. In a
   later idle cycle it is unmodified while its value remains retained. A fixed
   directly bound input observes its output's state.
-- **END-5.** Active/passive status affects scheduling, not the observations
-  above. An equal publication still notifies. Repeated writes while already
-  modified in one producer evaluation expose the final value/delta downstream
-  without additional publication notifications. Normal graph scheduling still
-  evaluates each node at most once per cycle.
 
 ## Agreed rules
 
@@ -49,6 +43,11 @@ selectors follow the language contract rather than this one-endpoint table.
   silent. Within a producer evaluation the last action determines the state:
   publish then invalidate leaves the endpoint invalid. Invalidate then publish
   leaves it valid and modified.
+- **END-5.** A publication notifies active subscribers, including when its
+  value repeats. Further writes to the already modified endpoint in the same
+  evaluation update its publication without notifying again. A downstream
+  node runs at most once per cycle and reads the completed value and delta.
+  Active and passive inputs read the same endpoint state.
 - **END-6.** `last_modified(value)` returns `datetime?`. It returns null while
   the endpoint is invalid, including before its first publication and after
   invalidation. While valid, it returns the retained publication's UTC
@@ -90,6 +89,50 @@ The `false` tick shows that invalidation wakes `watch`. The `_` shows
 silence on repeated invalidation. The
 [core eval case](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/scalar_endpoints.hgl)
 checks the `W` trace.
+
+## Multiple writes in one cycle
+
+This illustration of END-5 uses proposed set delta syntax and semantics.
+`C` is the command input, `S` is the output of `change_members`, and `R` is
+the output of `read_delta`.
+
+```hgl
+module examples.set_updates
+
+fn change_members(command: i64) -> set<i64> {
+    inject out
+    when {
+        if command == 1 { return delta<set<i64>>(added: [1]) }
+        out = delta<set<i64>>(added: [2, 3])
+        out = delta<set<i64>>(removed: [1, 2])
+    }
+}
+
+fn read_delta(input: set<i64>) -> set<i64> {
+    when { return delta_value(input) }
+}
+
+fn observe_set_updates(command: i64) -> set<i64> =>
+    read_delta(change_members(command))
+
+test set_writes_coalesce {
+    assert eval(observe_set_updates, command: [1, 2, _]) == [
+        delta<set<i64>>(added: [1]),
+        delta<set<i64>>(added: [3], removed: [1]),
+        _
+    ]
+}
+```
+
+| Cycle | `C` tick | Writes to `S` by `change_members` | `S` at cycle end | `read_delta` evaluations | `R` tick |
+| --- | --- | --- | --- | --- | --- |
+| `t1` | `1` | Add `1` | `{1}` | 1 | Add `1` |
+| `t2` | `2` | Add `2, 3`, then remove `1, 2` | `{3}` | 1 | Add `3`, remove `1` |
+| `t3` | `_` | None | `{3}` | 0 | `_` |
+
+At `t2`, the addition and removal of `2` cancel in the set delta. The
+[core eval fixture](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/set_endpoints.hgl)
+checks the published `R` trace.
 
 ## Proposed examples and conformance observations
 
