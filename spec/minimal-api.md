@@ -6,8 +6,8 @@ Each row must gain a contract, examples, and conformance observations before it
 becomes mandatory. API names and representation choices remain open.
 The [numeric operator contract](numeric-operators.md) now defines the agreed
 numeric baseline and policy behavior; other inventory rows retain their status.
-The next proposed slice is [scalar endpoint observations](temporal-endpoints.md),
-separating publication, validity, notification, and retained data.
+The [scalar endpoint contract](temporal-endpoints.md) defines publication,
+validity, notification, and retained data for directly bound scalar endpoints.
 
 | Capability | HGL-facing need | Implementation-facing obligation |
 | --- | --- | --- |

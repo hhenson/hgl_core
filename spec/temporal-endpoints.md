@@ -1,6 +1,6 @@
 # Scalar temporal endpoint observations
 
-Status: END-1 and END-3 through END-6 are agreed. END-2 is proposed.
+Status: END-1 through END-6 are agreed.
 
 ## Scope and API
 
@@ -22,18 +22,15 @@ These are semantic interfaces, not native declarations. Runtime metadata reads
 create no graph nodes. Composition forms and empty/multi-argument handler
 selectors follow the language contract rather than this one-endpoint table.
 
-## Proposed rules
-
-- **END-2.** A publication marks the owned endpoint modified at the current
-  evaluation time, including when its value equals the previous value. In a
-  later idle cycle it is unmodified while its value remains retained. A fixed
-  directly bound input observes its output's state.
-
 ## Agreed rules
 
 - **END-1.** A scalar publication makes the endpoint valid and retains its
   payload, including false, zero, empty text, null, NaN, or infinity.
   Silence preserves validity and the retained payload.
+- **END-2.** A scalar publication marks its endpoint modified for the current
+  cycle, including when the payload repeats. An idle cycle leaves the endpoint
+  unmodified and preserves its retained payload. A fixed, directly bound input
+  observes its output's state.
 - **END-3.** `delta_value(x)` returns the scalar value `x` published this cycle,
   including a published null. The checker must prove `x` is valid and modified
   at the call.
@@ -88,6 +85,39 @@ test publication_establishes_validity {
 | `t1` | `_` | `true` | `_` | Unavailable | `false` |
 | `t2` | `0` | `true` | `null` | `null` | `true` |
 | `t3` | `_` | `true` | `_` | `null` | `true` |
+| `t4` | `7` | `true` | `7` | `7` | `true` |
+
+## Equal publications and idle cycles
+
+`P` is the output of `publish_value` and `M` is the output of
+`read_modified`. The probe ticks every cycle.
+
+```hgl
+module examples.scalar_modified
+
+fn publish_value(value: i64) -> i64 {
+    when { return value }
+}
+
+fn read_modified(watched: i64, probe: bool) -> bool {
+    when modified(probe) && valid([]) { return modified(watched) }
+}
+
+fn observe_modified(value: i64, probe: bool) -> bool =>
+    read_modified(publish_value(value), probe)
+
+test equal_publications_are_modified {
+    assert eval(observe_modified,
+                value: [_, 7, _, 7],
+                probe: [true, true, true, true]) == [false, true, false, true]
+}
+```
+
+| Cycle | Value input tick | Probe tick | `P` tick | `P` retained value | `M` tick |
+| --- | --- | --- | --- | --- | --- |
+| `t1` | `_` | `true` | `_` | Unavailable | `false` |
+| `t2` | `7` | `true` | `7` | `7` | `true` |
+| `t3` | `_` | `true` | `_` | `7` | `false` |
 | `t4` | `7` | `true` | `7` | `7` | `true` |
 
 ## Invalidation and recovery
