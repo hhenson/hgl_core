@@ -4,13 +4,13 @@ module conformance part scalar_endpoints
 # Probe ticks let the observers read an idle or invalid watched input.
 
 fn watched_valid(watched: i64, probe: bool) -> bool {
-    when valid() {
+    when valid([]) {
         return valid(watched)
     }
 }
 
 fn watched_modified(watched: i64, probe: bool) -> bool {
-    when valid() {
+    when valid([]) {
         return modified(watched)
     }
 }
@@ -49,7 +49,7 @@ fn produce(command: i64) -> i64 {
 }
 
 fn watch(input: i64) -> bool {
-    when valid() { return valid(input) }
+    when valid([]) { return valid(input) }
 }
 
 fn observe(command: i64) -> bool => watch(produce(command))
@@ -66,7 +66,7 @@ fn publish_nullable(command: i64) -> i64? {
 }
 
 fn read_validity(watched: i64?, probe: bool) -> bool {
-    when modified(probe) && valid() { return valid(watched) }
+    when modified(probe) && valid([]) { return valid(watched) }
 }
 
 fn observe_validity(command: i64, probe: bool) -> bool =>

@@ -70,7 +70,7 @@ fn publish_nullable(command: i64) -> i64? {
 }
 
 fn read_validity(watched: i64?, probe: bool) -> bool {
-    when modified(probe) && valid() { return valid(watched) }
+    when modified(probe) && valid([]) { return valid(watched) }
 }
 
 fn observe_validity(command: i64, probe: bool) -> bool =>
@@ -93,7 +93,7 @@ test publication_establishes_validity {
 ## Invalidation and recovery
 
 `C` is the command input, `P` is the output of `produce`, and `W` is the
-output of `watch`. The empty validity selector allows `watch` to report an
+output of `watch`. The selector `valid([])` allows `watch` to report an
 invalid input.
 
 ```hgl
@@ -108,7 +108,7 @@ fn produce(command: i64) -> i64 {
 }
 
 fn watch(input: i64) -> bool {
-    when valid() { return valid(input) }
+    when valid([]) { return valid(input) }
 }
 
 fn observe(command: i64) -> bool => watch(produce(command))
