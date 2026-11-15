@@ -88,7 +88,7 @@ fn count_publications(value: i64) -> i64 {
 }
 
 test replay_preserves_equal_ticks {
-    assert eval(count_publications, value: [7, _, 7, 7, _]) ==
+    assert eval(count_publications, value: [7, _, 7, 7]) ==
         [1, _, 2, 3]
 }
 ```
@@ -100,7 +100,7 @@ test replay_preserves_equal_ticks {
 | `t3` | `7` | `2` |
 | `t4` | `7` | `3` |
 
-The trailing placeholder schedules no work at `t5`.
+Appending `_` gives the same replay. It schedules no work at `t5`.
 
 The [core fixture](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/scalar_eval.hgl)
 checks the recorded counter trace.
@@ -116,11 +116,11 @@ fn scaled_sum(left: i64, right: i64, const factor: i64) -> i64 {
     when { return (left + right) * factor }
 }
 
-test unequal_input_lengths {
+test shared_input_ticks {
     assert eval(scaled_sum,
-                left: [2, _, 5],
+                left: [2, _, 5, 7],
                 right: [_, 3, _, 4],
-                factor: 2) == [_, 10, 16, 18]
+                factor: 2) == [_, 10, 16, 22]
 }
 ```
 
@@ -129,7 +129,10 @@ test unequal_input_lengths {
 | `t1` | `2` | `_` | `_` while `right` is invalid |
 | `t2` | `_` | `3` | `10` using retained `left = 2` |
 | `t3` | `5` | `_` | `16` using retained `right = 3` |
-| `t4` | `_` | `4` | `18` using retained `left = 5` |
+| `t4` | `7` | `4` | `22` using both new values |
+
+Both inputs publish at `t4`. Dependency order gives `scaled_sum` both new
+values when it evaluates once that cycle (TIME-2).
 
 Call an ordinary value helper directly for an all-scalar test.
 
