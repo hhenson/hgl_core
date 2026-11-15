@@ -1,0 +1,42 @@
+module core
+
+# Proposed. Core's mandatory module: every module binds its public
+# declarations without a `use` (UNIT-11). Contracts: spec/numeric-operators.md
+# and spec/scalar-operators.md. The native candidates are in
+# hgl/native/scalar_operators.hgl.
+
+# The outcome of a full comparison, `<=>` (OPS-3, NUM-6).
+export enum CmpResult { less, equivalent, greater, unordered }
+
+# The symbol operators. Syntax binds each identity (the language's generics
+# chapter): `a + b` is `add_(a, b)`. An operator is neither value nor
+# temporal; the candidate a call selects is.
+
+# `+`, binary `-`, `*`, `/`, `//`, `%`.
+operator add_<L, R, O>(lhs: L, rhs: R) -> O
+operator sub_<L, R, O>(lhs: L, rhs: R) -> O
+operator mul_<L, R, O>(lhs: L, rhs: R) -> O
+operator div_<L, R, O>(lhs: L, rhs: R) -> O
+operator floordiv_<L, R, O>(lhs: L, rhs: R) -> O
+operator mod_<L, R, O>(lhs: L, rhs: R) -> O
+
+# Unary `-`.
+operator neg_<T, O>(value: T) -> O
+
+# `==`, `!=`, `<`, `<=`, `>`, `>=`.
+operator eq_<L, R>(lhs: L, rhs: R) -> bool
+operator ne_<L, R>(lhs: L, rhs: R) -> bool
+operator lt_<L, R>(lhs: L, rhs: R) -> bool
+operator le_<L, R>(lhs: L, rhs: R) -> bool
+operator gt_<L, R>(lhs: L, rhs: R) -> bool
+operator ge_<L, R>(lhs: L, rhs: R) -> bool
+
+# `<=>`.
+operator compare_<L, R>(lhs: L, rhs: R) -> CmpResult
+
+# `&&`, `||`, `!`, and a chain of three or more `&&` or `||` (OPS-5).
+operator and_(lhs: bool, rhs: bool) -> bool
+operator or_(lhs: bool, rhs: bool) -> bool
+operator not_(value: bool) -> bool
+operator all_(values: ...bool) -> bool
+operator any_(values: ...bool) -> bool
