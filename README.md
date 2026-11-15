@@ -6,6 +6,7 @@ portable implementations, required native support, and runtime conformance.
 - [Foundation charter](spec/foundation.md)
 - [Minimal API inventory](spec/minimal-api.md)
 - [Numeric operators and policies](spec/numeric-operators.md)
+- [Scalar operators and conversion](spec/scalar-operators.md)
 - [Value-function lifting observations](spec/value-function-lifting.md)
 - [Scalar temporal endpoints](spec/temporal-endpoints.md)
 - [Testing and eval contract](spec/testing-and-eval.md)

@@ -66,12 +66,12 @@ fn publish_nullable(command: i64) -> i64? {
     }
 }
 
-fn read_validity(watched: i64?, probe: bool) -> bool {
+fn read_validity(probe: bool, watched: i64?) -> bool {
     when modified(probe) && valid([]) { return valid(watched) }
 }
 
 fn observe_validity(command: i64, probe: bool) -> bool =>
-    read_validity(publish_nullable(command), probe)
+    read_validity(probe, publish_nullable(command))
 
 test publication_establishes_validity {
     assert eval(observe_validity,
