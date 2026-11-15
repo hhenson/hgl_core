@@ -1,9 +1,9 @@
 # Scalar operators and conversion
 
 Status: agreed operator domains for the scalar types other than numbers, the
-comparison outcome type, and the domains of the conversion operator. What
-each conversion yields is not specified here. No executable conformance or
-native ABI is specified.
+comparison outcome type, the domains of the conversion operator, and what
+each conversion yields. The options of a conversion are proposed. No
+executable conformance or native ABI is specified.
 
 ## Contract
 
@@ -32,6 +32,19 @@ owns symbol syntax, precedence, and phase checking. An instant is a
   rejects every other.
 - **OPS-5.** `&&`, `||`, and `!` take bools. A number or a string has no
   truth value.
+- **OPS-6.** A conversion yields what the third table below says.
+  `convert<list<B>>(values)` is admitted too, where `values` is a `list<A>`
+  and the struct `A` inherits from the abstract struct `B`; it yields the same
+  elements.
+- **OPS-7.** A conversion is configured as division is (NUM-3, NUM-9).
+  Options select how an `f64` is rounded to an `i64` and what a NaN becomes,
+  an error or a sentinel value. A conversion can fail: an `f64` that is NaN,
+  an infinity, or outside `i64` once rounded; text that is no literal of the
+  type asked for; bytes that are not well-formed UTF-8. Its error policy is
+  checked wherever it can be: the conversion then returns `result<T, error>`,
+  and a failure is an Err, ordinary result data (NUM-10). A policy under
+  which a failure escapes instead is an option. The options, their members,
+  and their defaults are proposed below.
 
 | Operator | Operands | Result |
 | --- | --- | --- |
@@ -61,6 +74,43 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 | `bytes` | `str` |
 | `date` | `datetime` |
 | `datetime` | `date` |
+
+| Conversion | Yields |
+| --- | --- |
+| `i64` to `f64` | The nearest `f64` |
+| `f64` to `i64` | The integer its rounding selects (OPS-7) |
+| `i64` or `f64` to `bool` | False for zero, true otherwise; NaN is true |
+| `bool` to `i64` or `f64` | 0 or 1 |
+| A number or a `bool` to `str` | The text of the literal that denotes the value |
+| `str` to `i64`, `f64`, or `bool` | The value of the literal the text is |
+| `str` to `bytes`, `bytes` to `str` | UTF-8 |
+| `date` to `datetime` | The start of that date, in UTC |
+| `datetime` to `date` | The date of the instant, in UTC |
+
+## Proposed conversion options
+
+Proposed, not agreed. Each is const configuration of `convert`, given as a
+named argument and resolved during source checking where it determines the
+result type, as NUM-9 does for division.
+
+| Option | Applies to | Members | Default |
+| --- | --- | --- | --- |
+| `rounding` | `f64` to `i64` | `.truncate`, toward zero; `.floor`, toward negative infinity; `.ceiling`, toward positive infinity; `.half_even`, to the nearest, a tie to the even integer; `.half_up`, to the nearest, a tie away from zero; `.half_down`, to the nearest, a tie toward zero | `.truncate` |
+| `nan` | `f64` to `i64` | An `i64?`: the value a NaN converts to. Null leaves a NaN to `invalid` | null |
+| `invalid` | Every conversion that can fail (OPS-7) | `.error`: the conversion returns `result<T, error>`, and a failure is an Err carrying error code `convert.invalid`. `.fail`: it returns T, and a failure is an escaping HGL error | `.error` |
+
+Proposed expression fragments, with `price` an `f64` in scope:
+
+```hgl
+convert<i64>(price)
+convert<i64>(price, rounding: .half_even)
+convert<i64>(price, nan: 0)
+convert<i64>(price, invalid: .fail)
+convert<f64>("1.5")
+```
+
+Their types are `result<i64, error>` for the first three, `i64`, and
+`result<f64, error>`.
 
 ## Examples
 
