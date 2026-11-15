@@ -26,5 +26,8 @@ portable implementations, required native support, and runtime conformance.
 | `tests/implementation/` | Ordinary tests of core implementation code |
 
 [`tests/conformance/`](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/README.md)
-holds the endpoint and eval fixtures. The other code directories are reserved.
+holds the endpoint and eval fixtures. `hgl/core/core.hgl` is the proposed
+mandatory module, `core`: the comparison outcome and the symbol operators.
+`hgl/native/scalar_operators.hgl` is its proposed native value candidates over
+scalars. The other code directories are reserved.
 A target adapter and eval runner are needed to run the shared expectations.
