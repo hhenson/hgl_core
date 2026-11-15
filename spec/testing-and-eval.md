@@ -1,6 +1,6 @@
 # Core testing and eval
 
-Status: test ownership and CEVAL-1 through CEVAL-5 are agreed.
+Status: test ownership and CEVAL-1 through CEVAL-6 are agreed.
 The remaining eval profile and pack mechanics are proposed.
 
 ## Agreed
@@ -33,8 +33,13 @@ The remaining eval profile and pack mechanics are proposed.
   retained delta. Later writes leave earlier entries intact.
 - **CEVAL-5.** Each eval creates a fresh run with independent node state and
   recording. Eval constructs a dense result from that recording under TST-6.
+- **CEVAL-6.** A failed run or a missing required recording makes eval
+  fail. On run failure, eval performs cleanup and reports the failure even
+  if the recorder captured earlier ticks. A successful run with an
+  initialized empty recording yields `[]`. Recorder storage is isolated
+  from program state and supplied seeds.
 
-## Proposed eval boundary
+## Eval wiring
 
 ```mermaid
 flowchart LR
@@ -45,11 +50,7 @@ flowchart LR
 ```
 
 The [language specification](https://github.com/hhenson/hgl_spec/blob/main/spec/language/tests-and-eval.md)
-owns source checking, trace notation, and harness comparison. Core proposes:
-
-- **CEVAL-6.** Failure and missing recording data are errors. Neither becomes a
-  successful empty result. Internal recorder keys must not collide with source
-  or owner-supplied state.
+owns source checking, trace notation, and harness comparison.
 
 ## Eval examples
 
@@ -280,6 +281,37 @@ test runs_are_independent {
 
 The [core fixture](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/scalar_eval.hgl)
 checks all three calls.
+
+### Failed runs and missing recordings
+
+Eval wires replay to `checked_ratio` and records its output.
+
+```hgl
+module examples.eval_failure
+
+fn checked_ratio(divisor: f64) -> f64 {
+    when { return (6.0 /{zero: .error} divisor)? }
+}
+
+test eval_preserves_failure {
+    assert eval(checked_ratio, divisor: []) == []
+    assert eval(checked_ratio, divisor: [2.0]) == [3.0]
+    assert raises("numeric.division_by_zero") {
+        eval(checked_ratio, divisor: [2.0, 0.0])
+    }
+}
+```
+
+| Input or condition | Recorder observation | Eval outcome |
+| --- | --- | --- |
+| `divisor: []` | Starts empty and receives no ticks | `[]` |
+| `divisor: [2.0]` | Captures `3.0` at `t1` | `[3.0]` |
+| `divisor: [2.0, 0.0]` | Captures `3.0` at `t1`. The node fails at `t2`. | `numeric.division_by_zero` escapes after cleanup |
+| Required recording unavailable after successful execution | No recording to extract | Missing recording error |
+
+The [core fixture](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/failure_eval.hgl)
+checks the first three outcomes. The fourth requires the test host to make
+the recording unavailable.
 
 ### Sink
 

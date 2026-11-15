@@ -19,6 +19,7 @@ are private functions that publish or wire their own output.
 | `mixed_eval` | `mixed_replay` | CEVAL-2 (agreed), TST-6, TST-9. Set delta profile is proposed. |
 | `record_eval` | `record_retains_each_delta` | CEVAL-4 (agreed), TST-6. Set delta profile is proposed. |
 | `record_eval` | `record_can_be_empty` | CEVAL-4 (agreed), TST-6. Set delta profile is proposed. |
+| `failure_eval` | `eval_preserves_failure` | CEVAL-6 (agreed), ERR-5, NUM-9, TST-10 |
 | `scalar_endpoints` | `silence_preserves_validity` | END-1 (agreed), TIME-1, TIME-3 |
 | `scalar_endpoints` | `equal_publication_is_modified_and_idle_is_not` | END-2 (agreed), TIME-3 |
 | `scalar_endpoints` | `retained_value_is_read_without_a_new_tick` | END-1, FN-7, TIME-3 |
@@ -27,5 +28,5 @@ are private functions that publish or wire their own output.
 | `scalar_endpoints` | `equal_publications_are_modified` | END-2 (agreed), TIME-3, TST-6 |
 | `set_endpoints` | `set_writes_coalesce` | END-5 (agreed), TIME-2, TST-6. Set delta syntax and semantics are proposed. |
 
-CEVAL, CONF, and END rules are in this repository's `spec/`. FN, TIME, and TST
+CEVAL, CONF, END, and NUM rules are in core's `spec/`. ERR, FN, TIME, and TST
 rules are in the [language specification](https://github.com/hhenson/hgl_spec).
