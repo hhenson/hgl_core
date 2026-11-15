@@ -1,8 +1,9 @@
 module core part scalar_operators
 
-# Proposed. The value candidates of core's symbol operators over scalars:
-# one for each row of the numeric contract (NUM-1) and of the operator table
-# (OPS-1, OPS-2). A provider supplies each body.
+# The value candidates of core's symbol operators over scalars: one for each
+# row of the numeric contract (NUM-1) and of the operator table (OPS-1,
+# OPS-2). A provider supplies each body. An option is declared by the
+# candidates that use it.
 
 # NUM-1: `+`, `-`, `*` on numbers. Two `i64` give an `i64`; an `f64` among
 # the operands gives an `f64`.
@@ -19,11 +20,27 @@ native impl const fn mul_(lhs: f64, rhs: f64) -> f64
 native impl const fn mul_(lhs: i64, rhs: f64) -> f64
 native impl const fn mul_(lhs: f64, rhs: i64) -> f64
 
-# NUM-1: `/` is an `f64`; `//` and `%` are an `i64` of two `i64`.
-native impl const fn div_(lhs: i64, rhs: i64) -> f64
-native impl const fn div_(lhs: f64, rhs: f64) -> f64
-native impl const fn div_(lhs: i64, rhs: f64) -> f64
-native impl const fn div_(lhs: f64, rhs: i64) -> f64
+# NUM-1: `/` is an `f64`. NUM-3, NUM-9: its `zero` option. Under `.ieee`,
+# the default, and `.nan` it gives an `f64`; under `.error` a
+# `result<f64, error>`.
+native impl const fn div_(lhs: i64, rhs: i64, zero: ZeroPolicy = .ieee) -> f64
+    requires zero in {.ieee, .nan}
+native impl const fn div_(lhs: f64, rhs: f64, zero: ZeroPolicy = .ieee) -> f64
+    requires zero in {.ieee, .nan}
+native impl const fn div_(lhs: i64, rhs: f64, zero: ZeroPolicy = .ieee) -> f64
+    requires zero in {.ieee, .nan}
+native impl const fn div_(lhs: f64, rhs: i64, zero: ZeroPolicy = .ieee) -> f64
+    requires zero in {.ieee, .nan}
+native impl const fn div_(lhs: i64, rhs: i64, zero: ZeroPolicy) -> result<f64, error>
+    requires zero == .error
+native impl const fn div_(lhs: f64, rhs: f64, zero: ZeroPolicy) -> result<f64, error>
+    requires zero == .error
+native impl const fn div_(lhs: i64, rhs: f64, zero: ZeroPolicy) -> result<f64, error>
+    requires zero == .error
+native impl const fn div_(lhs: f64, rhs: i64, zero: ZeroPolicy) -> result<f64, error>
+    requires zero == .error
+
+# NUM-1: `//` and `%` are an `i64` of two `i64`.
 native impl const fn floordiv_(lhs: i64, rhs: i64) -> i64
 native impl const fn floordiv_(lhs: f64, rhs: f64) -> f64
 native impl const fn floordiv_(lhs: i64, rhs: f64) -> f64
@@ -74,14 +91,19 @@ native impl const fn div_(lhs: duration, rhs: f64) -> duration
 native impl const fn div_(lhs: duration, rhs: duration) -> f64
 native impl const fn floordiv_(lhs: duration, rhs: duration) -> i64
 
-# OPS-2: `==` and `!=` compare two values of one type. Numbers compare as the
-# numeric contract says, an `i64` with an `f64` included (NUM-4).
+# OPS-2: `==` and `!=` compare two values of one type. NUM-4: numbers
+# compare exactly, an `i64` with an `f64` included, or within the tolerances
+# `abs` and `rel`, each zero unless given.
 native impl const fn eq_<T>(lhs: T, rhs: T) -> bool
-native impl const fn eq_(lhs: i64, rhs: f64) -> bool
-native impl const fn eq_(lhs: f64, rhs: i64) -> bool
+native impl const fn eq_(lhs: i64, rhs: i64, abs: f64 = 0.0, rel: f64 = 0.0) -> bool
+native impl const fn eq_(lhs: f64, rhs: f64, abs: f64 = 0.0, rel: f64 = 0.0) -> bool
+native impl const fn eq_(lhs: i64, rhs: f64, abs: f64 = 0.0, rel: f64 = 0.0) -> bool
+native impl const fn eq_(lhs: f64, rhs: i64, abs: f64 = 0.0, rel: f64 = 0.0) -> bool
 native impl const fn ne_<T>(lhs: T, rhs: T) -> bool
-native impl const fn ne_(lhs: i64, rhs: f64) -> bool
-native impl const fn ne_(lhs: f64, rhs: i64) -> bool
+native impl const fn ne_(lhs: i64, rhs: i64, abs: f64 = 0.0, rel: f64 = 0.0) -> bool
+native impl const fn ne_(lhs: f64, rhs: f64, abs: f64 = 0.0, rel: f64 = 0.0) -> bool
+native impl const fn ne_(lhs: i64, rhs: f64, abs: f64 = 0.0, rel: f64 = 0.0) -> bool
+native impl const fn ne_(lhs: f64, rhs: i64, abs: f64 = 0.0, rel: f64 = 0.0) -> bool
 
 # OPS-2: the ordered types. NUM-6: numbers, an `i64` with an `f64` included.
 native impl const fn lt_<T>(lhs: T, rhs: T) -> bool
@@ -107,10 +129,8 @@ native impl const fn compare_<T>(lhs: T, rhs: T) -> CmpResult
 native impl const fn compare_(lhs: i64, rhs: f64) -> CmpResult
 native impl const fn compare_(lhs: f64, rhs: i64) -> CmpResult
 
-# OPS-4, OPS-6: the conversions that cannot fail. The others are not declared
-# here: an `f64` to an `i64`, text to a number or a bool, and bytes to text,
-# which take the options of OPS-8, and a list of structs to a list of their
-# parent.
+# OPS-4, OPS-6: the conversions that cannot fail. A list of structs to a
+# list of their parent is not declared here.
 native impl const fn convert(value: i64) -> f64
 native impl const fn convert(value: i64) -> bool
 native impl const fn convert(value: i64) -> str
@@ -129,3 +149,37 @@ native impl const fn or_(lhs: bool, rhs: bool) -> bool
 native impl const fn not_(value: bool) -> bool
 native impl const fn all_(values: ...bool) -> bool
 native impl const fn any_(values: ...bool) -> bool
+
+# OPS-7, OPS-8: the conversions that can fail. Under `invalid: .error`, the
+# default, each returns a `result`; under `.fail` the plain type, and a
+# failure escapes. An `f64` to an `i64` takes `rounding` and `nan` too.
+native impl const fn convert(
+    value: f64,
+    rounding: Rounding = .truncate,
+    nan: i64? = null,
+    invalid: InvalidPolicy = .error,
+) -> result<i64, error>
+    requires invalid == .error
+native impl const fn convert(
+    value: f64,
+    invalid: InvalidPolicy,
+    rounding: Rounding = .truncate,
+    nan: i64? = null,
+) -> i64
+    requires invalid == .fail
+native impl const fn convert(value: str, invalid: InvalidPolicy = .error) -> result<i64, error>
+    requires invalid == .error
+native impl const fn convert(value: str, invalid: InvalidPolicy) -> i64
+    requires invalid == .fail
+native impl const fn convert(value: str, invalid: InvalidPolicy = .error) -> result<f64, error>
+    requires invalid == .error
+native impl const fn convert(value: str, invalid: InvalidPolicy) -> f64
+    requires invalid == .fail
+native impl const fn convert(value: str, invalid: InvalidPolicy = .error) -> result<bool, error>
+    requires invalid == .error
+native impl const fn convert(value: str, invalid: InvalidPolicy) -> bool
+    requires invalid == .fail
+native impl const fn convert(value: bytes, invalid: InvalidPolicy = .error) -> result<str, error>
+    requires invalid == .error
+native impl const fn convert(value: bytes, invalid: InvalidPolicy) -> str
+    requires invalid == .fail

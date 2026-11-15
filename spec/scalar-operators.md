@@ -48,7 +48,9 @@ owns symbol syntax, precedence, and phase checking. An instant is a
   and a failure is an Err, ordinary result data (NUM-10). A policy under
   which a failure escapes instead is an option.
 - **OPS-8.** The options of a conversion are those of the fourth table below.
-  Each is const configuration of `convert`, given as a named argument.
+  Each is const configuration of `convert`, given as a named argument, and
+  declared by the conversions that use it. `rounding` is a `Rounding` and
+  `invalid` an `InvalidPolicy`, each an enum of the members shown.
   `invalid` determines the result type and is resolved during source
   checking, as NUM-9 does for division. A conversion that cannot fail
   returns T.

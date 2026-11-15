@@ -20,10 +20,10 @@ Core owns numerical domains, public configuration, results, and errors.
   preserves IEEE special values, including signed zero and overflow infinity.
   Mixed numeric comparison must not first round an i64 operand to f64 and
   thereby lose a distinction between the operand values.
-- **NUM-3.** The `zero` option of division is an enum with members `ieee`,
-  `nan`, and `error`, written `.ieee`, `.nan`, and `.error` where the option
-  is given. True division `/`, whose numeric result is f64, defaults to the
-  `ieee` zero policy:
+- **NUM-3.** The `zero` option of division is a `ZeroPolicy`, an enum with
+  members `ieee`, `nan`, and `error`, written `.ieee`, `.nan`, and `.error`
+  where the option is given. True division `/`, whose numeric result is f64,
+  defaults to the `ieee` zero policy:
   a finite nonzero numerator divided by signed zero produces signed infinity;
   zero divided by zero produces NaN. The infinity sign combines both operand
   signs. The `nan` zero policy instead produces NaN for every zero divisor.
@@ -60,8 +60,9 @@ abs(a - b) <= max(abs_tolerance,
   an explicit total-order policy defining NaN placement/equivalence and
   signed-zero treatment. Approximate equality does not configure `<=>`.
 - **NUM-8.** A configuration selects the same nominal operator and applicable
-  contract. Omitted options use its public defaults; imports, target choice,
-  and optional folding must not silently alter them. Value and temporal
+  contract. An option is declared by the candidates that use it, and an
+  omitted option takes the default they declare; imports, target choice,
+  and optional folding must not silently alter it. Value and temporal
   execution preserve the same numerical outcomes under their existing phase,
   lifting, validity, publication, and error rules. A NaN/infinity publication
   is present data. Required-constant errors and optional folding follow the
