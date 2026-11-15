@@ -15,7 +15,7 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 
 - **OPS-1.** The symbol operators admit the operand types of the first table
   below, beside those of the numeric contract. Every other pairing is a
-  source rejection, `operator.operand`. An operation that commutes admits
+  source rejection, `operator.no_candidate`. An operation that commutes admits
   its operands in either order; one that does not admits the order shown.
 - **OPS-2.** `<`, `<=`, `>`, `>=`, and `<=>` compare two values of one type
   among `str`, `bool`, `date`, `time`, `datetime`, `civil_datetime`, and
