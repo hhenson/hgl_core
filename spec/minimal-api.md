@@ -9,7 +9,7 @@ numeric baseline and policy behavior; the
 [scalar operator contract](scalar-operators.md) defines the operator domains of
 the other scalar types, the comparison outcome, and conversion. Other
 inventory rows retain their status. The operators those two contracts cover
-are declared, as proposed HGL source, in `hgl/core/core.hgl` and
+are declared as HGL source in `hgl/core/core.hgl` and
 `hgl/native/scalar_operators.hgl`.
 The [scalar endpoint contract](temporal-endpoints.md) defines publication,
 validity, notification, and retained data for directly bound scalar endpoints.
