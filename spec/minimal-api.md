@@ -5,7 +5,10 @@ Status: proposed capability inventory. No native signatures are accepted yet.
 Each row must gain a contract, examples, and conformance observations before it
 becomes mandatory. API names and representation choices remain open.
 The [numeric operator contract](numeric-operators.md) now defines the agreed
-numeric baseline and policy behavior; other inventory rows retain their status.
+numeric baseline and policy behavior; the
+[scalar operator contract](scalar-operators.md) defines the operator domains of
+the other scalar types, the comparison outcome, and conversion. Other
+inventory rows retain their status.
 The [scalar endpoint contract](temporal-endpoints.md) defines publication,
 validity, notification, and retained data for directly bound scalar endpoints.
 

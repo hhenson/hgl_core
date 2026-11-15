@@ -48,7 +48,8 @@ abs(a - b) <= max(abs_tolerance,
   The finite test must not admit an incorrect result through overflow of
   intermediate subtraction or scaling.
 - **NUM-6.** The numeric full-comparison operator `compare_`, selected by
-  `<=>`, returns an ordinary comparison outcome: `less`, `equivalent`,
+  `<=>`, returns an ordinary comparison outcome, a
+  [`CmpResult`](scalar-operators.md): `less`, `equivalent`,
   `greater`, or `unordered`. A NaN operand yields `unordered`; equivalent
   numeric values, including opposite signed zeros, yield `equivalent`.
   Numeric Boolean comparisons obey the table below. An outcome has no implicit
