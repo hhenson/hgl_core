@@ -31,7 +31,10 @@ owns symbol syntax, precedence, and phase checking. An instant is a
   without it. It admits the conversions of the second table below and
   rejects every other.
 - **OPS-5.** `&&`, `||`, and `!` take bools. A number or a string has no
-  truth value.
+  truth value. A chain of three or more operands joined by `&&` alone is
+  `all_` over them, and one joined by `||` alone is `any_`. Core's candidate
+  of each for bools is the chain itself, `and_` or `or_` applied left to
+  right, short-circuiting as the links do.
 - **OPS-6.** A conversion yields what the third table below says.
   `convert<list<B>>(values)` is admitted too, where `values` is a `list<A>`
   and the struct `A` inherits from the abstract struct `B`; it yields the same
