@@ -34,6 +34,10 @@ operator ge_<L, R>(lhs: L, rhs: R) -> bool
 # `<=>`.
 operator compare_<L, R>(lhs: L, rhs: R) -> CmpResult
 
+# `convert<T>(value)`: the value as a T (OPS-4). A call gives T and leaves V
+# to be inferred from the value.
+operator convert<T, V>(value: V) -> T
+
 # `&&`, `||`, `!`, and a chain of three or more `&&` or `||` (OPS-5).
 operator and_(lhs: bool, rhs: bool) -> bool
 operator or_(lhs: bool, rhs: bool) -> bool
