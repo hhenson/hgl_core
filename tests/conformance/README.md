@@ -11,12 +11,14 @@ are private functions that publish or wire their own output.
 | `scalar_eval` | `equal_publications_remain_ticks` | CEVAL-3, END-2 (agreed), TST-6 |
 | `scalar_eval` | `replay_preserves_equal_ticks` | CEVAL-3 (agreed), TST-6 |
 | `scalar_eval` | `all_silent_input_is_empty` | CEVAL-2 (agreed), TST-6 |
-| `scalar_eval` | `empty_input_remains_empty` | CEVAL-4, TST-6, TST-8 |
+| `scalar_eval` | `empty_input_remains_empty` | CEVAL-4 (agreed), TST-6, TST-8 |
 | `scalar_eval` | `leading_silence_locates_a_tick` | CEVAL-2 (agreed), TST-6 |
 | `scalar_eval` | `zero_false_and_empty_text_are_present` | CEVAL-3, END-1, TST-9 |
 | `scalar_eval` | `dense_result_ends_at_last_publication` | END-3, TIME-3, TST-6 |
-| `scalar_eval` | `runs_are_independent` | CEVAL-5, TIME-5, TST-8 |
+| `scalar_eval` | `runs_are_independent` | CEVAL-5 (agreed), TIME-5, TST-6, TST-8 |
 | `mixed_eval` | `mixed_replay` | CEVAL-2 (agreed), TST-6, TST-9. Set delta profile is proposed. |
+| `record_eval` | `record_retains_each_delta` | CEVAL-4 (agreed), TST-6. Set delta profile is proposed. |
+| `record_eval` | `record_can_be_empty` | CEVAL-4 (agreed), TST-6. Set delta profile is proposed. |
 | `scalar_endpoints` | `silence_preserves_validity` | END-1 (agreed), TIME-1, TIME-3 |
 | `scalar_endpoints` | `equal_publication_is_modified_and_idle_is_not` | END-2 (agreed), TIME-3 |
 | `scalar_endpoints` | `retained_value_is_read_without_a_new_tick` | END-1, FN-7, TIME-3 |
