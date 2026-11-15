@@ -1,9 +1,9 @@
 # Scalar operators and conversion
 
 Status: agreed operator domains for the scalar types other than numbers, the
-comparison outcome type, the domains of the conversion operator, and what
-each conversion yields. The options of a conversion are proposed. No
-executable conformance or native ABI is specified.
+comparison outcome type, the domains of the conversion operator, what each
+conversion yields, and its options. No executable conformance or native ABI
+is specified.
 
 ## Contract
 
@@ -46,8 +46,12 @@ owns symbol syntax, precedence, and phase checking. An instant is a
   type asked for; bytes that are not well-formed UTF-8. Its error policy is
   checked wherever it can be: the conversion then returns `result<T, error>`,
   and a failure is an Err, ordinary result data (NUM-10). A policy under
-  which a failure escapes instead is an option. The options, their members,
-  and their defaults are proposed below.
+  which a failure escapes instead is an option.
+- **OPS-8.** The options of a conversion are those of the fourth table below.
+  Each is const configuration of `convert`, given as a named argument.
+  `invalid` determines the result type and is resolved during source
+  checking, as NUM-9 does for division. A conversion that cannot fail
+  returns T.
 
 | Operator | Operands | Result |
 | --- | --- | --- |
@@ -90,30 +94,11 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 | `date` to `datetime` | The start of that date, in UTC |
 | `datetime` to `date` | The date of the instant, in UTC |
 
-## Proposed conversion options
-
-Proposed, not agreed. Each is const configuration of `convert`, given as a
-named argument and resolved during source checking where it determines the
-result type, as NUM-9 does for division.
-
 | Option | Applies to | Members | Default |
 | --- | --- | --- | --- |
 | `rounding` | `f64` to `i64` | `.truncate`, toward zero; `.floor`, toward negative infinity; `.ceiling`, toward positive infinity; `.half_even`, to the nearest, a tie to the even integer; `.half_up`, to the nearest, a tie away from zero; `.half_down`, to the nearest, a tie toward zero | `.truncate` |
 | `nan` | `f64` to `i64` | An `i64?`: the value a NaN converts to. Null leaves a NaN to `invalid` | null |
 | `invalid` | Every conversion that can fail (OPS-7) | `.error`: the conversion returns `result<T, error>`, and a failure is an Err carrying error code `convert.invalid`. `.fail`: it returns T, and a failure is an escaping HGL error | `.error` |
-
-Proposed expression fragments, with `price` an `f64` in scope:
-
-```hgl
-convert<i64>(price)
-convert<i64>(price, rounding: .half_even)
-convert<i64>(price, nan: 0)
-convert<i64>(price, invalid: .fail)
-convert<f64>("1.5")
-```
-
-Their types are `result<i64, error>` for the first three, `i64`, and
-`result<f64, error>`.
 
 ## Examples
 
@@ -136,3 +121,18 @@ Their types are `str`, `duration`, `datetime`, `datetime`, `duration`,
 OPS-1: `5m - @2026-09-03T09:30Z`, a duration less an instant; `"a" + 1`;
 `@2026-09-03 + @2026-09-04`. Under OPS-5: `1 && true`. Executable conformance
 is planned.
+
+Accepted expression fragments for OPS-8, with `price` an `f64` in scope:
+
+```hgl
+convert<i64>(price)
+convert<i64>(price, rounding: .half_even)
+convert<i64>(price, nan: 0)
+convert<i64>(price, invalid: .fail)
+convert<f64>("1.5")
+```
+
+Their types are `result<i64, error>` for the first three, `i64`, and
+`result<f64, error>`. With `nan: 0` a NaN converts to 0; an infinity still
+fails. Deliberate source rejection: `convert<i64>(price, invalid: policy)`
+with `policy` no constant, which leaves the result type unresolved.

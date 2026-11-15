@@ -107,9 +107,10 @@ native impl const fn compare_<T>(lhs: T, rhs: T) -> CmpResult
 native impl const fn compare_(lhs: i64, rhs: f64) -> CmpResult
 native impl const fn compare_(lhs: f64, rhs: i64) -> CmpResult
 
-# OPS-4, OPS-6: the conversions that cannot fail. The others take options
-# (OPS-7) that are not agreed yet: an `f64` to an `i64`, text to a number or a
-# bool, bytes to text, and a list of structs to a list of their parent.
+# OPS-4, OPS-6: the conversions that cannot fail. The others are not declared
+# here: an `f64` to an `i64`, text to a number or a bool, and bytes to text,
+# which take the options of OPS-8, and a list of structs to a list of their
+# parent.
 native impl const fn convert(value: i64) -> f64
 native impl const fn convert(value: i64) -> bool
 native impl const fn convert(value: i64) -> str
