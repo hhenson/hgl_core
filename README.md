@@ -28,7 +28,9 @@ portable implementations, required native support, and runtime conformance.
 [`tests/conformance/`](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/README.md)
 holds the endpoint and eval fixtures. `hgl/core/core.hgl` is the mandatory
 module, `core`: the comparison outcome, the option enums and the symbol
-operators. `hgl/native/scalar_operators.hgl` is its native value candidates
-over scalars, each declaring the options it uses. The other code directories
-are reserved.
+operators, with HGL wrappers for commutative pairs in reverse operand order.
+`hgl/native/scalar_operators.hgl` holds the remaining native scalar candidates,
+each declaring the options it uses. Providers implement only those native
+declarations. [Implementation tests](https://github.com/hhenson/hgl_core/blob/main/tests/implementation/README.md) cover
+the wrappers.
 A target adapter and eval runner are needed to run the shared expectations.

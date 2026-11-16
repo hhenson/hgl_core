@@ -55,3 +55,26 @@ operator or_(lhs: bool, rhs: bool) -> bool
 operator not_(value: bool) -> bool
 operator all_(values: ...bool) -> bool
 operator any_(values: ...bool) -> bool
+
+# Reverse-order candidates reuse one native body for each commutative pair.
+# Arguments have already been evaluated; only their bound values are swapped.
+
+# NUM-1: mixed numeric addition and multiplication.
+impl const fn add_(lhs: f64, rhs: i64) -> f64 => add_(rhs, lhs)
+impl const fn mul_(lhs: f64, rhs: i64) -> f64 => mul_(rhs, lhs)
+
+# OPS-1: temporal addition, duration scaling, and string repetition.
+impl const fn add_(lhs: duration, rhs: datetime) -> datetime => add_(rhs, lhs)
+impl const fn add_(lhs: duration, rhs: date) -> date => add_(rhs, lhs)
+impl const fn add_(lhs: duration, rhs: civil_datetime) -> civil_datetime => add_(rhs, lhs)
+impl const fn add_(lhs: duration, rhs: zoned_datetime) -> zoned_datetime => add_(rhs, lhs)
+impl const fn add_(lhs: time, rhs: date) -> civil_datetime => add_(rhs, lhs)
+impl const fn mul_(lhs: i64, rhs: duration) -> duration => mul_(rhs, lhs)
+impl const fn mul_(lhs: f64, rhs: duration) -> duration => mul_(rhs, lhs)
+impl const fn mul_(lhs: i64, rhs: str) -> str => mul_(rhs, lhs)
+
+# NUM-2, NUM-4, NUM-5: preserve the integer's type and both tolerances.
+impl const fn eq_(lhs: f64, rhs: i64, abs: f64 = 0.0, rel: f64 = 0.0) -> bool =>
+    eq_(rhs, lhs, abs: abs, rel: rel)
+impl const fn ne_(lhs: f64, rhs: i64, abs: f64 = 0.0, rel: f64 = 0.0) -> bool =>
+    ne_(rhs, lhs, abs: abs, rel: rel)
