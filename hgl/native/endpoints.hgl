@@ -2,13 +2,17 @@ module core part endpoints
 
 # The operations on an endpoint (the language's TIME-9): each takes the
 # endpoint of a temporal input, or of `out`, and not its payload. Contract:
-# spec/temporal-endpoints.md. `delta_value` is not declared yet (END-3).
+# spec/temporal-endpoints.md.
 
 # END-1, END-4: whether the endpoint holds a payload.
 export native const fn valid<T>(input: endpoint<T>) -> bool
 
 # END-2: whether the endpoint published in the current cycle.
 export native const fn modified<T>(input: endpoint<T>) -> bool
+
+# END-3: what the endpoint published in the current cycle (the language's
+# TYPE-16): the value itself for a scalar.
+export native const fn delta_value<T>(input: endpoint<T>) -> delta<T>
 
 # END-6: when the retained publication was made; null while invalid.
 export native const fn last_modified<T>(input: endpoint<T>) -> datetime?

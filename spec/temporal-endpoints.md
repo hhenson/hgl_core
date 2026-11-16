@@ -15,14 +15,13 @@ owns endpoint interpretation, handler selection, and phase admission.
 | `valid(value)` | bool; may inspect an invalid endpoint |
 | `modified(value)` | bool; whether the endpoint published in the current cycle |
 | Runtime parameter payload | T; requires readable valid input, subject to declared nullable/default argument binding |
-| `delta_value(value)` | Agreed `T` for scalar inputs. See END-3. |
+| `delta_value(value)` | `delta<T>` (the language's TYPE-16), which is T for a scalar input; see END-3 |
 | `last_modified(value)` | Agreed `datetime?`; see END-6 |
 
-`valid`, `modified`, `last_modified`, `invalidate`, `activate`, and
-`passivate` are declared in `hgl/native/endpoints.hgl` as native value
-functions that take the endpoint and not its payload, an `endpoint<T>`
-(the language's TIME-9). `delta_value` is not declared yet: END-3 agrees
-its result for a scalar input alone. Runtime metadata reads create no graph
+`valid`, `modified`, `delta_value`, `last_modified`, `invalidate`,
+`activate`, and `passivate` are declared in `hgl/native/endpoints.hgl` as
+native value functions that take the endpoint and not its payload, an
+`endpoint<T>` (the language's TIME-9). Runtime metadata reads create no graph
 nodes. Composition forms and empty/multi-argument handler
 selectors follow the language contract rather than this one-endpoint table.
 
@@ -35,9 +34,10 @@ selectors follow the language contract rather than this one-endpoint table.
   cycle, including when the payload repeats. An idle cycle leaves the endpoint
   unmodified and preserves its retained payload. A fixed, directly bound input
   observes its output's state.
-- **END-3.** `delta_value(x)` returns the scalar value `x` published this cycle,
-  including a published null. The checker must prove `x` is valid and modified
-  at the call.
+- **END-3.** `delta_value(x)` returns what `x` published this cycle, a
+  `delta<T>` for an endpoint of T (the language's TYPE-16). For a scalar it
+  is the value published, including a published null. The checker must prove
+  `x` is valid and modified at the call.
 - **END-4.** Invalidation clears validity, modification, payload, and delta.
   The transition to invalid notifies active subscribers. Each handler's
   validity requirements still apply. Repeated invalidation while invalid is
