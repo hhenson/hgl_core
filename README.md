@@ -10,6 +10,7 @@ portable implementations, required native support, and runtime conformance.
 - [Temporal addition and subtraction](spec/temporal-arithmetic.md)
 - [Value-function lifting observations](spec/value-function-lifting.md)
 - [Scalar temporal endpoints](spec/temporal-endpoints.md)
+- [Capabilities](spec/capabilities.md)
 - [Testing and eval contract](spec/testing-and-eval.md)
 - [Language specification](https://github.com/hhenson/hgl_spec)
 - [Open decisions](https://github.com/hhenson/hgl_core/issues/1)
@@ -33,7 +34,9 @@ operators, with HGL wrappers for commutative pairs in reverse operand order.
 Generic temporal candidates handle same-type addition/subtraction with an
 explicit `invalid` input policy (OPS-9).
 `hgl/native/scalar_operators.hgl` holds the remaining native scalar candidates,
-each declaring the options it uses. Providers implement only those native
-declarations. [Implementation tests](https://github.com/hhenson/hgl_core/blob/main/tests/implementation/README.md) cover
+each declaring the options it uses. `hgl/native/capabilities.hgl` holds the
+capability types, logging, and the scheduler's cancellations, and
+`hgl/native/endpoints.hgl` the endpoint operations. Providers implement only
+those native declarations. [Implementation tests](https://github.com/hhenson/hgl_core/blob/main/tests/implementation/README.md) cover
 the wrappers.
 A target adapter and eval runner are needed to run the shared expectations.

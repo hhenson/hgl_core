@@ -323,7 +323,7 @@ module examples.eval_sink
 
 fn log_tick(value: i64) {
     inject logger
-    when { info(logger, str(value)) }
+    when { log_info(logger, str(value)) }
 }
 
 test run_log_sink {

@@ -18,8 +18,12 @@ owns endpoint interpretation, handler selection, and phase admission.
 | `delta_value(value)` | Agreed `T` for scalar inputs. See END-3. |
 | `last_modified(value)` | Agreed `datetime?`; see END-6 |
 
-These are semantic interfaces, not native declarations. Runtime metadata reads
-create no graph nodes. Composition forms and empty/multi-argument handler
+`valid`, `modified`, `last_modified`, `invalidate`, `activate`, and
+`passivate` are declared in `hgl/native/endpoints.hgl` as native value
+functions that take the endpoint and not its payload, an `endpoint<T>`
+(the language's TIME-9). `delta_value` is not declared yet: END-3 agrees
+its result for a scalar input alone. Runtime metadata reads create no graph
+nodes. Composition forms and empty/multi-argument handler
 selectors follow the language contract rather than this one-endpoint table.
 
 ## Agreed rules

@@ -1,0 +1,36 @@
+module core part capabilities
+
+# The capabilities a node injects (the language's TIME-8), as native types,
+# and the native operations on them. Contract: spec/capabilities.md. The
+# `log_*` helpers and `LogLevel` are in hgl/core/core.hgl.
+
+# `inject logger` (CAP-2).
+export native type Logger {
+    level: LogLevel
+}
+
+# `inject clock` (CAP-3).
+export native type Clock {
+    evaluation_time: datetime
+    now: datetime
+    cycle_time: duration
+    next_cycle_evaluation_time: datetime
+}
+
+# `inject scheduler` (CAP-4).
+export native type Scheduler {
+    next_scheduled_time: datetime?
+    is_scheduled: bool
+}
+
+# `inject alarm` and `inject global_state` (CAP-5, CAP-6). Neither has a
+# property.
+export native type Alarm
+export native type GlobalState
+
+# CAP-2: one record at `level`.
+export native const fn log(logger: Logger, level: LogLevel, message: str)
+
+# CAP-4: cancel a pending wake, and every pending wake.
+export native const fn un_schedule(scheduler: Scheduler, tag: str? = null)
+export native const fn reset(scheduler: Scheduler)
