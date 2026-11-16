@@ -16,7 +16,8 @@ validity, notification, and retained data for directly bound scalar endpoints;
 its operations but `delta_value` are declared in `hgl/native/endpoints.hgl`.
 The [capability contract](capabilities.md) defines the types of the clock,
 logger, scheduler, alarm, and global store, declared in
-`hgl/native/capabilities.hgl`, with logging and the scheduler's cancellations.
+`hgl/native/capabilities.hgl`, with logging, scheduling, and the store's
+operations.
 
 | Capability | HGL-facing need | Implementation-facing obligation |
 | --- | --- | --- |

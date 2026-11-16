@@ -35,8 +35,8 @@ Generic temporal candidates handle same-type addition/subtraction with an
 explicit `invalid` input policy (OPS-9).
 `hgl/native/scalar_operators.hgl` holds the remaining native scalar candidates,
 each declaring the options it uses. `hgl/native/capabilities.hgl` holds the
-capability types, logging, and the scheduler's cancellations, and
-`hgl/native/endpoints.hgl` the endpoint operations. Providers implement only
+capability types, logging, scheduling, and the global store's candidates,
+and `hgl/native/endpoints.hgl` the endpoint operations. Providers implement only
 those native declarations. [Implementation tests](https://github.com/hhenson/hgl_core/blob/main/tests/implementation/README.md) cover
 the wrappers.
 A target adapter and eval runner are needed to run the shared expectations.

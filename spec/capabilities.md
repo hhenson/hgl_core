@@ -1,7 +1,7 @@
 # Capabilities
 
 Status: CAP-1 to CAP-6 are agreed. The meanings under "Proposed behaviour"
-are proposed.
+are proposed. `delta_value` waits on the language's definition of `delta<T>`.
 
 ## Scope and API
 
@@ -15,14 +15,16 @@ operations on it.
 | --- | --- | --- | --- |
 | `logger` | `Logger` | `level: LogLevel` | `log`, `log_debug`, `log_info`, `log_warning`, `log_error` |
 | `clock` | `Clock` | `evaluation_time: datetime`, `now: datetime`, `cycle_time: duration`, `next_cycle_evaluation_time: datetime` | None |
-| `scheduler` | `Scheduler` | `next_scheduled_time: datetime?`, `is_scheduled: bool` | `un_schedule`, `reset` |
-| `alarm` | `Alarm` | None | None declared yet |
-| `global_state` | `GlobalState` | None | None declared yet |
+| `scheduler` | `Scheduler` | `next_scheduled_time: datetime?`, `is_scheduled: bool` | `schedule`, `un_schedule`, `reset` |
+| `alarm` | `Alarm` | None | `schedule` |
+| `global_state` | `GlobalState` | None | `get`, `has`, `put` |
 
 The types and the native operations are declared in
-`hgl/native/capabilities.hgl`; `LogLevel` and the `log_*` helpers in
-`hgl/core/core.hgl`. Asking for a wake, on a scheduler or an alarm, and the
-global store's operations are not declared: their spellings are open.
+`hgl/native/capabilities.hgl`; `LogLevel`, the `log_*` helpers, and the
+operators `schedule`, `get`, `has`, and `put` in `hgl/core/core.hgl`. Each
+of the four is an operator: its name has a meaning beyond one capability,
+and other candidates join it as they are declared. `get` already has the
+dictionary's (the language's ERR-6).
 
 ## Agreed rules
 
@@ -38,15 +40,26 @@ global store's operations are not declared: their spellings are open.
   `next_cycle_evaluation_time`, each a `datetime`, and `cycle_time`, a
   `duration`. It has no operation.
 - **CAP-4.** A scheduler has two properties: `next_scheduled_time`, a
-  `datetime?`, and `is_scheduled`, a `bool`. `un_schedule(scheduler)` and
+  `datetime?`, and `is_scheduled`, a `bool`. `schedule(scheduler, at)` asks
+  for a wake: `at` is a `duration` or a `datetime`. It takes a `tag`, a
+  `str?` that is null when omitted, and `on_wall_clock`, a `bool` that is
+  false when omitted. `un_schedule(scheduler)` and
   `un_schedule(scheduler, tag: name)` cancel a pending wake, and
-  `reset(scheduler)` every one. A wake may be asked for under a tag, a `str`.
+  `reset(scheduler)` every one.
 - **CAP-5.** An alarm is a cheaper scheduler: best effort, with nothing
-  tracked, moved, or cancelled. It has no property, no tag, and no
-  cancellation. A node injects it in place of `scheduler`, with temporal
-  inputs or none.
-- **CAP-6.** The global store is a run-wide store of ordinary values. Reading
-  or writing it wakes no node and is no temporal input.
+  tracked, moved, or cancelled. `schedule(alarm, at)` asks for a wake, with
+  `at` a `duration` or a `datetime`; asking again keeps the earliest. It has
+  no property, no tag, no wall clock, and no cancellation. A node injects it
+  in place of `scheduler`, with temporal inputs or none.
+- **CAP-6.** The global store is a run-wide store of ordinary values under
+  string keys, each fixed when the graph is built (the language's FN-1).
+  `get<V>(global_state, key)` is the value under `key`, of the type the call
+  writes or its place expects; an absent key fails the node.
+  `has(global_state, key)` is whether the key holds a value.
+  `put(global_state, key, value)` puts one there. A key keeps the type of
+  its first value: a `put` of another type is rejected where the two are in
+  one program, and fails otherwise. Reading or writing the store wakes no
+  node and is no temporal input.
 
 ## Proposed behaviour
 
@@ -61,6 +74,8 @@ a requirement until agreed.
 | `clock.next_cycle_evaluation_time` | The earliest time a following cycle could have: evaluation time plus the engine's smallest step. It asks for no cycle |
 | `scheduler.is_scheduled` | True while a wake is pending |
 | `scheduler.next_scheduled_time` | The time of the earliest pending wake; null with none |
+| `schedule(scheduler, at)` | With a `duration`, a wake that long after the current evaluation time; with a `datetime`, a wake then |
+| `schedule(scheduler, at, on_wall_clock: true)` | The wake is timed on the wall clock, which only a real-time engine accepts |
 | `un_schedule(scheduler)` | Cancels the earliest pending wake |
 | `un_schedule(scheduler, tag: name)` | Cancels the wake asked for under `name` |
 | `reset(scheduler)` | Cancels every pending wake |
@@ -90,11 +105,37 @@ fn quiet(value: f64) -> f64 {
         return value
     }
 }
+
+fn counted(const every: duration = 1s) -> i64 {
+    inject scheduler, global_state
+    start {
+        if !has(global_state, "count") { put(global_state, "count", 0) }
+        schedule(scheduler, every, tag: "count")
+    }
+    when scheduled() {
+        schedule(scheduler, every, tag: "count")
+        put(global_state, "count", get<i64>(global_state, "count") + 1)
+        return get<i64>(global_state, "count")
+    }
+}
+
+fn woken(value: f64, const every: duration = 1s) -> f64 {
+    inject alarm
+    start { schedule(alarm, every) }
+    when {
+        schedule(alarm, every)
+        return value
+    }
+}
 ```
 
 `stamp` gives its clock to `stamped`, whose parameter is of the clock's type,
 and logs through its logger. `quiet` reads a property of its scheduler and
-cancels what is pending. Deliberate rejections: `clock.now = value`, a
-property assigned; `Clock()`, a capability constructed; and
-`log(logger, "info", "text")`, a `str` where a `LogLevel` is taken.
-Conformance is planned.
+cancels what is pending. `counted` wakes itself each second under a tag, and
+counts in the global store under a key written out, which `start` gives a
+value where it has none. `woken` is woken by its
+input and by its alarm. Deliberate rejections: `clock.now = value`, a
+property assigned; `Clock()`, a capability constructed;
+`log(logger, "info", "text")`, a `str` where a `LogLevel` is taken;
+`schedule(alarm, every, tag: "poll")`, a tag on an alarm; and
+`put(global_state, 7, 1)`, a key that is no string. Conformance is planned.
