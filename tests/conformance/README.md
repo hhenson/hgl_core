@@ -11,7 +11,7 @@ are private functions that publish or wire their own output.
 | `identity_arithmetic` | `identity_arithmetic_publications` | OPS-9, END-1, END-5 |
 | `identity_arithmetic` | `identity_arithmetic_invalidates_and_recovers` | OPS-9, END-4 |
 | `identity_arithmetic` | `repeated_invalidation_is_silent` | OPS-9, END-4 |
-| `identity_arithmetic` | `required_inputs_wait_for_both` | OPS-9, FN-11 |
+| `identity_arithmetic` | `unconfigured_arithmetic_uses_lifting` | OPS-9, FN-6, FN-11 |
 | `identity_arithmetic` | `identity_arithmetic_is_generic` | OPS-9, GEN-7, GEN-16 |
 | `scalar_eval` | `equal_publications_remain_ticks` | CEVAL-3, END-2 (agreed), TST-6 |
 | `scalar_eval` | `replay_preserves_equal_ticks` | CEVAL-3 (agreed), TST-6 |

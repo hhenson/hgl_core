@@ -7,7 +7,9 @@ fn identity_sum<T>(lhs: T, rhs: T) -> T
 fn identity_difference<T>(lhs: T, rhs: T) -> T
     requires sub_(T, T) -> T && neg_(T) -> T => lhs -{invalid: .identity} rhs
 
-fn require_sum(lhs: i64, rhs: i64) -> i64 => lhs +{invalid: .require} rhs
+# Unconfigured calls select the ordinary value candidates and lift them.
+fn lifted_sum(lhs: i64, rhs: i64) -> i64 => lhs + rhs
+fn lifted_difference(lhs: i64, rhs: i64) -> i64 => lhs - rhs
 
 # A valid null command invalidates; zero is an ordinary published value.
 fn identity_operand(command: i64?) -> i64 {
@@ -24,8 +26,11 @@ fn wired_identity_sum(left: i64?, right: i64?) -> i64 =>
 fn wired_identity_difference(left: i64?, right: i64?) -> i64 =>
     identity_difference(identity_operand(left), identity_operand(right))
 
-fn wired_require_sum(left: i64?, right: i64?) -> i64 =>
-    require_sum(identity_operand(left), identity_operand(right))
+fn wired_lifted_sum(left: i64?, right: i64?) -> i64 =>
+    lifted_sum(identity_operand(left), identity_operand(right))
+
+fn wired_lifted_difference(left: i64?, right: i64?) -> i64 =>
+    lifted_difference(identity_operand(left), identity_operand(right))
 
 fn identity_validity(value: i64) -> bool {
     when valid([]) { return valid(value) }
@@ -66,11 +71,15 @@ test repeated_invalidation_is_silent {
         left: [7, null, null, 9], right: []) == [true, false, _, true]
 }
 
-test required_inputs_wait_for_both {
-    assert eval(wired_require_sum,
+test unconfigured_arithmetic_uses_lifting {
+    assert eval(wired_lifted_sum,
         left:  [7, _, null, _, 9, _, _, 0, _],
         right: [_, 2, _, null, _, _, 3, _, null]) ==
         [_, 9, _, _, _, _, 12, 3]
+    assert eval(wired_lifted_difference,
+        left:  [7, _, null, _, 9, _, _, 0, _],
+        right: [_, 2, _, null, _, _, 3, _, null]) ==
+        [_, 5, _, _, _, _, 6, -3]
 }
 
 test identity_arithmetic_is_generic {

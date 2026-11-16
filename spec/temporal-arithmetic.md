@@ -5,9 +5,13 @@ native operations supply the ordinary value arithmetic. Runtime execution
 still needs a target adapter and eval runner.
 
 The `invalid` option is a const generic. `invalid: .identity` admits one valid
-operand; `invalid: .require` requires both. Omitting the option keeps ordinary
-operator selection. These candidates require `add_(T, T) -> T`, or
+operand. Omitting it keeps ordinary operator selection and lifting. These
+temporal candidates require the explicit option and `add_(T, T) -> T`, or
 `sub_(T, T) -> T` and `neg_(T) -> T`. They invent no identity value or conversion.
+
+Their guarded `when` clauses are in source order. The first satisfied condition
+runs its body; `return` exits the node's current evaluation. The final
+`valid([])` clause is reached only when neither operand is valid (TIME-3, FN-7).
 
 ## Wired example
 

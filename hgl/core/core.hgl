@@ -18,7 +18,7 @@ export enum Rounding { truncate, floor, ceiling, half_even, half_up, half_down }
 export enum InvalidPolicy { error, fail }
 
 # Admission for same-type temporal addition/subtraction (OPS-9).
-export enum InvalidInputPolicy { require, identity }
+export enum InvalidInputPolicy { identity }
 
 # The symbol operators. Syntax binds each identity (the language's generics
 # chapter): `a + b` is `add_(a, b)`. An operator is neither value nor
@@ -85,27 +85,19 @@ impl const fn ne_(lhs: f64, rhs: i64, abs: f64 = 0.0, rel: f64 = 0.0) -> bool =>
 # OPS-9: the required option keeps these candidates out of unconfigured calls.
 # The requirements name value operations; a runtime body calls those candidates.
 impl fn add_<T, const invalid: InvalidInputPolicy>(lhs: T, rhs: T) -> T
-    requires invalid in {.require, .identity} && add_(T, T) -> T {
+    requires invalid == .identity && add_(T, T) -> T {
     inject out
-    when valid([]) {
-        if valid(lhs) && valid(rhs) { return add_(lhs, rhs) }
-        if invalid == .identity {
-            if valid(lhs) { return lhs }
-            if valid(rhs) { return rhs }
-            invalidate(out)
-        }
-    }
+    when valid(lhs, rhs) { return add_(lhs, rhs) }
+    when valid(lhs) { return lhs }
+    when valid(rhs) { return rhs }
+    when valid([]) { invalidate(out) }
 }
 
 impl fn sub_<T, const invalid: InvalidInputPolicy>(lhs: T, rhs: T) -> T
-    requires invalid in {.require, .identity} && sub_(T, T) -> T && neg_(T) -> T {
+    requires invalid == .identity && sub_(T, T) -> T && neg_(T) -> T {
     inject out
-    when valid([]) {
-        if valid(lhs) && valid(rhs) { return sub_(lhs, rhs) }
-        if invalid == .identity {
-            if valid(lhs) { return lhs }
-            if valid(rhs) { return neg_(rhs) }
-            invalidate(out)
-        }
-    }
+    when valid(lhs, rhs) { return sub_(lhs, rhs) }
+    when valid(lhs) { return lhs }
+    when valid(rhs) { return neg_(rhs) }
+    when valid([]) { invalidate(out) }
 }

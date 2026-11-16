@@ -57,12 +57,13 @@ owns symbol syntax, precedence, and phase checking. An instant is a
   compile-time constant. `rounding` and `nan` are parameters. A conversion
   that cannot fail returns T.
 - **OPS-9.** Same-type temporal addition and subtraction may select an
-  `invalid` policy, a const generic `InvalidInputPolicy` with members
-  `require` and `identity`. Addition requires a value `add_(T, T) -> T`;
+  `invalid: .identity`, a const generic `InvalidInputPolicy` whose member is
+  `identity`. Addition requires a value `add_(T, T) -> T`;
   subtraction requires value `sub_(T, T) -> T` and `neg_(T) -> T`.
   The option admits no mixed operand or result types. It adds no scalar
   native entry points. Omission keeps ordinary candidate selection and
-  validity admission; `.require` publishes only when both inputs are valid.
+  lifting and validity admission. These temporal candidates require the
+  explicit `.identity` option.
   Under `.identity`, use the table below. Input invalidation activates the
   node as END-4 specifies; silence retains input values and creates no work.
   Valid zero, empty text, null, and NaN remain values, not invalid inputs.
