@@ -57,9 +57,11 @@ dictionary's (the language's ERR-6).
   writes or its place expects; an absent key fails the node.
   `has(global_state, key)` is whether the key holds a value.
   `put(global_state, key, value)` puts one there. A key keeps the type of
-  its first value: a `put` of another type is rejected where the two are in
-  one program, and fails otherwise. Reading or writing the store wakes no
-  node and is no temporal input.
+  its first value within the bound store: a `put` of another type is rejected
+  where the accesses are known to share that store, and fails otherwise.
+  Reading or writing the store wakes no node and is no temporal input.
+  Eval's designated recorder uses a separate private binding under
+  [CEVAL-9](eval-recording.md#rules), inaccessible to the program and its seeds.
 
 ## Proposed behaviour
 

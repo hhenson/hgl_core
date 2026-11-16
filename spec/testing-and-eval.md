@@ -1,7 +1,11 @@
 # Core testing and eval
 
-Status: test ownership and CEVAL-1 through CEVAL-6 are agreed.
+Status: test ownership and CEVAL-1 through CEVAL-10 are agreed.
 The remaining eval profile and pack mechanics are proposed.
+
+[Eval entries and recorder handoff](eval-recording.md) defines CEVAL-7 through
+CEVAL-10: `EvalEntry<T>`, the core replay/record bodies, private storage, and
+the complete graph-run and result-extraction sequence.
 
 ## Agreed
 

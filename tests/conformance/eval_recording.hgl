@@ -1,0 +1,56 @@
+module conformance part eval_recording
+
+fn positive(value: i64) -> i64 {
+    when {
+        if value > 0 { return value }
+    }
+}
+
+fn recording_nullable(value: i64?) -> i64? {
+    when valid(value) && modified(value) { return delta_value(value) }
+}
+
+# CEVAL-9: this is the program store, not the recorder's private store.
+fn recording_store_collision(value: i64) -> i64 {
+    inject global_state
+    start { put(global_state, "result", 99) }
+    when {
+        if value > 0 { return value }
+    }
+    stop { put(global_state, "result", -1) }
+}
+
+# CEVAL-7/8/10, TST-6: an absent input and a non-publishing evaluation
+# both leave gaps; trailing silence supplies neither work nor padding.
+test recording_silent_ticks {
+    assert eval(positive, value: [7, _, 0, 9, _]) == [7, _, _, 9]
+}
+
+# CEVAL-4/9/10: stop hands over an initialized empty buffer in both cases.
+test recording_empty_handoff {
+    assert eval(positive, value: []) == []
+    assert eval(positive, value: [0, _, 0, _]) == []
+}
+
+# CEVAL-7, END-1/3: a null delta is a publication, distinct from no entry.
+test recording_preserves_null_publications {
+    assert eval(recording_nullable, value: [null, _, 7, null, _]) ==
+        [null, _, 7, null]
+}
+
+# CEVAL-6/9: program writes of the same key cannot replace a recording,
+# including an empty one. The stores also bind that key to different types.
+test recording_store_is_private {
+    assert eval(recording_store_collision, value: [7, _, 0, 9, _]) ==
+        [7, _, _, 9]
+    assert eval(recording_store_collision, value: []) == []
+    assert eval(recording_store_collision, value: [0, _, 0, _]) == []
+}
+
+# CEVAL-4/5/10: a retained result outlives the run and later eval calls.
+test recording_result_outlives_run {
+    let first = eval(positive, value: [7, _, 0, 9, _])
+    assert eval(positive, value: []) == []
+    assert eval(positive, value: [11]) == [11]
+    assert first == [7, _, _, 9]
+}

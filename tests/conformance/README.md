@@ -8,6 +8,11 @@ are private functions that publish or wire their own output.
 
 | Part | Test | Rules observed |
 | --- | --- | --- |
+| `eval_recording` | `recording_silent_ticks` | CEVAL-7/8/10 (agreed), TST-6 |
+| `eval_recording` | `recording_empty_handoff` | CEVAL-4/9/10 (agreed), TST-6 |
+| `eval_recording` | `recording_preserves_null_publications` | CEVAL-7, END-1/3 (agreed), TST-6 |
+| `eval_recording` | `recording_store_is_private` | CEVAL-6/9 (agreed) |
+| `eval_recording` | `recording_result_outlives_run` | CEVAL-4/5/10 (agreed), TST-6 |
 | `identity_arithmetic` | `identity_arithmetic_publications` | OPS-9, END-1, END-5 |
 | `identity_arithmetic` | `identity_arithmetic_invalidates_and_recovers` | OPS-9, END-4 |
 | `identity_arithmetic` | `repeated_invalidation_is_silent` | OPS-9, END-4 |

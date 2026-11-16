@@ -12,6 +12,7 @@ portable implementations, required native support, and runtime conformance.
 - [Scalar temporal endpoints](spec/temporal-endpoints.md)
 - [Capabilities](spec/capabilities.md)
 - [Testing and eval contract](spec/testing-and-eval.md)
+- [Eval entries and recorder handoff](spec/eval-recording.md)
 - [Language specification](https://github.com/hhenson/hgl_spec)
 - [Open decisions](https://github.com/hhenson/hgl_core/issues/1)
 
