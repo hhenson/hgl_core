@@ -1,7 +1,7 @@
 # Capabilities
 
 Status: CAP-1 to CAP-6 are agreed. The meanings under "Proposed behaviour"
-are proposed. `delta_value` waits on the language's definition of `delta<T>`.
+are proposed.
 
 ## Scope and API
 
