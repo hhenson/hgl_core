@@ -7,6 +7,7 @@ portable implementations, required native support, and runtime conformance.
 - [Minimal API inventory](spec/minimal-api.md)
 - [Numeric operators and policies](spec/numeric-operators.md)
 - [Scalar operators and conversion](spec/scalar-operators.md)
+- [Temporal addition and subtraction](spec/temporal-arithmetic.md)
 - [Value-function lifting observations](spec/value-function-lifting.md)
 - [Scalar temporal endpoints](spec/temporal-endpoints.md)
 - [Testing and eval contract](spec/testing-and-eval.md)
@@ -28,7 +29,11 @@ portable implementations, required native support, and runtime conformance.
 [`tests/conformance/`](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/README.md)
 holds the endpoint and eval fixtures. `hgl/core/core.hgl` is the mandatory
 module, `core`: the comparison outcome, the option enums and the symbol
-operators. `hgl/native/scalar_operators.hgl` is its native value candidates
-over scalars, each declaring the options it uses. The other code directories
-are reserved.
+operators, with HGL wrappers for commutative pairs in reverse operand order.
+Generic temporal candidates handle same-type addition/subtraction with an
+explicit `invalid` input policy (OPS-9).
+`hgl/native/scalar_operators.hgl` holds the remaining native scalar candidates,
+each declaring the options it uses. Providers implement only those native
+declarations. [Implementation tests](https://github.com/hhenson/hgl_core/blob/main/tests/implementation/README.md) cover
+the wrappers.
 A target adapter and eval runner are needed to run the shared expectations.
