@@ -12,7 +12,11 @@ inventory rows retain their status. The operators those two contracts cover
 are declared as HGL source in `hgl/core/core.hgl` and
 `hgl/native/scalar_operators.hgl`.
 The [scalar endpoint contract](temporal-endpoints.md) defines publication,
-validity, notification, and retained data for directly bound scalar endpoints.
+validity, notification, and retained data for directly bound scalar endpoints;
+its operations but `delta_value` are declared in `hgl/native/endpoints.hgl`.
+The [capability contract](capabilities.md) defines the types of the clock,
+logger, scheduler, alarm, and global store, declared in
+`hgl/native/capabilities.hgl`, with logging and the scheduler's cancellations.
 
 | Capability | HGL-facing need | Implementation-facing obligation |
 | --- | --- | --- |

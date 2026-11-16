@@ -1,9 +1,12 @@
 module core
 
 # Core's mandatory module: every module binds its public declarations
-# without a `use` (UNIT-11). Contracts: spec/numeric-operators.md and
-# spec/scalar-operators.md. The native candidates are in
-# hgl/native/scalar_operators.hgl.
+# without a `use` (UNIT-11). Contracts: spec/numeric-operators.md,
+# spec/scalar-operators.md, spec/capabilities.md and
+# spec/temporal-endpoints.md. The native candidates are in
+# hgl/native/scalar_operators.hgl, the capabilities in
+# hgl/native/capabilities.hgl and the endpoint operations in
+# hgl/native/endpoints.hgl.
 
 # The outcome of a full comparison, `<=>` (OPS-3, NUM-6).
 export enum CmpResult { less, equivalent, greater, unordered }
@@ -19,6 +22,27 @@ export enum InvalidPolicy { error, fail }
 
 # Admission for same-type temporal addition/subtraction (OPS-9).
 export enum InvalidInputPolicy { identity }
+
+# The level of a log record (CAP-2).
+export enum LogLevel { debug, info, warning, error }
+
+# `log` at each level (CAP-2). The native `log` and the capability types
+# are in hgl/native/capabilities.hgl.
+export const fn log_debug(logger: Logger, message: str) {
+    log(logger, .debug, message)
+}
+
+export const fn log_info(logger: Logger, message: str) {
+    log(logger, .info, message)
+}
+
+export const fn log_warning(logger: Logger, message: str) {
+    log(logger, .warning, message)
+}
+
+export const fn log_error(logger: Logger, message: str) {
+    log(logger, .error, message)
+}
 
 # The symbol operators. Syntax binds each identity (the language's generics
 # chapter): `a + b` is `add_(a, b)`. An operator is neither value nor
