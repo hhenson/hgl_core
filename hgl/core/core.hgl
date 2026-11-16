@@ -8,8 +8,8 @@ module core
 # The outcome of a full comparison, `<=>` (OPS-3, NUM-6).
 export enum CmpResult { less, equivalent, greater, unordered }
 
-# What true division does with a zero divisor (NUM-3, NUM-9).
-export enum ZeroPolicy { ieee, nan, error }
+# What a division does with a zero divisor (NUM-3, NUM-9, NUM-12).
+export enum ZeroPolicy { ieee, nan, error, fail }
 
 # How an `f64` is rounded to an `i64` (OPS-8).
 export enum Rounding { truncate, floor, ceiling, half_even, half_up, half_down }

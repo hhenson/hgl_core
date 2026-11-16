@@ -1,8 +1,9 @@
 # Numeric operators and policies
 
 Status: agreed baseline, explicit operator configuration, approximate equality,
-full comparison, IEEE division default, and checked-division result contract.
-No executable conformance or native ABI is specified.
+full comparison, IEEE division default, the zero policy of every division,
+and checked-division result contract. No executable conformance or native ABI
+is specified.
 
 ## Contract
 
@@ -20,16 +21,18 @@ Core owns numerical domains, public configuration, results, and errors.
   preserves IEEE special values, including signed zero and overflow infinity.
   Mixed numeric comparison must not first round an i64 operand to f64 and
   thereby lose a distinction between the operand values.
-- **NUM-3.** The `zero` option of division is a `ZeroPolicy`, an enum with
-  members `ieee`, `nan`, and `error`, written `.ieee`, `.nan`, and `.error`
-  where the option is given. True division `/`, whose numeric result is f64,
-  defaults to the `ieee` zero policy:
+- **NUM-3.** The `zero` option of a division is a `ZeroPolicy`, an enum with
+  members `ieee`, `nan`, `error`, and `fail`, written `.ieee`, `.nan`,
+  `.error`, and `.fail` where the option is given. True division `/`, whose
+  numeric result is f64, defaults to the `ieee` zero policy:
   a finite nonzero numerator divided by signed zero produces signed infinity;
   zero divided by zero produces NaN. The infinity sign combines both operand
   signs. The `nan` zero policy instead produces NaN for every zero divisor.
-  The `error` alternative follows NUM-9. The zero
+  The `error` alternative follows NUM-9. The `fail` policy makes a zero
+  divisor an HGL error with code `numeric.division_by_zero`. The zero
   option applies to zero divisors, not to unrelated operand errors. Policies
-  requiring NaN/infinity need a result type that can represent those values.
+  requiring NaN/infinity need a result type that can represent those values
+  (NUM-12).
 - **NUM-4.** Plain numeric `==` is exact and `!=` is its complement. Configured
   `==` accepts absolute (`abs`) and relative (`rel`) tolerance, each defaulting
   to zero. For finite operands, closeness is the symmetric condition below.
@@ -68,12 +71,13 @@ abs(a - b) <= max(abs_tolerance,
   is present data. Required-constant errors and optional folding follow the
   language's error-phase contract.
 - **NUM-9.** Division with `zero: .ieee` or `zero: .nan` returns f64; division
-  with `zero: .error` returns `result<f64, error>`. Resolve the zero policy
-  during source checking because it determines the result type. For the error
-  policy,
+  with `zero: .error` returns `result<f64, error>`. A division whose result
+  is another type T (NUM-12) returns `result<T, error>` under `zero: .error`.
+  Resolve the zero policy during source checking because it determines the
+  result type. For the error policy,
   either signed zero divisor produces `err(...)` carrying error code
   `numeric.division_by_zero`; every nonzero divisor produces `ok(value)` from
-  ordinary IEEE division. This includes successful NaN/infinity results where
+  the ordinary division. This includes successful NaN/infinity results where
   IEEE division produces them. This policy checks only the divisor and does
   not catch unrelated errors evaluating the operands.
 - **NUM-10.** A checked-division Err is ordinary result data. It neither
@@ -89,6 +93,12 @@ abs(a - b) <= max(abs_tolerance,
   invocation. They create no temporal dependency. A temporal tolerance requires
   an explicitly admitted temporal parameter. Configuration order and phase
   checking follow EXPR-12 through EXPR-14 in the language specification.
+- **NUM-12.** Every division takes `zero`: `/`, `//`, and `%`, of numbers and
+  of durations (OPS-1). The policies one admits, and its default, follow
+  from what its result can hold, as the second table below says. A policy a
+  division does not admit is a source rejection, `operator.no_candidate`.
+  Under `.ieee` a floor division or a modulo with an `f64` operand is what
+  IEEE arithmetic makes of the zero divisor.
 
 | Numeric expression | Full-comparison outcomes producing true |
 | --- | --- |
@@ -98,6 +108,11 @@ abs(a - b) <= max(abs_tolerance,
 | `a <= b` | `less`, `equivalent` |
 | `a > b` | `greater` |
 | `a >= b` | `greater`, `equivalent` |
+
+| A division whose result is | Namely | Admits | Default |
+| --- | --- | --- | --- |
+| An `f64` | `/` of numbers; `//` and `%` with an `f64` operand; a `duration` by a `duration` | `.ieee`, `.nan`, `.error`, `.fail` | `.ieee` |
+| An `i64` or a `duration` | `//` and `%` of two `i64`; a `duration` by a number; `//` of two durations | `.error`, `.fail` | `.fail` |
 
 ## Examples and conformance observations
 
@@ -126,6 +141,11 @@ NaN/infinity names in the table describe outcomes, not source literal syntax.
 | `1.0 /{zero: .error} 0.0`; `0.0 /{zero: .error} -0.0` | Err with code `numeric.division_by_zero` in both cases |
 | NaN divided by a nonzero value with `zero: .error` | Ok containing NaN |
 | NaN divided by zero with `zero: .error` | Err with code `numeric.division_by_zero` |
+| `1.0 /{zero: .fail} 0.0` | HGL error with code `numeric.division_by_zero` |
+| `7 // 0`; `7 % 0`; `5m / 0`; `5m // 0s` | HGL error with code `numeric.division_by_zero` in each case |
+| `7 //{zero: .error} 2`; `7 //{zero: .error} 0` | `ok(3)`; Err with code `numeric.division_by_zero` |
+| `7 //{zero: .nan} 2`; `5m /{zero: .ieee} 2` | Source rejection in both cases: the result holds no NaN or infinity |
+| `7.0 // 0.0`; `7.0 % 0.0`; `5m / 0s` | Positive infinity; NaN; positive infinity |
 | Checked division publishes Err, then Ok on a later admitted evaluation | Two atomic result publications; no implicit node failure |
 | `?` in a value function returning `result<f64, error>` receives checked-division Err | Same error returned; later statements are not executed |
 | `?` inside `when` receives checked-division Err | Node failure with the same error; no successful result publication |
