@@ -74,7 +74,9 @@ abs(a - b) <= max(abs_tolerance,
   with `zero: .error` returns `result<f64, error>`. A division whose result
   is another type T (NUM-12) returns `result<T, error>` under `zero: .error`.
   Resolve the zero policy during source checking because it determines the
-  result type. For the error policy,
+  result type: `zero` is a generic value parameter of the candidates that
+  declare it, and a call gives it a compile-time constant. For the error
+  policy,
   either signed zero divisor produces `err(...)` carrying error code
   `numeric.division_by_zero`; every nonzero divisor produces `ok(value)` from
   the ordinary division. This includes successful NaN/infinity results where
