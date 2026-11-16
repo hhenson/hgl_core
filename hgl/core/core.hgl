@@ -44,6 +44,17 @@ export const fn log_error(logger: Logger, message: str) {
     log(logger, .error, message)
 }
 
+# Ask for a wake on a scheduler or an alarm (CAP-4, CAP-5). `at` is a
+# `duration` from the current evaluation time, or a `datetime`.
+operator schedule<C, W>(capability: C, at: W)
+
+# The global store (CAP-6): the value under a key, whether a key holds
+# one, and a value put under a key. A call of `get` gives `V` and leaves
+# the store and the key to be inferred, as `convert<T>(value)` does.
+operator get<V, S, K>(store: S, key: K) -> V
+operator has<S, K>(store: S, key: K) -> bool
+operator put<S, K, V>(store: S, key: K, value: V)
+
 # The symbol operators. Syntax binds each identity (the language's generics
 # chapter): `a + b` is `add_(a, b)`. An operator is neither value nor
 # temporal; the candidate a call selects is.
