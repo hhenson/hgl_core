@@ -108,12 +108,13 @@ fn quiet(value: f64) -> f64 {
 
 fn counted(const every: duration = 1s) -> i64 {
     inject scheduler, global_state
-    start { schedule(scheduler, every, tag: "count") }
+    start {
+        if !has(global_state, "count") { put(global_state, "count", 0) }
+        schedule(scheduler, every, tag: "count")
+    }
     when scheduled() {
         schedule(scheduler, every, tag: "count")
-        if has(global_state, "count") {
-            put(global_state, "count", get<i64>(global_state, "count") + 1)
-        }
+        put(global_state, "count", get<i64>(global_state, "count") + 1)
         return get<i64>(global_state, "count")
     }
 }
@@ -131,7 +132,8 @@ fn woken(value: f64, const every: duration = 1s) -> f64 {
 `stamp` gives its clock to `stamped`, whose parameter is of the clock's type,
 and logs through its logger. `quiet` reads a property of its scheduler and
 cancels what is pending. `counted` wakes itself each second under a tag, and
-counts in the global store under a key written out. `woken` is woken by its
+counts in the global store under a key written out, which `start` gives a
+value where it has none. `woken` is woken by its
 input and by its alarm. Deliberate rejections: `clock.now = value`, a
 property assigned; `Clock()`, a capability constructed;
 `log(logger, "info", "text")`, a `str` where a `LogLevel` is taken;
