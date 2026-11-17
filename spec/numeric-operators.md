@@ -15,7 +15,11 @@ Core owns numerical domains, public configuration, results, and errors.
   Unconfigured mixed i64/f64 and f64 arithmetic returns f64; `/` defaults to f64.
   NUM-9 defines the configured division result types.
   Unary negation preserves the numeric type. Integer floor division rounds
-  toward negative infinity; modulo has the divisor's sign when nonzero.
+  toward negative infinity; modulo has the divisor's sign when nonzero. So
+  do `//` and `%` of finite f64 operands. Where an f64 operand is an
+  infinity or NaN and the divisor is not zero, `//` is the floor of the
+  IEEE quotient and `%` what IEEE `fmod` gives: a remainder by an infinity
+  is the numerator as it is, whatever its sign.
 - **NUM-2.** An unrepresentable i64 result produces an HGL error; it neither
   wraps nor silently promotes. Floating arithmetic rounds to binary64 and
   preserves IEEE special values, including signed zero and overflow infinity.
@@ -148,6 +152,10 @@ NaN/infinity names in the table describe outcomes, not source literal syntax.
 | `7 //{zero: .error} 2`; `7 //{zero: .error} 0` | `ok(3)`; Err with code `numeric.division_by_zero` |
 | `7 //{zero: .nan} 2`; `5m /{zero: .ieee} 2` | Source rejection in both cases: the result holds no NaN or infinity |
 | `7.0 // 0.0`; `7.0 % 0.0`; `5m / 0s` | Positive infinity; NaN; positive infinity |
+| Positive infinity `// 2.0`; positive infinity `% 2.0` | Positive infinity; NaN |
+| `1.0 //` positive infinity; `-1.0 //` positive infinity | `0.0`; `-0.0` |
+| `1.0 %` positive infinity; `-1.0 %` positive infinity | `1.0`; `-1.0` |
+| Infinity `//` infinity; `//` or `%` with a NaN operand | NaN; NaN |
 | Checked division publishes Err, then Ok on a later admitted evaluation | Two atomic result publications; no implicit node failure |
 | `?` in a value function returning `result<f64, error>` receives checked-division Err | Same error returned; later statements are not executed |
 | `?` inside `when` receives checked-division Err | Node failure with the same error; no successful result publication |
