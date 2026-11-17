@@ -1,8 +1,9 @@
 # Scalar operators and conversion
 
 Status: agreed operator domains for the scalar types other than numbers, the
-comparison outcome type, the domains of the conversion operator, what each
-conversion yields, its options, and generic temporal identity handling.
+rounding and range of a duration or an instant result, the comparison
+outcome type, the domains of the conversion operator, what each conversion
+yields, its options, and generic temporal identity handling.
 Runtime conformance execution and the native ABI remain pending.
 
 ## Contract
@@ -74,6 +75,12 @@ owns symbol syntax, precedence, and phase checking. An instant is a
   Under `.identity`, use the table below. Input invalidation activates the
   node as END-4 specifies; silence retains input values and creates no work.
   Valid zero, empty text, null, and NaN remain values, not invalid inputs.
+- **OPS-10.** A `duration` result is the exact result rounded to the nearest
+  duration the type holds, a tie to the even one. The type's resolution is
+  the language's (TYPE-2): a microsecond. A `duration` or an instant result
+  outside its type's range is an HGL error with code `numeric.out_of_range`,
+  as an `i64` result is (NUM-2): it neither wraps nor saturates. So is a
+  `duration` multiplied or divided by a NaN or an infinity.
 
 | Operator | Operands | Result |
 | --- | --- | --- |
@@ -153,6 +160,17 @@ Their types are `str`, `duration`, `datetime`, `datetime`, `duration`,
 OPS-1: `5m - @2026-09-03T09:30Z`, a duration less an instant; `"a" + 1`;
 `@2026-09-03 + @2026-09-04`. Under OPS-5: `1 && true`. Executable conformance
 is planned.
+
+A duration result rounds to the type's resolution, and one out of range is
+an error (OPS-10):
+
+| Expression | Result |
+| --- | --- |
+| `5m / 3` | `100s`, exactly |
+| `1us * 0.5`; `3us * 0.5` | `0us`; `2us`: half a microsecond is a tie, and goes to the even one |
+| `1us / 3`; `2us / 3` | `0us`; `1us` |
+| A duration times an infinity or a NaN | HGL error with code `numeric.out_of_range` |
+| `@9999-12-31T23:59:59Z + 1d` | HGL error with code `numeric.out_of_range` |
 
 Accepted illustration of equality between values that hold others (OPS-2),
 complete module:
