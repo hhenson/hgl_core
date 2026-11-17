@@ -18,9 +18,10 @@ The remaining eval profile and pack mechanics are proposed.
 - **CEVAL-1.** Eval is a [run](execution.md) of an entry it generates
   (CRUN-1): core's `replay` wired to each temporal input of the target, and
   the target's result as the entry's. It binds const arguments once for the
-  run as ordinary values. The run is under `RunConfig()`: a simulation from
-  the earliest start until nothing is scheduled. Imports and overloads
-  cannot replace `replay` or `record`.
+  run as ordinary values. The run is a simulation under the eval's
+  configuration. Where the eval writes none that is `RunConfig()`: from the
+  earliest start until nothing is scheduled. Imports and overloads cannot
+  replace `replay` or `record`.
 - **CEVAL-2.** Each temporal input of type T has a replay list, a
   `list<tuple<datetime, delta<T>>>` of its present publications. Each tuple
   holds the absolute evaluation time and the publication's delta. Times
@@ -74,7 +75,7 @@ fn copy_tick(value: i64) -> i64 {
 }
 
 test scalar_trace {
-    assert eval(copy_tick, value: [7, _, 7]) == [7, _, 7]
+    assert eval(copy_tick(value: [7, _, 7])) == [7, _, 7]
 }
 ```
 
@@ -94,7 +95,7 @@ fn count_publications(value: i64) -> i64 {
 }
 
 test replay_preserves_equal_ticks {
-    assert eval(count_publications, value: [7, _, 7, 7]) ==
+    assert eval(count_publications(value: [7, _, 7, 7])) ==
         [1, _, 2, 3]
 }
 ```
@@ -123,10 +124,10 @@ fn scaled_sum(left: i64, right: i64, const factor: i64) -> i64 {
 }
 
 test shared_input_ticks {
-    assert eval(scaled_sum,
+    assert eval(scaled_sum(
                 left: [2, _, 5, 7],
                 right: [_, 3, _, 4],
-                factor: 2) == [_, 10, 16, 22]
+                factor: 2)) == [_, 10, 16, 22]
 }
 ```
 
@@ -169,14 +170,14 @@ fn relay_members(enabled: bool, members: set<i64>) -> set<i64> {
 }
 
 test mixed_replay {
-    assert eval(relay_members,
+    assert eval(relay_members(
                 enabled: [true, _, true],
                 members: [
                     _,
                     delta<set<i64>>(added: [1, 2]),
                     _,
                     delta<set<i64>>(added: [3], removed: [1])
-                ]) == [
+                ])) == [
         _,
         delta<set<i64>>(added: [1, 2]),
         _,
@@ -226,7 +227,7 @@ fn update_members(command: i64) -> set<i64> {
 }
 
 test record_retains_each_delta {
-    assert eval(update_members, command: [1, _, 2]) == [
+    assert eval(update_members(command: [1, _, 2])) == [
         delta<set<i64>>(added: [1, 2]),
         _,
         delta<set<i64>>(added: [3], removed: [1])
@@ -234,8 +235,8 @@ test record_retains_each_delta {
 }
 
 test record_can_be_empty {
-    assert eval(update_members, command: []) == []
-    assert eval(update_members, command: [0]) == []
+    assert eval(update_members(command: [])) == []
+    assert eval(update_members(command: [0])) == []
 }
 ```
 
@@ -276,9 +277,9 @@ fn count_publications(value: i64) -> i64 {
 }
 
 test runs_are_independent {
-    assert eval(count_publications, value: [7, _, 7]) == [1, _, 2]
-    assert eval(count_publications, value: []) == []
-    assert eval(count_publications, value: [7, _, 7]) == [1, _, 2]
+    assert eval(count_publications(value: [7, _, 7])) == [1, _, 2]
+    assert eval(count_publications(value: [])) == []
+    assert eval(count_publications(value: [7, _, 7])) == [1, _, 2]
 }
 ```
 
@@ -303,10 +304,10 @@ fn checked_ratio(divisor: f64) -> f64 {
 }
 
 test eval_preserves_failure {
-    assert eval(checked_ratio, divisor: []) == []
-    assert eval(checked_ratio, divisor: [2.0]) == [3.0]
+    assert eval(checked_ratio(divisor: [])) == []
+    assert eval(checked_ratio(divisor: [2.0])) == [3.0]
     assert raises("numeric.division_by_zero") {
-        eval(checked_ratio, divisor: [2.0, 0.0])
+        eval(checked_ratio(divisor: [2.0, 0.0]))
     }
 }
 ```
@@ -333,7 +334,7 @@ fn log_tick(value: i64) {
 }
 
 test run_log_sink {
-    eval(log_tick, value: [7, _, 9])
+    eval(log_tick(value: [7, _, 9]))
 }
 ```
 
@@ -356,7 +357,7 @@ fn emit_two(const first: i64) -> i64 {
 }
 
 test source_trace {
-    assert eval(emit_two, first: 7) == [1s: 7, 2s: 8]
+    assert eval(emit_two(first: 7)) == [1s: 7, 2s: 8]
 }
 ```
 

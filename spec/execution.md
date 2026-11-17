@@ -12,8 +12,7 @@ ends, and what it gives back.
 
 | Core API | Contract |
 | --- | --- |
-| `RunMode` | `simulation` or `real_time` |
-| `RunConfig` | An ordinary struct: `mode: RunMode = .simulation`, `start: datetime? = null`, `end: datetime? = null`. Every field has a default |
+| `RunConfig` | An ordinary struct: `start: datetime? = null`, `end: datetime? = null`. Every field has a default |
 | `replay<T>(const items: list<tuple<datetime, delta<T>>>) -> T` | A source of the publications `items` holds |
 | `record<T>(input: T, const key: str)` | A sink that retains each publication of `input` and puts them in the store under `key` at stop |
 
@@ -22,7 +21,9 @@ ends, and what it gives back.
 - **CRUN-1.** A run takes one entry, its `const` arguments, and one
   `RunConfig`. It builds the entry's graph, starts it, evaluates zero or more
   cycles, and stops it, once each. To run an entry again is another run, with
-  its own state, store and recording.
+  its own state, store and recording. A run is a simulation or in real
+  time, as the word it is written with says (the language's RUN-3): an
+  `eval` is a simulation and a `run` is in real time.
 - **CRUN-2.** A `RunConfig` is fixed for its run. `start` is inclusive and
   `end` exclusive: no cycle runs before `start`, and none at or after `end`.
   A null `start` is the earliest start in simulation and the host clock's
@@ -82,13 +83,13 @@ fn positive(value: i64) -> i64 {
     when value > 0 { return value }
 }
 
-# The entry generated for eval(positive, value: [7, _, 0, 9, _]).
+# The entry generated for eval(positive(value: [7, _, 0, 9, _])).
 fn wired_positive(const value: list<tuple<datetime, delta<i64>>>) -> i64 {
     positive(replay<i64>(value))
 }
 
 test silent_ticks {
-    assert eval(positive, value: [7, _, 0, 9, _]) == [7, _, _, 9]
+    assert eval(positive(value: [7, _, 0, 9, _])) == [7, _, _, 9]
 }
 ```
 
@@ -101,7 +102,8 @@ flowchart LR
     S -->|once the run has stopped| O[The run's output]
 ```
 
-The run of `wired_positive` is under `RunConfig()`. S is its start, the
+The eval writes no configuration, so the run of `wired_positive` is a
+simulation under `RunConfig()`. S is its start, the
 earliest start. The replay list is `[(S, 7), (S + 2us, 0), (S + 3us, 9)]`.
 
 | Time | `replay` publishes | `positive` publishes | Tuple recorded |

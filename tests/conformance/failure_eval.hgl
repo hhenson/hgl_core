@@ -5,9 +5,9 @@ fn checked_ratio(divisor: f64) -> f64 {
 }
 
 test eval_preserves_failure {
-    assert eval(checked_ratio, divisor: []) == []
-    assert eval(checked_ratio, divisor: [2.0]) == [3.0]
+    assert eval(checked_ratio(divisor: [])) == []
+    assert eval(checked_ratio(divisor: [2.0])) == [3.0]
     assert raises("numeric.division_by_zero") {
-        eval(checked_ratio, divisor: [2.0, 0.0])
+        eval(checked_ratio(divisor: [2.0, 0.0]))
     }
 }
