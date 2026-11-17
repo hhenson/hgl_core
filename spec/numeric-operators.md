@@ -20,8 +20,9 @@ Core owns numerical domains, public configuration, results, and errors.
   infinity or NaN and the divisor is not zero, `//` is the floor of the
   IEEE quotient and `%` what IEEE `fmod` gives: a remainder by an infinity
   is the numerator as it is, whatever its sign.
-- **NUM-2.** An unrepresentable i64 result produces an HGL error; it neither
-  wraps nor silently promotes. Floating arithmetic rounds to binary64 and
+- **NUM-2.** An unrepresentable i64 result produces an HGL error with code
+  `numeric.out_of_range`; it neither wraps nor silently promotes. Floating
+  arithmetic rounds to binary64 and
   preserves IEEE special values, including signed zero and overflow infinity.
   Mixed numeric comparison must not first round an i64 operand to f64 and
   thereby lose a distinction between the operand values.
@@ -139,7 +140,7 @@ NaN/infinity names in the table describe outcomes, not source literal syntax.
 | Case | Expected observation |
 | --- | --- |
 | `7 / 2`; `-7 // 3`; `-7 % 3` | `3.5`; `-3`; `2` |
-| Maximum i64 plus one; negation of minimum i64 | HGL errors, without wrapping |
+| Maximum i64 plus one; negation of minimum i64 | HGL errors with code `numeric.out_of_range`, without wrapping |
 | `9007199254740993 == 9007199254740992.0` | false |
 | `1.0 / 0.0`; `1.0 / -0.0`; `0.0 / 0.0` | Positive infinity; negative infinity; NaN |
 | `1.0 /{zero: .nan} 0.0` | NaN |
