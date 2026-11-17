@@ -26,16 +26,11 @@ export enum InvalidInputPolicy { identity }
 # The level of a log record (CAP-2).
 export enum LogLevel { debug, info, warning, error }
 
-# How a run takes its time (CRUN-2, CRUN-4, CRUN-5): logical time without
-# waiting, or the host clock.
-export enum RunMode { simulation, real_time }
-
 # What a run is given beside its entry and the entry's arguments (CRUN-2).
-# A null `start` is the earliest start in simulation and the present in
+# A null `start` is the earliest start in a simulation and the present in
 # real time. A null `end` ends a simulation when nothing is scheduled, and
 # a real-time run when its host stops it.
 export struct RunConfig {
-    mode: RunMode = .simulation
     start: datetime? = null
     end: datetime? = null
 }

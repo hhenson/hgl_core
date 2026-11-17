@@ -43,17 +43,17 @@ fn watch(value: i64) -> bool {
 fn sum_validity(left: i64?, right: i64?) -> bool => watch(sum(left, right))
 
 test identity_arithmetic {
-    assert eval(sum,
+    assert eval(sum(
         left:  [7, _, null, _, 9, _, _, 0, _],
-        right: [_, 2, _, null, _, _, 3, _, null]) ==
+        right: [_, 2, _, null, _, _, 3, _, null])) ==
         [7, 9, 2, _, 9, _, 12, 3, 0]
-    assert eval(difference,
+    assert eval(difference(
         left:  [7, _, null, _, 9, _, _, 0, _],
-        right: [_, 2, _, null, _, _, 3, _, null]) ==
+        right: [_, 2, _, null, _, _, 3, _, null])) ==
         [7, 5, -2, _, 9, _, 6, -3, 0]
-    assert eval(sum_validity,
+    assert eval(sum_validity(
         left:  [7, _, null, _, 9, _, _, 0, _],
-        right: [_, 2, _, null, _, _, 3, _, null]) ==
+        right: [_, 2, _, null, _, _, 3, _, null])) ==
         [true, true, true, false, true, _, true, true, true]
 }
 ```
