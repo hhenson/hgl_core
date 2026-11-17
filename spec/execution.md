@@ -1,0 +1,123 @@
+# Execution
+
+Status: CRUN-1 through CRUN-8 are agreed. Outside events in real time, a
+stop a node asks for, and observers of a run have no rules yet.
+
+## Scope and API
+
+The [language specification](https://github.com/hhenson/hgl_spec/blob/main/spec/language/program-execution.md)
+says what an entry is and how one is admitted (RUN-1, RUN-2). This contract
+says what a run of one is: what it is given, when its cycles happen, how it
+ends, and what it gives back.
+
+| Core API | Contract |
+| --- | --- |
+| `RunMode` | `simulation` or `real_time` |
+| `RunConfig` | An ordinary struct: `mode: RunMode = .simulation`, `start: datetime? = null`, `end: datetime? = null`. Every field has a default |
+| `replay<T>(const items: list<tuple<datetime, delta<T>>>) -> T` | A source of the publications `items` holds |
+| `record<T>(input: T, const key: str)` | A sink that retains each publication of `input` and puts them in the store under `key` at stop |
+
+## Rules
+
+- **CRUN-1.** A run takes one entry, its `const` arguments, and one
+  `RunConfig`. It builds the entry's graph, starts it, evaluates zero or more
+  cycles, and stops it, once each. To run an entry again is another run, with
+  its own state, store and recording.
+- **CRUN-2.** A `RunConfig` is fixed for its run. `start` is inclusive and
+  `end` exclusive: no cycle runs before `start`, and none at or after `end`.
+  A null `start` is the earliest start in simulation and the host clock's
+  present time in real time. A null `end` ends a simulation when nothing is
+  scheduled, and a real-time run when its host stops it.
+- **CRUN-3.** Evaluation time is constant within a cycle, and each cycle's is
+  later than the one before by one microsecond or more: the smallest step.
+  The earliest start is one smallest step after `1970-01-01T00:00:00Z`.
+- **CRUN-4.** In simulation a cycle runs at the next scheduled time without
+  waiting, and the run ends when nothing is scheduled before its `end`. The
+  same entry, arguments and configuration give the same cycles and the same
+  publications, where no node reads the host clock.
+- **CRUN-5.** In real time a cycle runs when the host clock reaches its
+  scheduled time, and at once when that time has passed.
+- **CRUN-6.** However a run ends, every node that started is stopped, in the
+  reverse of the order they started in. A failure names its node and its
+  phase: construction, start, evaluation or stop. A run that failed has no
+  output.
+- **CRUN-7.** A run has one store (CAP-6), which is empty when its graph is
+  built. Nothing outside the program puts a value there: an entry is
+  configured by its `const` arguments.
+- **CRUN-8.** The output of a run of an entry whose result type is T is a
+  `list<tuple<datetime, delta<T>>>` (the language's TST-16): one tuple for
+  each publication of the result, in time order, holding the evaluation time
+  and what was published. An entry with no result has no output. The run
+  wires `record` to the entry's result under the key `"run.output"`, and its
+  output is the value under that key once the run has stopped. That key is
+  the run's: a program that names it is rejected when its graph is built.
+
+## Replay and record
+
+`replay` and `record` are ordinary HGL: no native function is theirs alone.
+Illustration, complete module. The bodies say what the two do; they are not
+yet source under `hgl/core`.
+
+```hgl
+module examples.execution
+
+native const fn append<V>(values: list<V>, item: V) -> list<V>
+
+fn replay<T>(const items: list<tuple<datetime, delta<T>>>) -> T {
+    for item in items {
+        yield item[0]: item[1]
+    }
+}
+
+fn record<T>(input: T, const key: str) {
+    cache entries: list<tuple<datetime, delta<T>>> = []
+    inject clock, global_state
+    when valid(input) && modified(input) {
+        entries = append(entries, (clock.evaluation_time, delta_value(input)))
+    }
+    stop { put(global_state, key, entries) }
+}
+
+fn positive(value: i64) -> i64 {
+    when value > 0 { return value }
+}
+
+# The entry generated for eval(positive, value: [7, _, 0, 9, _]).
+fn wired_positive(const value: list<tuple<datetime, delta<i64>>>) -> i64 {
+    positive(replay<i64>(value))
+}
+
+test silent_ticks {
+    assert eval(positive, value: [7, _, 0, 9, _]) == [7, _, _, 9]
+}
+```
+
+```mermaid
+flowchart LR
+    I[Replay list] --> R[replay]
+    R --> P[positive]
+    P --> C[record]
+    C -->|stop: put under the run's key| S[The run's store]
+    S -->|once the run has stopped| O[The run's output]
+```
+
+The run of `wired_positive` is under `RunConfig()`. S is its start, the
+earliest start. The replay list is `[(S, 7), (S + 2us, 0), (S + 3us, 9)]`.
+
+| Time | `replay` publishes | `positive` publishes | Tuple recorded |
+| --- | --- | --- | --- |
+| S | `7` | `7` | `(S, 7)` |
+| S + 1us | Nothing: no cycle is scheduled | Nothing | None |
+| S + 2us | `0` | Nothing: no return | None |
+| S + 3us | `9` | `9` | `(S + 3us, 9)` |
+
+Nothing is scheduled at S + 4us, so the run ends. `record` puts its two
+tuples under the run's key at stop, and they are the run's output. Eval
+writes it dense (TST-6): `[7, _, _, 9]`.
+
+| The run | Its output |
+| --- | --- |
+| Stops with a recording that has tuples | Those tuples |
+| Stops with an empty recording | `[]` |
+| Stops with nothing under the run's key | None: a failure (CEVAL-6) |
+| Fails in construction, start, evaluation or stop | None: the failure (CRUN-6) |
