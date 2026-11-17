@@ -23,6 +23,13 @@ owns symbol syntax, precedence, and phase checking. An instant is a
   `duration`. `==` and `!=` compare two values of one type. The zoned types
   have no order: same-instant zoned values need not be equal. Numbers
   compare as the numeric contract says, an `i64` with an `f64` included.
+  Two structs are equal when they are of one struct with the same generic
+  arguments (the language's TYPE-3), and each field is equal as `==` of the
+  field's type has it. Two lists, and two tuples, are equal when they are
+  of one length and each position is equal; two dictionaries when they have
+  the same keys and each value is equal; two sets when they have the same
+  members. NUM-5 holds inside a value: a struct, a list, a tuple, or a
+  dictionary that holds a NaN is not equal to itself.
 - **OPS-3.** `CmpResult` is the enum of comparison outcomes, with the members
   `less`, `equivalent`, `greater`, and `unordered`. `<=>` returns one
   (NUM-6). Only a numeric comparison yields `unordered`. The other
@@ -146,6 +153,38 @@ Their types are `str`, `duration`, `datetime`, `datetime`, `duration`,
 OPS-1: `5m - @2026-09-03T09:30Z`, a duration less an instant; `"a" + 1`;
 `@2026-09-03 + @2026-09-04`. Under OPS-5: `1 && true`. Executable conformance
 is planned.
+
+Accepted illustration of equality between values that hold others (OPS-2),
+complete module:
+
+```hgl
+module examples.equality
+
+struct Point {
+    x: f64
+    y: f64
+}
+
+abstract struct Shape {}
+
+struct Tagged<T> : Shape {
+    tag: T
+}
+
+const fn same(lhs: Shape, rhs: Shape) -> bool => lhs == rhs
+
+test equality {
+    assert Point(x: 1.0, y: 2.0) == Point(x: 1.0, y: 2.0)
+    let odd = Point(x: 0.0 / 0.0, y: 0.0)
+    assert odd != odd
+    assert [odd.x] != [odd.x]
+    assert !same(Tagged(tag: 1), Tagged(tag: 1.0))
+}
+```
+
+`odd` holds a NaN, so it is not equal to itself, and neither is a list of
+that NaN. A `Tagged<i64>` is no `Tagged<f64>`, so the two are not equal where
+they meet as values of their parent. Executable conformance is planned.
 
 Accepted expression fragments for OPS-8, with `price` an `f64` in scope:
 
