@@ -15,7 +15,7 @@ owns endpoint interpretation, handler selection, and phase admission.
 | `valid(value)` | bool; may inspect an invalid endpoint |
 | `modified(value)` | bool; whether the endpoint published in the current cycle |
 | Runtime parameter payload | T; requires readable valid input, subject to declared nullable/default argument binding |
-| `delta_value(value)` | `delta<T>` (the language's TYPE-16), which is T for a scalar input; see END-3 |
+| `delta_value(value)` | `delta<T>` (the language's TYPE-16): T for a scalar input, and for a nullable scalar the optional that holds what was published; see END-3 |
 | `last_modified(value)` | Agreed `datetime?`; see END-6 |
 
 `valid`, `modified`, `delta_value`, `last_modified`, `invalidate`,
@@ -36,8 +36,10 @@ selectors follow the language contract rather than this one-endpoint table.
   observes its output's state.
 - **END-3.** `delta_value(x)` returns what `x` published this cycle, a
   `delta<T>` for an endpoint of T (the language's TYPE-16). For a scalar it
-  is the value published, including a published null. The checker must prove
-  `x` is valid and modified at the call.
+  is the value published. For a nullable scalar it is the optional that
+  type gives it, which holds the value published or the null: a published
+  null is `delta<i64?>()` for an `i64?` endpoint, and is no absent delta.
+  The checker must prove `x` is valid and modified at the call.
 - **END-4.** Invalidation clears validity, modification, payload, and delta.
   The transition to invalid notifies active subscribers. Each handler's
   validity requirements still apply. Repeated invalidation while invalid is
