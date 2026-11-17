@@ -12,6 +12,7 @@ ends, and what it gives back.
 
 | Core API | Contract |
 | --- | --- |
+| `smallest_step`, `never`, `earliest_start`, `forever`, `latest_end` | Constants: the least step between two cycles, a `duration`, and four instants, each a `datetime` (CRUN-3) |
 | `RunConfig` | An ordinary struct: `start: datetime? = null`, `end: datetime? = null`, `length: duration? = null`. Every field has a default |
 | `replay<T>(const items: list<tuple<datetime, delta<T>>>) -> T` | A source of the publications `items` holds |
 | `record<T>(input: T, const key: str)` | A sink that retains each publication of `input` and puts them in the store under `key` at stop |
@@ -34,8 +35,13 @@ ends, and what it gives back.
   code `run.end_and_length`. With neither, a simulation ends when nothing
   is scheduled, and a real-time run when its host stops it.
 - **CRUN-3.** Evaluation time is constant within a cycle, and each cycle's is
-  later than the one before by one microsecond or more: the smallest step.
-  The earliest start is one smallest step after `1970-01-01T00:00:00Z`.
+  later than the one before by one microsecond or more: the smallest step,
+  `smallest_step`. Core names four instants beside it. `never`,
+  `1970-01-01T00:00:00Z`, is before every evaluation time, and `forever`,
+  `2262-04-11T00:00:00Z`, after every one: no cycle runs at either. The
+  earliest start, `earliest_start`, is one smallest step after `never`, and
+  the latest end, `latest_end`, one smallest step before `forever`: a run's
+  start is no earlier than the first and its end no later than the second.
 - **CRUN-4.** In simulation a cycle runs at the next scheduled time without
   waiting, and the run ends when nothing is scheduled before its `end`. The
   same entry, arguments and configuration give the same cycles and the same

@@ -26,6 +26,17 @@ export enum InvalidInputPolicy { identity }
 # The level of a log record (CAP-2).
 export enum LogLevel { debug, info, warning, error }
 
+# The named times of a run (CRUN-3). `smallest_step` is the least by which
+# one cycle's evaluation time follows another's. `never` is before every
+# evaluation time and `forever` after every one: no cycle runs at either.
+# `earliest_start` is the first instant a run may start at, and
+# `latest_end` the last it may end at.
+export const smallest_step: duration = 1us
+export const never: datetime = @1970-01-01T00:00:00Z
+export const earliest_start: datetime = never + smallest_step
+export const forever: datetime = @2262-04-11T00:00:00Z
+export const latest_end: datetime = forever - smallest_step
+
 # What a run is given beside its entry and the entry's arguments (CRUN-2).
 # A null `start` is the earliest start in a simulation and the present in
 # real time. `end` and `length` each say when the run ends, `length`
