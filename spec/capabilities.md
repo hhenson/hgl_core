@@ -59,7 +59,8 @@ dictionary's (the language's ERR-6).
   `put(global_state, key, value)` puts one there. A key keeps the type of
   its first value: a `put` of another type is rejected where the two are in
   one program, and fails otherwise. Reading or writing the store wakes no
-  node and is no temporal input.
+  node and is no temporal input. The key `"run.output"` is the run's
+  (CRUN-8): a program that names it is rejected when its graph is built.
 
 ## Proposed behaviour
 

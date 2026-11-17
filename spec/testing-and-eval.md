@@ -15,29 +15,35 @@ The remaining eval profile and pack mechanics are proposed.
 - **CONF-4.** Ordinary implementation tests remain distinct from portable
   conformance. Target adapters may supply host observations, never new expected
   results. Compiler internals are tested in their implementation project.
-- **CEVAL-1.** Eval wires designated core replay to each temporal input and
-  designated core record to the target output, if present. It binds const
-  arguments once for the run as ordinary values. Imports and overloads
-  cannot replace the designated replay or record.
-- **CEVAL-2.** Each temporal input has a typed replay list of present
-  publications. Each entry pairs its absolute evaluation time with the
-  publication delta for that input's temporal shape. Eval derives all times
-  from a common run origin. A dense placeholder locates any later entries
-  and adds no replay entry or run bound. An empty replay schedules no work.
-  Simulation stops when scheduled work is exhausted (RUN-3).
+- **CEVAL-1.** Eval is a [run](execution.md) of an entry it generates
+  (CRUN-1): core's `replay` wired to each temporal input of the target, and
+  the target's result as the entry's. It binds const arguments once for the
+  run as ordinary values. The run is under `RunConfig()`: a simulation from
+  the earliest start until nothing is scheduled. Imports and overloads
+  cannot replace `replay` or `record`.
+- **CEVAL-2.** Each temporal input of type T has a replay list, a
+  `list<tuple<datetime, delta<T>>>` of its present publications. Each tuple
+  holds the absolute evaluation time and the publication's delta. Times
+  strictly increase within a list and are not before the run's start. Eval
+  derives all times from the run's start: dense position i is the start
+  plus i smallest steps (CRUN-3). A dense placeholder locates any later
+  entries and adds no replay entry or run bound. An empty replay schedules
+  no work.
 - **CEVAL-3.** Replay publishes each scalar entry at its timestamp, including
   repeated values. Silent slots publish nothing. Replay applies collection
   entries under their shape's publication rules.
-- **CEVAL-4.** Record initializes an empty recording at start. Each output
-  publication adds an entry with its evaluation time and an independently
-  retained delta. Later writes leave earlier entries intact.
-- **CEVAL-5.** Each eval creates a fresh run with independent node state and
-  recording. Eval constructs a dense result from that recording under TST-6.
-- **CEVAL-6.** A failed run or a missing required recording makes eval
-  fail. On run failure, eval performs cleanup and reports the failure even
-  if the recorder captured earlier ticks. A successful run with an
-  initialized empty recording yields `[]`. Recorder storage is isolated
-  from program state and supplied seeds.
+- **CEVAL-4.** Record starts with an empty recording. Each publication of
+  its input adds a tuple of the evaluation time and an independently
+  retained delta. Later writes leave earlier tuples intact. At stop it puts
+  the recording in the store under its key, an empty one included.
+- **CEVAL-5.** Each eval is a fresh run with independent node state, store
+  and recording. Its value is the run's output (CRUN-8), written dense
+  under TST-6.
+- **CEVAL-6.** A failed run or a missing recording makes eval fail. The run
+  still stops what started (CRUN-6), and eval reports the failure even if
+  the recorder captured earlier ticks. A run that stops with an empty
+  recording yields `[]`. A program cannot write the recording: its key is
+  the run's (CRUN-8).
 
 ## Eval wiring
 
@@ -46,7 +52,7 @@ flowchart LR
     A[Typed input traces] --> B[Core replay]
     B --> C[Target function]
     C --> D[Core record]
-    D --> E[Owned result and comparison]
+    D --> E[The run's output and comparison]
 ```
 
 The [language specification](https://github.com/hhenson/hgl_spec/blob/main/spec/language/tests-and-eval.md)

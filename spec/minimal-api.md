@@ -24,7 +24,7 @@ operations.
 | Values and types | Typed ordinary values and capability-constrained operations | Preserve type identity, value ownership, and admitted operations |
 | Temporal endpoints | Read values and publication metadata; publish outputs | Preserve validity, deltas, equal ticks, and modification times |
 | Admission and activity | React to admitted input changes; select input activity | Enforce subscriptions and validity guards without inventing ticks |
-| Time and execution | Evaluation time and ordered temporal computation | Define run bounds, cycle order, idle completion, and failure propagation |
+| Time and execution | Evaluation time and ordered temporal computation | Define run bounds, cycle order, idle completion, and failure propagation: [execution](execution.md) |
 | Graph construction | Compose functions and bind typed connections | Validate descriptions and instantiate independent graphs |
 | Lifecycle and state | Start/stop hooks, persistent node state, reconstructible cache | Scope storage, initialization, teardown, and failure cleanup |
 | Scheduling and sources | Future publications and source suspension | Schedule, cancel where admitted, and resume in the defined time order |

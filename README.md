@@ -11,6 +11,7 @@ portable implementations, required native support, and runtime conformance.
 - [Value-function lifting observations](spec/value-function-lifting.md)
 - [Scalar temporal endpoints](spec/temporal-endpoints.md)
 - [Capabilities](spec/capabilities.md)
+- [Execution](spec/execution.md)
 - [Testing and eval contract](spec/testing-and-eval.md)
 - [Language specification](https://github.com/hhenson/hgl_spec)
 - [Open decisions](https://github.com/hhenson/hgl_core/issues/1)
@@ -29,8 +30,9 @@ portable implementations, required native support, and runtime conformance.
 
 [`tests/conformance/`](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/README.md)
 holds the endpoint and eval fixtures. `hgl/core/core.hgl` is the mandatory
-module, `core`: the comparison outcome, the option enums and the symbol
-operators, with HGL wrappers for commutative pairs in reverse operand order.
+module, `core`: the comparison outcome, the option enums, the run
+configuration and the symbol operators, with HGL wrappers for commutative
+pairs in reverse operand order.
 Generic temporal candidates handle same-type addition/subtraction with an
 explicit `invalid` input policy (OPS-9).
 `hgl/native/scalar_operators.hgl` holds the remaining native scalar candidates,
