@@ -12,7 +12,7 @@ ends, and what it gives back.
 
 | Core API | Contract |
 | --- | --- |
-| `RunConfig` | An ordinary struct: `start: datetime? = null`, `end: datetime? = null`. Every field has a default |
+| `RunConfig` | An ordinary struct: `start: datetime? = null`, `end: datetime? = null`, `length: duration? = null`. Every field has a default |
 | `replay<T>(const items: list<tuple<datetime, delta<T>>>) -> T` | A source of the publications `items` holds |
 | `record<T>(input: T, const key: str)` | A sink that retains each publication of `input` and puts them in the store under `key` at stop |
 
@@ -27,8 +27,12 @@ ends, and what it gives back.
 - **CRUN-2.** A `RunConfig` is fixed for its run. `start` is inclusive and
   `end` exclusive: no cycle runs before `start`, and none at or after `end`.
   A null `start` is the earliest start in simulation and the host clock's
-  present time in real time. A null `end` ends a simulation when nothing is
-  scheduled, and a real-time run when its host stops it.
+  present time in real time. `length` gives the end counted from the start
+  the run has, given or not: a run with a `length` ends as one whose `end`
+  is that start and `length` later. A `RunConfig` with both an `end` and a
+  `length` is refused before the run's graph is built, an HGL error with
+  code `run.end_and_length`. With neither, a simulation ends when nothing
+  is scheduled, and a real-time run when its host stops it.
 - **CRUN-3.** Evaluation time is constant within a cycle, and each cycle's is
   later than the one before by one microsecond or more: the smallest step.
   The earliest start is one smallest step after `1970-01-01T00:00:00Z`.

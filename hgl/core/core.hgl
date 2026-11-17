@@ -28,11 +28,14 @@ export enum LogLevel { debug, info, warning, error }
 
 # What a run is given beside its entry and the entry's arguments (CRUN-2).
 # A null `start` is the earliest start in a simulation and the present in
-# real time. A null `end` ends a simulation when nothing is scheduled, and
-# a real-time run when its host stops it.
+# real time. `end` and `length` each say when the run ends, `length`
+# counted from its start, and a run is given at most one of them. With
+# neither, a simulation ends when nothing is scheduled, and a real-time
+# run when its host stops it.
 export struct RunConfig {
     start: datetime? = null
     end: datetime? = null
+    length: duration? = null
 }
 
 # `log` at each level (CAP-2). The native `log` and the capability types
