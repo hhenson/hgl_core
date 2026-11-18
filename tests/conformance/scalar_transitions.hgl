@@ -1,0 +1,159 @@
+module conformance part scalar_transitions
+
+fn nullable_delta_payload(input: i64?) -> i64? {
+    when valid(input) && modified(input) {
+        return delta_value(input).value
+    }
+}
+
+/**
+A nullable scalar delta carries the value published in this cycle.
+Both nulls produce output ticks, including the null after the silent cycle.
+
+:Rules: END-2, END-3
+:Status: agreed
+*/
+test a_published_null_has_a_delta {
+    assert eval(nullable_delta_payload(input: [7, null, _, null, 0])) ==
+        [7, null, _, null, 0]
+}
+
+enum ScalarAction { write_seven, write_null, clear_value }
+
+fn apply_scalar_action(action: ScalarAction) -> i64? {
+    inject out
+    when {
+        if action == .clear_value { invalidate(out) }
+        else if action == .write_null { return null }
+        else { return 7 }
+    }
+}
+
+fn sample_timestamp(sample: bool, watched: i64?) -> datetime? {
+    when modified(sample) && valid([]) { return last_modified(watched) }
+}
+
+fn scalar_timestamp(action: ScalarAction, sample: bool) -> datetime? =>
+    sample_timestamp(sample, apply_scalar_action(action))
+
+/**
+A scalar keeps its publication time through silence, updates it on every
+publication (including equal values and null), and clears it on invalidation.
+The sample input ticks every cycle so the observer also reports invalid times.
+
+:Rules: END-6
+:Status: agreed
+*/
+test last_modified_follows_the_last_publication {
+    let t = earliest_start
+    assert eval(scalar_timestamp(
+        action: [_, .write_seven, _, .write_seven, .clear_value, .write_null],
+        sample: [true, true, true, true, true, true])) ==
+        [null, t + 1us, t + 1us, t + 3us, null, t + 5us]
+}
+
+fn reject_stale_output(value: i64) -> i64 {
+    inject out
+    when {
+        if value > 0 { return value }
+    }
+    stop {
+        let input_time = last_modified(value)
+        let output_time = last_modified(out)
+        if input_time != null && output_time != null && input_time > output_time {
+            let stale = 1 // 0
+        }
+    }
+}
+
+/**
+At stop, an input and the node's output each retain their own publication time.
+Positive inputs are forwarded. A final zero advances only the input time.
+The stop hook signals that the output is older by dividing by zero.
+
+:Rules: END-6, TIME-5, TIME-7
+:Status: agreed
+*/
+test stop_can_distinguish_input_and_output_publication_times {
+    assert eval(reject_stale_output(value: [7, _, 9])) == [7, _, 9]
+    assert raises("numeric.division_by_zero") {
+        eval(reject_stale_output(value: [7, _, 0]))
+    }
+}
+
+fn validity_with_two_handlers(watched: i64, other: bool) -> bool {
+    when modified(watched) && valid([]) { return valid(watched) }
+    when modified(other) && valid([]) { return true }
+}
+
+fn observe_with_two_handlers(command: i64, other: bool) -> bool =>
+    validity_with_two_handlers(produce(command), other)
+
+/**
+An active subscriber sees invalidation even when its node has another handler.
+A positive command publishes and zero invalidates. The second handler's input
+stays idle. Only the first transition to invalid wakes the subscriber.
+
+:Rules: END-4, TIME-3
+:Status: agreed
+*/
+test invalidation_wakes_the_subscribed_handler {
+    assert eval(observe_with_two_handlers(command: [7, 0, 0, 7], other: [])) ==
+        [true, false, _, true]
+}
+
+enum WriteOrder { clear_then_publish, publish_then_clear }
+
+fn write_in_order(order: WriteOrder) -> i64 {
+    inject out
+    when {
+        if order == .clear_then_publish {
+            invalidate(out)
+            out = 7
+        } else {
+            out = 7
+            invalidate(out)
+        }
+    }
+}
+
+fn validity_after_writes(order: WriteOrder) -> bool => watch(write_in_order(order))
+
+/**
+The final write in one evaluation decides whether a scalar output is valid.
+Start with a publication. Reverse the order to end invalid, then recover.
+The validity observer also reports the transition that emits no payload.
+
+:Rules: END-4
+:Status: agreed
+*/
+test the_last_write_decides_validity {
+    assert eval(write_in_order(
+        order: [.clear_then_publish, .publish_then_clear, .clear_then_publish])) ==
+        [7, _, 7]
+    assert eval(validity_after_writes(
+        order: [.clear_then_publish, .publish_then_clear, .clear_then_publish])) ==
+        [true, false, true]
+}
+
+fn write_twice(value: i64) -> i64 {
+    inject out
+    when {
+        out = -1
+        out = value
+    }
+}
+
+fn count_after_two_writes(value: i64) -> i64 => count_publications(write_twice(value))
+
+/**
+Two writes by one producer give its subscriber one evaluation with the final
+value. The counter increments on every evaluation, including a spurious one.
+
+:Rules: END-5, TIME-2
+:Status: agreed
+*/
+test two_writes_deliver_one_publication {
+    assert eval(write_twice(value: [7, 9])) == [7, 9]
+    assert eval(count_after_two_writes(value: [7, 9])) == [1, 2]
+}

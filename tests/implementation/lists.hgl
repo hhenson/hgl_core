@@ -1,13 +1,4 @@
-module conformance part lists
-
-# A node that keeps what it has seen in a cache, and publishes the first.
-fn first_gathered(value: i64) -> i64 {
-    cache seen: list<i64> = []
-    when {
-        append(seen, value)
-        return seen[0]
-    }
-}
+module core_implementation part lists
 
 # LIST-1: an item goes after the last entry, one at a time.
 test append_adds_one_entry_after_the_last {
@@ -35,10 +26,4 @@ test a_value_taken_before_is_as_it_was {
     extend(entries, before)
     assert before == [1, 2]
     assert entries == [1, 2, 3, 1, 2]
-}
-
-# LIST-1, the language's TIME-6: a cache is a place, kept from one
-# evaluation to the next.
-test a_cache_gathers_across_evaluations {
-    assert eval(first_gathered(value: [7, _, 9])) == [7, _, 7]
 }

@@ -1,49 +1,66 @@
-# Runtime conformance cases
+# Runtime conformance
 
-Status: fixtures cover agreed and proposed behavior. The eval contract and
-its runner remain pending.
+Each named HGL test describes an observable runtime rule. The same source,
+stimulus and expected result apply to every backend. Build fixtures from
+ordinary HGL and the public operations of the mandatory core. Core operator
+semantics have their own [implementation tests](../implementation/README.md).
 
-Each file is a part of the test-only module `conformance` (CONF-3). Fixtures
-are private functions that publish or wire their own output.
+## Reading a case
 
-| Part | Test | Rules observed |
-| --- | --- | --- |
-| `identity_arithmetic` | `identity_arithmetic_publications` | OPS-9, END-1, END-5 |
-| `identity_arithmetic` | `identity_arithmetic_invalidates_and_recovers` | OPS-9, END-4 |
-| `identity_arithmetic` | `repeated_invalidation_is_silent` | OPS-9, END-4 |
-| `identity_arithmetic` | `unconfigured_arithmetic_uses_lifting` | OPS-9, FN-6, FN-11 |
-| `identity_arithmetic` | `identity_arithmetic_is_generic` | OPS-9, GEN-7, GEN-16 |
-| `scalar_eval` | `equal_publications_remain_ticks` | CEVAL-3, END-2 (agreed), TST-6 |
-| `scalar_eval` | `replay_preserves_equal_ticks` | CEVAL-3 (agreed), TST-6 |
-| `scalar_eval` | `all_silent_input_is_empty` | CEVAL-2 (agreed), TST-6 |
-| `scalar_eval` | `empty_input_remains_empty` | CEVAL-4 (agreed), TST-6, TST-8 |
-| `scalar_eval` | `leading_silence_locates_a_tick` | CEVAL-2 (agreed), TST-6 |
-| `scalar_eval` | `zero_false_and_empty_text_are_present` | CEVAL-3, END-1, TST-9 |
-| `scalar_eval` | `dense_result_ends_at_last_publication` | END-3, TIME-3, TST-6 |
-| `scalar_eval` | `runs_are_independent` | CEVAL-5 (agreed), TIME-5, TST-6, TST-8 |
-| `mixed_eval` | `mixed_replay` | CEVAL-2 (agreed), TST-6, TST-9. Set delta profile is proposed. |
-| `record_eval` | `record_retains_each_delta` | CEVAL-4 (agreed), TST-6. Set delta profile is proposed. |
-| `record_eval` | `record_can_be_empty` | CEVAL-4 (agreed), TST-6. Set delta profile is proposed. |
-| `failure_eval` | `eval_preserves_failure` | CEVAL-6 (agreed), ERR-5, NUM-9, TST-10 |
-| `scalar_endpoints` | `silence_preserves_validity` | END-1 (agreed), TIME-1, TIME-3 |
-| `scalar_endpoints` | `equal_publication_is_modified_and_idle_is_not` | END-2 (agreed), TIME-3 |
-| `scalar_endpoints` | `retained_value_is_read_without_a_new_tick` | END-1, FN-7, TIME-3 |
-| `scalar_endpoints` | `publish_invalidate_recover` | END-4 (agreed), TIME-3, TST-6 |
-| `scalar_endpoints` | `publication_establishes_validity` | END-1 (agreed), TIME-3, TST-6 |
-| `scalar_endpoints` | `equal_publications_are_modified` | END-2 (agreed), TIME-3, TST-6 |
-| `set_endpoints` | `set_writes_coalesce` | END-5 (agreed), TIME-2, TST-6. Set delta syntax and semantics are proposed. |
-| `lists` | `append_adds_one_entry_after_the_last` | LIST-1 |
-| `lists` | `extend_adds_each_entry_in_order` | LIST-2 |
-| `lists` | `a_value_taken_before_is_as_it_was` | LIST-3, FN-15 |
-| `lists` | `a_cache_gathers_across_evaluations` | LIST-1, TIME-6, TST-6 |
-| `tenors` | `a_tenor_is_its_counts` | TEN-1, TEN-2, TYPE-17 |
-| `tenors` | `the_two_forms_have_no_sum` | TEN-2, TST-10 |
-| `tenors` | `the_order_is_count_by_count` | TEN-3, OPS-3 |
-| `tenors` | `months_end_at_the_months_last_day` | TEN-4 |
-| `tenors` | `business_days_start_from_a_business_day` | TEN-5, TEN-6 |
-| `tenors` | `a_calendar_says_what_a_business_day_is` | TEN-5, EXPR-10 |
-| `tenors` | `a_rule_rolls_to_a_business_day` | TEN-7, TEN-8, EXPR-10 |
-| `tenors` | `a_tenors_text_has_its_largest_units` | TEN-9, OPS-4 |
+Start with the documentation comment immediately above a test, then read
+its assertion. In a dense trace each column is one simulation step:
+`_` means silence, a repeated value means a new publication, and `null`
+means a published null. An invalidation is an action on an endpoint.
+A subscriber can wake for that action even though the endpoint has no
+value to forward.
 
-CEVAL, CONF, END, LIST, NUM, OPS, and TEN rules are in core's `spec/`. ERR, EXPR, FN, GEN,
-TIME, TST, and TYPE rules are in the [language specification](https://github.com/hhenson/hgl_spec).
+A separate probe input lets a test inspect an endpoint on an idle cycle.
+To observe which cycles woke a subscriber, have the subscriber publish a
+marker and leave the probe out of its subscriptions.
+
+## Where to start
+
+| Runtime behavior | Example |
+| --- | --- |
+| Validity, silence and invalidation | [Scalar endpoint observers](scalar_endpoints.hgl) |
+| Notifications and admission | [Input activity](input_activity.hgl) and [handler order](handler_order.hgl) |
+| Fan-in and logical time | [Graph cycles](graph_cycles.hgl) |
+| Node lifetime and shared state | [Run lifecycle](run_lifecycle.hgl) and [run-wide store](run_store.hgl) |
+| Lifted values, fields and collection updates | [Lifted inputs](lifted_inputs.hgl) and [collection ticks](collection_ticks.hgl) |
+| Branch selection and failure propagation | [Conditional graphs](conditional_graphs.hgl) and [captured failures](captured_failures.hgl) |
+| Wakes and source suspension | [Scheduling](scheduled_wakes.hgl) and [source timing](source_timing.hgl) |
+
+## Writing a case
+
+Use an HGL `/** ... */` documentation comment attached to each named test.
+Its first sentence states the observable rule. Explain a fixture or a
+deliberate gap in the input when that helps a reader predict the outcome.
+End the comment with two reStructuredText fields on separate lines:
+
+- `:Rules:` lists the applicable core or language rule IDs, separated by commas.
+- `:Status:` is `agreed` or `proposed`. If a case depends on a proposed
+  profile, use `proposed` and name that dependency in the comment.
+
+The module and test name identify the case. A documentation tool can use
+the attached comment and the HGL assertion together. Keep the literal
+expected trace in the test so a change to a tick is visible in review.
+When existing backend tests describe the same observable behavior, choose
+one small example that distinguishes it.
+
+## Running the cases
+
+From the core checkout, give the runner this checkout's core sources and
+the conformance module. For example, with the hgraph target installed:
+
+```sh
+hgl check hgl tests/conformance
+hgl test hgl tests/conformance --target hgraph
+```
+
+To run one case with its fixtures available, keep both source roots and add
+`--test conformance::a_diamond_settles_before_its_join_runs`.
+
+Report the core revision, compiler, backend and counts of cases passed,
+failed and not run. A missing target capability leaves the expectation
+in place. A backend failure can be narrowed down in its owning project;
+compiler and transpiler regression tests belong with the affected code.
