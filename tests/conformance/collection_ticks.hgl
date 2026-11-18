@@ -1,0 +1,205 @@
+module conformance part collection_ticks
+
+fn adjacent_members(first: i64) -> set<i64> {
+    when { return [first, first + 1] }
+}
+
+const fn sum_members(members: set<i64>) -> i64 {
+    var total: i64 = 0
+    for member in members { total += member }
+    return total
+}
+
+fn total_of_adjacent_members(first: i64) -> i64 =>
+    sum_members(adjacent_members(first))
+
+/**
+Publishing a complete set replaces its previous membership.
+The successive sets are {1, 2}, {2, 3}, and {4, 5}. A lifted helper
+sums all current members, including the 2 shared by the first two sets.
+
+:Rules: TYPE-9, TIME-7, FN-12
+:Status: agreed
+*/
+test a_whole_set_replaces_the_previous_members {
+    assert eval(total_of_adjacent_members(first: [1, 2, _, 4])) == [3, 5, _, 9]
+}
+
+/**
+A lifted helper reads all current set members after an addition or removal.
+Adding 5 to {2, 3} keeps both old members. Removing 2 leaves {3, 5}.
+The replay uses the proposed set-delta publication profile.
+
+:Rules: TYPE-9, TYPE-16, CEVAL-3, FN-12
+:Status: proposed
+*/
+test a_set_delta_changes_only_the_named_members {
+    assert eval(sum_members(members: [
+        delta<set<i64>>(added: [2, 3]),
+        delta<set<i64>>(added: [5]),
+        _,
+        delta<set<i64>>(removed: [2]),
+    ])) == [5, 10, _, 8]
+}
+
+fn list_snapshot(reading: i64?) -> list<i64> {
+    when {
+        if reading == null { return [] }
+        return [1, reading]
+    }
+}
+
+const fn sum_readings(readings: list<i64>) -> i64 {
+    var total: i64 = 0
+    for reading in readings { total += reading }
+    return total
+}
+
+fn total_of_snapshot(reading: i64?) -> i64 => sum_readings(list_snapshot(reading))
+
+/**
+A lifted helper runs on a valid empty list and on each subsequent snapshot.
+The first tick publishes an empty list. The next two snapshots are [1, 2]
+and [1, 5]. The intervening silence has no snapshot to process.
+
+:Rules: TIME-7, FN-6, FN-12
+:Status: agreed
+*/
+test lifting_observes_the_complete_list_including_empty {
+    assert eval(total_of_snapshot(reading: [null, 2, _, 5])) == [0, 3, _, 6]
+}
+
+const fn keep_readings(readings: list<i64>) -> list<i64> => readings
+
+fn read_saved_second(current: list<i64>, save: bool) -> i64 {
+    cache saved: list<i64> = []
+    when modified(save) {
+        if save { saved = current }
+        return saved[1]
+    }
+}
+
+fn observe_saved_readings(save: bool, reading: i64?) -> i64 =>
+    read_saved_second(keep_readings(list_snapshot(reading)), save)
+
+/**
+A retained list returned by a lifted helper keeps its earlier contents.
+Save [1, 2], then change the second reading to 7 and read the stored 2.
+Saving the latest result makes the last read return 7.
+
+:Rules: FN-12, FN-13, TIME-7
+:Status: agreed
+*/
+test a_retained_list_is_independent_of_later_input_changes {
+    assert eval(observe_saved_readings(
+        reading: [   2,     7,    _],
+        save:    [true, false, true],
+    )) ==        [   2,     2,    7]
+}
+
+const fn span(low: i64, high: i64) -> i64 => high - low
+
+fn set_one_position(slot: i64, reading: i64) -> list<i64, 2> {
+    when {
+        let change: delta<list<i64, 2>> = [slot: reading]
+        return change
+    }
+}
+
+fn span_of_pair(slot: i64, reading: i64) -> i64 {
+    let pair = set_one_position(slot, reading)
+    return span(pair[0], pair[1])
+}
+
+/**
+Each required child of a fixed list must be valid before a helper using both can run.
+The low endpoint arrives first. Publishing the high endpoint supplies the
+missing value. A later low tick reuses the retained high endpoint.
+
+:Rules: TYPE-9, TYPE-16, EXPR-7, FN-11
+:Status: agreed
+*/
+test fixed_list_children_become_readable_independently {
+    assert eval(span_of_pair(
+        slot:    [0, 1, _, 0],
+        reading: [3, 8, _, 4],
+    )) ==        [_, 5, _, 4]
+}
+
+struct MarketQuote {
+    bid: i64
+    ask: i64
+}
+
+fn update_quote(is_bid: bool, price: i64) -> MarketQuote {
+    when {
+        if is_bid { return delta<MarketQuote>(bid: price) }
+        return delta<MarketQuote>(ask: price)
+    }
+}
+
+fn bid_ticks(is_bid: bool, price: i64) -> i64 => update_quote(is_bid, price).bid
+
+/**
+A projected struct field follows that child's publications.
+The ask changes by itself on the second cycle. The bid stays silent then
+and publishes when its own value changes on the third cycle.
+
+:Rules: TYPE-9, TYPE-16, EXPR-7
+:Status: agreed
+*/
+test changing_a_sibling_field_does_not_publish_a_bid {
+    assert eval(bid_ticks(
+        is_bid: [true, false, true],
+        price:  [  10,    13,   11],
+    )) ==       [  10,     _,   11]
+}
+
+fn whole_quote(bid: i64, ask: i64) -> atomic<MarketQuote> {
+    when { return MarketQuote(bid: bid, ask: ask) }
+}
+
+fn atomic_bid_ticks(bid: i64, ask: i64) -> i64 => whole_quote(bid, ask).bid
+
+/**
+A field projected from an atomic struct follows each whole-struct publication.
+Only the ask changes in the second quote. The complete quote wakes the
+projection, so the bid publishes 10 a second time.
+
+:Rules: TYPE-9, EXPR-7, END-5
+:Status: agreed
+*/
+test an_atomic_quote_wakes_its_bid_projection {
+    assert eval(atomic_bid_ticks(
+        bid: [10,  _, 11],
+        ask: [12, 13,  _],
+    )) ==    [10, 10, 11]
+}
+
+fn write_quote_fields(bid: i64, ask: i64) -> MarketQuote {
+    inject out
+    when {
+        out = delta<MarketQuote>(bid: 0)
+        out = delta<MarketQuote>(ask: ask)
+        out = delta<MarketQuote>(bid: bid)
+    }
+}
+
+/**
+Writing several struct fields in one evaluation produces one completed delta.
+The proposed struct publication behavior keeps the ask from the middle
+write and the final bid. The temporary bid of zero stays inside the producer.
+
+:Rules: TIME-2, TIME-7, TYPE-16, END-5
+:Status: proposed
+*/
+test a_struct_delta_keeps_the_final_write_to_each_field {
+    assert eval(write_quote_fields(
+        bid: [10, _, 11],
+        ask: [12, _, 14],
+    )) == [
+        delta<MarketQuote>(bid: 10, ask: 12),
+        _,
+        delta<MarketQuote>(bid: 11, ask: 14),
+    ]
+}

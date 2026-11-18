@@ -30,8 +30,8 @@ portable implementations, required native support, and runtime conformance.
 | `tests/conformance/` | Shared runtime cases, fixtures, and expected results |
 | `tests/implementation/` | Ordinary tests of core implementation code |
 
-[`tests/conformance/`](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/README.md)
-holds the endpoint and eval fixtures. `hgl/core/core.hgl` is the mandatory
+[The runtime suite](tests/conformance/README.md) documents observable behavior
+with HGL programs and tick traces. `hgl/core/core.hgl` is the mandatory
 module, `core`: the comparison outcome, the option enums, the run
 configuration and the symbol operators, with HGL wrappers for commutative
 pairs in reverse operand order.
@@ -47,5 +47,5 @@ capability types, logging, scheduling, and the global store's candidates,
 HGL, the candidates that move a date by a tenor.
 Providers implement only those native declarations. `replay` and `record`,
 which an eval's run is wired with, are HGL in `hgl/core/core.hgl`. [Implementation tests](https://github.com/hhenson/hgl_core/blob/main/tests/implementation/README.md) cover
-the wrappers.
+scalar wrappers, identity arithmetic, list operations and tenors.
 A target adapter and eval runner are needed to run the shared expectations.

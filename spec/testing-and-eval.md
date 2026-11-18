@@ -258,7 +258,7 @@ A recorder that borrows a reused delta buffer could return `[D2, _, D2]`.
 | `command: []` | Replay schedules no events. | `[]` |
 | `command: [0]` | `update_members` evaluates once without publishing. | `[]` |
 
-The [core fixtures](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/record_eval.hgl)
+The [core fixtures](https://github.com/hhenson/hgl_core/blob/main/tests/implementation/record_eval.hgl)
 check both cases.
 
 ### Run isolation

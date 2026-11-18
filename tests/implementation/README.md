@@ -1,8 +1,17 @@
 # Core implementation tests
 
-`scalar_operator_wrappers.hgl` checks both operand orders, exact mixed numeric
-comparison, tolerance forwarding, and NaN/signed-zero behavior (NUM-1, NUM-2,
-NUM-4, NUM-5, OPS-1). These are value tests; they need no temporal eval.
+These HGL cases check the behavior of core's operators, portable bodies and eval harness.
 
-Source checking does not execute them. A native provider and test execution
-target are still required to run the assertions.
+| Part | What it checks |
+| --- | --- |
+| `scalar_operator_wrappers` | Operand order, numeric precision, tolerance options and special values |
+| `identity_arithmetic` | Addition and subtraction under the identity policy, ordinary lifting and generic candidates |
+| `lists` | Append, extend and independence of an earlier list value |
+| `dense_traces` | Empty frames, leading and trailing silence, and recording through the last publication |
+| `recorded_ticks` | Absolute recording times for published nullable deltas |
+| `record_eval` | Empty recordings and retention of earlier recorded deltas |
+| `tenors` | Tenor arithmetic, text, calendar extension and rolling rules |
+
+Run `hgl test hgl tests/implementation --target hgraph` from the core checkout
+with that target installed. Shared runtime observations live in
+[the conformance suite](../conformance/README.md).

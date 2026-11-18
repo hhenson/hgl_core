@@ -1,7 +1,8 @@
 # Value-function lifting observations
 
 Status: agreed admission, binding, aggregate, and ownership observations.
-Executable conformance is planned; this document supplies no native API.
+See the [scalar lifting cases](../tests/conformance/lifted_inputs.hgl) and
+[collection cases](../tests/conformance/collection_ticks.hgl).
 
 The [language rules FN-6 and FN-11 through FN-13](https://github.com/hhenson/hgl_spec/blob/main/spec/language/functions-and-phases.md)
 own source interpretation. Core owns the following runtime expectations.
@@ -85,8 +86,8 @@ map it to a non-null value, as in the language's `value_or_zero` illustration.
 
 The language distinguishes `list<f64?>` from `list<f64>?`; type syntax does not
 add a recursive `all_valid` condition to ordinary unsized-list admission.
-Test packaging, replay, and recordings retain their own status. Executable
-conformance remains planned.
+The [input binding cases](../tests/conformance/input_bindings.hgl) cover
+invalidating a previously valid defaulted input.
 
 ## Aggregate validity and retention controls
 
@@ -105,5 +106,5 @@ subsequently changing producer storage.
 A provider-declared view limited to its supplying invocation cannot itself be
 retained beyond that invocation. Source/provider lifetime checking must reject
 such an escape; retaining a permitted independent owning value is accepted.
-These controls introduce no public native/view API. Executable conformance is
-planned.
+The [retained list case](../tests/conformance/collection_ticks.hgl) exercises
+the owning result. The read-only view requires a public provider fixture.

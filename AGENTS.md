@@ -14,7 +14,11 @@
 - Put runtime native declarations in `hgl/native/`; core HGL bodies and required
   native implementation parts in `hgl/core/`. Add target source only as required.
 - Keep portable conformance in `tests/conformance/`; ordinary implementation
-  tests in `tests/implementation/`. Do not claim execution for a document example.
+  tests in `tests/implementation/`. Author shared runtime cases in HGL, using
+  public core surfaces. Attach the rule, status and observable expectation to
+  each case as described in `tests/conformance/README.md`. Core operators and
+  the eval harness have their own implementation tests. Do not claim execution
+  for a document example.
 - Define observable obligations before target symbols or internal layouts.
   Native adapters must preserve shared expected results.
 - Core has no optional-library dependency. Keep the test host's privileges
