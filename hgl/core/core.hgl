@@ -2,11 +2,13 @@ module core
 
 # Core's mandatory module: every module binds its public declarations
 # without a `use` (UNIT-11). Contracts: spec/numeric-operators.md,
-# spec/scalar-operators.md, spec/capabilities.md and
-# spec/temporal-endpoints.md. The native candidates are in
+# spec/scalar-operators.md, spec/capabilities.md,
+# spec/temporal-endpoints.md, spec/list-operations.md and
+# spec/execution.md. The native candidates are in
 # hgl/native/scalar_operators.hgl, the capabilities in
-# hgl/native/capabilities.hgl and the endpoint operations in
-# hgl/native/endpoints.hgl.
+# hgl/native/capabilities.hgl, the endpoint operations in
+# hgl/native/endpoints.hgl and the list operations in
+# hgl/native/lists.hgl.
 
 # The outcome of a full comparison, `<=>` (OPS-3, NUM-6).
 export enum CmpResult { less, equivalent, greater, unordered }
@@ -65,6 +67,27 @@ export const fn log_warning(logger: Logger, message: str) {
 
 export const fn log_error(logger: Logger, message: str) {
     log(logger, .error, message)
+}
+
+# The publications a replay list holds, each at its time (CEVAL-2,
+# CEVAL-3). An eval's run wires one to each temporal input of its target
+# (CEVAL-1).
+export fn replay<T>(const items: list<tuple<datetime, delta<T>>>) -> T {
+    for item in items {
+        yield item[0]: item[1]
+    }
+}
+
+# Each publication of `input`, with its evaluation time, put in the store
+# under `key` at stop (CEVAL-4). A run wires one to its entry's result
+# under the run's key (CRUN-8).
+export fn record<T>(input: T, const key: str) {
+    cache entries: list<tuple<datetime, delta<T>>> = []
+    inject clock, global_state
+    when valid(input) && modified(input) {
+        append(entries, (clock.evaluation_time, delta_value(input)))
+    }
+    stop { put(global_state, key, entries) }
 }
 
 # Ask for a wake on a scheduler or an alarm (CAP-4, CAP-5). `at` is a

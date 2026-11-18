@@ -32,6 +32,10 @@ are private functions that publish or wire their own output.
 | `scalar_endpoints` | `publication_establishes_validity` | END-1 (agreed), TIME-3, TST-6 |
 | `scalar_endpoints` | `equal_publications_are_modified` | END-2 (agreed), TIME-3, TST-6 |
 | `set_endpoints` | `set_writes_coalesce` | END-5 (agreed), TIME-2, TST-6. Set delta syntax and semantics are proposed. |
+| `lists` | `append_adds_one_entry_after_the_last` | LIST-1 |
+| `lists` | `extend_adds_each_entry_in_order` | LIST-2 |
+| `lists` | `a_value_taken_before_is_as_it_was` | LIST-3, FN-15 |
+| `lists` | `a_cache_gathers_across_evaluations` | LIST-1, TIME-6, TST-6 |
 
-CEVAL, CONF, END, NUM, and OPS rules are in core's `spec/`. ERR, FN, GEN, TIME, and TST
+CEVAL, CONF, END, LIST, NUM, and OPS rules are in core's `spec/`. ERR, FN, GEN, TIME, and TST
 rules are in the [language specification](https://github.com/hhenson/hgl_spec).
