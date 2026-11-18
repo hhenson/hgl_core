@@ -21,6 +21,7 @@ export native type Clock {
 export native type Scheduler {
     next_scheduled_time: datetime?
     is_scheduled: bool
+    is_scheduled_now: bool
 }
 
 # `inject alarm` and `inject global_state` (CAP-5, CAP-6). Neither has a
