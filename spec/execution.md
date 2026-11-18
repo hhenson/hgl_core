@@ -56,7 +56,8 @@ ends, and what it gives back.
   store holds what the run's application put there before its run statement
   (the language's UNIT-14), and nothing else: the store of a test's eval is
   then empty. A graph that injects the store puts values there as it is
-  built (the language's FN-9), before any node starts. Nothing outside the
+  built (the language's FN-9), before any node of that graph starts: a
+  graph built while the run is under way does so then. Nothing outside the
   program puts a value there.
 - **CRUN-8.** The output of a run of an entry whose result type is T is a
   `list<tuple<datetime, delta<T>>>` (the language's TST-16): one tuple for
