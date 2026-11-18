@@ -11,7 +11,7 @@ impl const fn business_day(calendar: Closed, day: date) -> bool =>
 # A rolling rule of a library's own: the day as it is.
 struct Unrolled {}
 
-impl const fn roll<C>(rule: Unrolled, calendar: C, day: date) -> date => day
+impl const fn roll<C>(rolling_rule: Unrolled, calendar: C, day: date) -> date => day
 
 const fn summed(lhs: tenor, rhs: tenor) -> tenor => lhs + rhs
 
@@ -98,15 +98,15 @@ test a_calendar_says_what_a_business_day_is {
 # TEN-7, TEN-8: a rolling rule gives the business day a moved date
 # becomes. 2026-01-31 is a Saturday and 2026-02-01 a Sunday.
 test a_rule_rolls_to_a_business_day {
-    assert @2026-01-31 +{rule: Rolling.following} 0D == @2026-02-02
-    assert @2026-01-31 +{rule: Rolling.modified_following} 0D == @2026-01-30
-    assert @2026-01-31 +{rule: Rolling.preceding} 0D == @2026-01-30
-    assert @2026-02-01 +{rule: Rolling.modified_preceding} 0D == @2026-02-02
-    assert @2025-10-31 +{rule: Rolling.modified_following} 3M == @2026-01-30
-    assert @2026-05-01 -{rule: Rolling.following} 3M == @2026-02-02
+    assert @2026-01-31 +{rolling_rule: Rolling.following} 0D == @2026-02-02
+    assert @2026-01-31 +{rolling_rule: Rolling.modified_following} 0D == @2026-01-30
+    assert @2026-01-31 +{rolling_rule: Rolling.preceding} 0D == @2026-01-30
+    assert @2026-02-01 +{rolling_rule: Rolling.modified_preceding} 0D == @2026-02-02
+    assert @2025-10-31 +{rolling_rule: Rolling.modified_following} 3M == @2026-01-30
+    assert @2026-05-01 -{rolling_rule: Rolling.following} 3M == @2026-02-02
     let closed = Closed(day: @2026-02-02)
-    assert @2026-01-31 +{rule: Rolling.following, calendar: closed} 0D == @2026-02-03
-    assert @2026-01-31 +{rule: Unrolled()} 0D == @2026-01-31
+    assert @2026-01-31 +{rolling_rule: Rolling.following, calendar: closed} 0D == @2026-02-03
+    assert @2026-01-31 +{rolling_rule: Unrolled()} 0D == @2026-01-31
 }
 
 # TEN-9: a tenor's text has its largest units.

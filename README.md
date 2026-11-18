@@ -12,6 +12,7 @@ portable implementations, required native support, and runtime conformance.
 - [Scalar temporal endpoints](spec/temporal-endpoints.md)
 - [Capabilities](spec/capabilities.md)
 - [List operations](spec/list-operations.md)
+- [Tenors and calendars](spec/tenor-operations.md)
 - [Execution](spec/execution.md)
 - [Testing and eval contract](spec/testing-and-eval.md)
 - [Language specification](https://github.com/hhenson/hgl_spec)
@@ -39,8 +40,11 @@ explicit `invalid` input policy (OPS-9).
 `hgl/native/scalar_operators.hgl` holds the remaining native scalar candidates,
 each declaring the options it uses. `hgl/native/capabilities.hgl` holds the
 capability types, logging, scheduling, and the global store's candidates,
-`hgl/native/endpoints.hgl` the endpoint operations, and
-`hgl/native/lists.hgl` the operations that give a list more entries.
+`hgl/native/endpoints.hgl` the endpoint operations,
+`hgl/native/lists.hgl` the operations that give a list more entries, and
+`hgl/native/tenors.hgl` a tenor's arithmetic, order, and text.
+`hgl/core/calendar.hgl` has the calendar and rolling-rule operators and, as
+HGL, the candidates that move a date by a tenor.
 Providers implement only those native declarations. `replay` and `record`,
 which an eval's run is wired with, are HGL in `hgl/core/core.hgl`. [Implementation tests](https://github.com/hhenson/hgl_core/blob/main/tests/implementation/README.md) cover
 the wrappers.

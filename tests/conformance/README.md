@@ -36,6 +36,14 @@ are private functions that publish or wire their own output.
 | `lists` | `extend_adds_each_entry_in_order` | LIST-2 |
 | `lists` | `a_value_taken_before_is_as_it_was` | LIST-3, FN-15 |
 | `lists` | `a_cache_gathers_across_evaluations` | LIST-1, TIME-6, TST-6 |
+| `tenors` | `a_tenor_is_its_counts` | TEN-1, TEN-2, TYPE-17 |
+| `tenors` | `the_two_forms_have_no_sum` | TEN-2, TST-10 |
+| `tenors` | `the_order_is_count_by_count` | TEN-3, OPS-3 |
+| `tenors` | `months_end_at_the_months_last_day` | TEN-4 |
+| `tenors` | `business_days_start_from_a_business_day` | TEN-5, TEN-6 |
+| `tenors` | `a_calendar_says_what_a_business_day_is` | TEN-5, EXPR-10 |
+| `tenors` | `a_rule_rolls_to_a_business_day` | TEN-7, TEN-8, EXPR-10 |
+| `tenors` | `a_tenors_text_has_its_largest_units` | TEN-9, OPS-4 |
 
-CEVAL, CONF, END, LIST, NUM, and OPS rules are in core's `spec/`. ERR, FN, GEN, TIME, and TST
-rules are in the [language specification](https://github.com/hhenson/hgl_spec).
+CEVAL, CONF, END, LIST, NUM, OPS, and TEN rules are in core's `spec/`. ERR, EXPR, FN, GEN,
+TIME, TST, and TYPE rules are in the [language specification](https://github.com/hhenson/hgl_spec).

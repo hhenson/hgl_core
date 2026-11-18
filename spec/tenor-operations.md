@@ -1,8 +1,6 @@
 # Tenors and calendars
 
-Status: TEN-1 through TEN-8 are agreed, except two names, which are
-proposed: the option `rule` and the calendar `Weekdays`. TEN-9 is proposed
-where a count is below zero.
+Status: TEN-1 through TEN-9 are agreed.
 
 ## Scope and API
 
@@ -15,7 +13,7 @@ a moved date is rolled onto one.
 | Core API | Contract |
 | --- | --- |
 | `business_day<C>(calendar: C, day: date) -> bool` | An operator. A calendar is any value it has a candidate for |
-| `roll<R, C>(rule: R, calendar: C, day: date) -> date` | An operator. A rolling rule is any value it has a candidate for |
+| `roll<R, C>(rolling_rule: R, calendar: C, day: date) -> date` | An operator. A rolling rule is any value it has a candidate for |
 | `Weekdays` | A struct with no field: the calendar on which every day but a Saturday and a Sunday is a business day |
 | `Rolling` | An enum: `following`, `modified_following`, `preceding`, `modified_preceding` |
 
@@ -58,11 +56,11 @@ are native, in `hgl/native/tenors.hgl`.
   before, and every result is a business day. A count below zero moves the
   other way: `day + (-tenor)` is `day - tenor`.
 - **TEN-7.** A rolling rule says which business day a date becomes. It is
-  any value for which a value `roll(rule, calendar, date) -> date` exists.
-  `+` and `-` of a date and a tenor take one as the option `rule`: the
-  result is `roll(rule, calendar, moved)`, where `moved` is the date the
-  tenor gives (TEN-4, TEN-6) and `calendar` the one the operation has
-  (TEN-5). With no rule the result is `moved`.
+  any value for which a value `roll(rolling_rule, calendar, date) -> date`
+  exists. `+` and `-` of a date and a tenor take one as the option
+  `rolling_rule`: the result is `roll(rolling_rule, calendar, moved)`, where
+  `moved` is the date the tenor gives (TEN-4, TEN-6) and `calendar` the one
+  the operation has (TEN-5). With no rolling rule the result is `moved`.
 - **TEN-8.** `Rolling` has the rules of the second table below, for any
   calendar.
 - **TEN-9.** `convert<str>(tenor)` gives a tenor's text, which uses the
@@ -97,8 +95,8 @@ rolling rule in scope:
 @2026-01-31 + 3M
 @2026-01-02 + 2B
 @2026-01-02 +{calendar: lme} 2B
-@2026-01-31 +{rule: Rolling.modified_following} 3M
-@2026-01-31 +{rule: lme_rolling, calendar: lme} 3M
+@2026-01-31 +{rolling_rule: Rolling.modified_following} 3M
+@2026-01-31 +{rolling_rule: lme_rolling, calendar: lme} 3M
 6M + 6M
 2 * 1Y6M
 1M <=> 45D
@@ -160,19 +158,19 @@ impl const fn business_day(calendar: Holidays, day: date) -> bool =>
 
 struct Unrolled {}
 
-impl const fn roll<C>(rule: Unrolled, calendar: C, day: date) -> date => day
+impl const fn roll<C>(rolling_rule: Unrolled, calendar: C, day: date) -> date => day
 
 const fn settles(trade: date, calendar: Holidays) -> date =>
     trade +{calendar: calendar} 2B
 
 const fn matures(spot: date, calendar: Holidays) -> date =>
-    spot +{rule: Rolling.modified_following, calendar: calendar} 3M
+    spot +{rolling_rule: Rolling.modified_following, calendar: calendar} 3M
 
 test calendars {
     let closed = Holidays(first: @2026-01-05, second: @2026-04-30)
     assert settles(@2026-01-02, closed) == @2026-01-07
     assert matures(@2026-01-30, closed) == @2026-04-29
-    assert @2026-01-31 +{rule: Unrolled()} 0D == @2026-01-31
+    assert @2026-01-31 +{rolling_rule: Unrolled()} 0D == @2026-01-31
 }
 ```
 

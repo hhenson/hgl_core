@@ -15,14 +15,16 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 `datetime`, `date`, `civil_datetime`, or `zoned_datetime`.
 
 - **OPS-1.** The symbol operators admit the operand types of the first table
-  below, beside those of the numeric contract. Every other pairing is a
+  below, beside those of the numeric contract and of the
+  [tenor contract](tenor-operations.md). Every other pairing is a
   source rejection, `operator.no_candidate`. An operation that commutes admits
   its operands in either order; one that does not admits the order shown. A
   division of a duration takes `zero` as NUM-12 says.
 - **OPS-2.** `<`, `<=`, `>`, `>=`, and `<=>` compare two values of one type
   among `str`, `bool`, `date`, `time`, `datetime`, `civil_datetime`, and
   `duration`. `==` and `!=` compare two values of one type. The zoned types
-  have no order: same-instant zoned values need not be equal. Numbers
+  have no order: same-instant zoned values need not be equal. A `tenor`'s
+  order is its own (TEN-3). Numbers
   compare as the numeric contract says, an `i64` with an `f64` included.
   Two structs are equal when they are of one struct with the same generic
   arguments (the language's TYPE-3), and each field is equal as `==` of the
@@ -33,8 +35,8 @@ owns symbol syntax, precedence, and phase checking. An instant is a
   dictionary that holds a NaN is not equal to itself.
 - **OPS-3.** `CmpResult` is the enum of comparison outcomes, with the members
   `less`, `equivalent`, `greater`, and `unordered`. `<=>` returns one
-  (NUM-6). Only a numeric comparison yields `unordered`. The other
-  comparison forms return a bool.
+  (NUM-6). Only a numeric comparison and a tenor's (TEN-3) yield
+  `unordered`. The other comparison forms return a bool.
 - **OPS-4.** `convert<T>(value)` converts a value to the type T. An integer
   literal is an `f64` where one is expected; no other value changes type
   without it. It admits the conversions of the second table below and
@@ -114,6 +116,7 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 | `bytes` | `str` |
 | `date` | `datetime` |
 | `datetime` | `date` |
+| `tenor` | `str` |
 
 | Conversion | Yields |
 | --- | --- |
@@ -126,6 +129,7 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 | `str` to `bytes`, `bytes` to `str` | UTF-8 |
 | `date` to `datetime` | The start of that date, in UTC |
 | `datetime` to `date` | The date of the instant, in UTC |
+| `tenor` to `str` | Its text, in its largest units (TEN-9) |
 
 | Option | Applies to | Members | Default |
 | --- | --- | --- | --- |
