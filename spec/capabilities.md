@@ -15,7 +15,7 @@ operations on it.
 | --- | --- | --- | --- |
 | `logger` | `Logger` | `level: LogLevel` | `log`, `log_debug`, `log_info`, `log_warning`, `log_error` |
 | `clock` | `Clock` | `evaluation_time: datetime`, `now: datetime`, `cycle_time: duration`, `next_cycle_evaluation_time: datetime` | None |
-| `scheduler` | `Scheduler` | `next_scheduled_time: datetime?`, `is_scheduled: bool` | `schedule`, `un_schedule`, `reset` |
+| `scheduler` | `Scheduler` | `next_scheduled_time: datetime?`, `is_scheduled: bool`, `is_scheduled_now: bool` | `schedule`, `un_schedule`, `reset` |
 | `alarm` | `Alarm` | None | `schedule` |
 | `global_state` | `GlobalState` | None | `get`, `has`, `put` |
 
@@ -39,8 +39,12 @@ dictionary's (the language's ERR-6).
 - **CAP-3.** A clock has four properties: `evaluation_time`, `now`, and
   `next_cycle_evaluation_time`, each a `datetime`, and `cycle_time`, a
   `duration`. It has no operation.
-- **CAP-4.** A scheduler has two properties: `next_scheduled_time`, a
-  `datetime?`, and `is_scheduled`, a `bool`. `schedule(scheduler, at)` asks
+- **CAP-4.** A scheduler has three properties: `next_scheduled_time`, a
+  `datetime?`, and `is_scheduled` and `is_scheduled_now`, each a `bool`.
+  `is_scheduled_now` is whether a wake asked of the scheduler is due in the
+  current evaluation, whether or not an input has ticked in it; the
+  language's `scheduled()` is this property in a node that injects a
+  scheduler (TIME-9). `schedule(scheduler, at)` asks
   for a wake: `at` is a `duration` or a `datetime`. It takes a `tag`, a
   `str?` that is null when omitted, and `on_wall_clock`, a `bool` that is
   false when omitted. `un_schedule(scheduler)` and
@@ -50,7 +54,8 @@ dictionary's (the language's ERR-6).
   tracked, moved, or cancelled. `schedule(alarm, at)` asks for a wake, with
   `at` a `duration` or a `datetime`; asking again keeps the earliest. It has
   no property, no tag, no wall clock, and no cancellation. A node injects it
-  in place of `scheduler`, with temporal inputs or none.
+  in place of `scheduler`, with temporal inputs or none. It keeps no record
+  of a wake: the language tells one from the node's inputs (TIME-9).
 - **CAP-6.** The global store is a run-wide store of ordinary values under
   string keys, each fixed when the graph is built (the language's FN-1).
   `get<V>(global_state, key)` is the value under `key`, of the type the call
