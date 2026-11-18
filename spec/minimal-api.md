@@ -18,6 +18,8 @@ The [capability contract](capabilities.md) defines the types of the clock,
 logger, scheduler, alarm, and global store, declared in
 `hgl/native/capabilities.hgl`, with logging, scheduling, and the store's
 operations.
+The [list operations](list-operations.md) `append` and `extend` are declared
+in `hgl/native/lists.hgl`.
 
 | Capability | HGL-facing need | Implementation-facing obligation |
 | --- | --- | --- |

@@ -1,0 +1,44 @@
+module conformance part lists
+
+# A node that keeps what it has seen in a cache, and publishes the first.
+fn first_gathered(value: i64) -> i64 {
+    cache seen: list<i64> = []
+    when {
+        append(seen, value)
+        return seen[0]
+    }
+}
+
+# LIST-1: an item goes after the last entry, one at a time.
+test append_adds_one_entry_after_the_last {
+    var entries: list<i64> = []
+    append(entries, 1)
+    append(entries, 2)
+    append(entries, 2)
+    assert entries == [1, 2, 2]
+}
+
+# LIST-2: every entry of the second list, in its order; none is none.
+test extend_adds_each_entry_in_order {
+    var entries: list<i64> = [1]
+    extend(entries, [2, 3])
+    extend(entries, [])
+    assert entries == [1, 2, 3]
+}
+
+# LIST-3, the language's FN-15: the call assigns the place, and a value
+# taken from it before is as it was.
+test a_value_taken_before_is_as_it_was {
+    var entries: list<i64> = [1, 2]
+    let before = entries
+    append(entries, 3)
+    extend(entries, before)
+    assert before == [1, 2]
+    assert entries == [1, 2, 3, 1, 2]
+}
+
+# LIST-1, the language's TIME-6: a cache is a place, kept from one
+# evaluation to the next.
+test a_cache_gathers_across_evaluations {
+    assert eval(first_gathered(value: [7, _, 9])) == [7, _, 7]
+}

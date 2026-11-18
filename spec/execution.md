@@ -66,28 +66,33 @@ ends, and what it gives back.
 ## Replay and record
 
 `replay` and `record` are ordinary HGL: no native function is theirs alone.
-Illustration, complete module. The bodies say what the two do; they are not
-yet source under `hgl/core`.
+They are source in `hgl/core/core.hgl`:
 
 ```hgl
-module examples.execution
-
-native const fn append<V>(values: list<V>, item: V) -> list<V>
-
-fn replay<T>(const items: list<tuple<datetime, delta<T>>>) -> T {
+export fn replay<T>(const items: list<tuple<datetime, delta<T>>>) -> T {
     for item in items {
         yield item[0]: item[1]
     }
 }
 
-fn record<T>(input: T, const key: str) {
+export fn record<T>(input: T, const key: str) {
     cache entries: list<tuple<datetime, delta<T>>> = []
     inject clock, global_state
     when valid(input) && modified(input) {
-        entries = append(entries, (clock.evaluation_time, delta_value(input)))
+        append(entries, (clock.evaluation_time, delta_value(input)))
     }
     stop { put(global_state, key, entries) }
 }
+```
+
+`replay` is a source that yields each entry at its time. `record` keeps
+its recording in a `cache`, which [`append`](list-operations.md) gives one
+more tuple at each publication.
+
+Illustration, complete module:
+
+```hgl
+module examples.execution
 
 fn positive(value: i64) -> i64 {
     when value > 0 { return value }
