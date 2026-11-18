@@ -80,16 +80,20 @@ owns symbol syntax, precedence, and phase checking. An instant is a
   the language's (TYPE-2): a microsecond. A `duration` or an instant result
   outside its type's range is an HGL error with code `numeric.out_of_range`,
   as an `i64` result is (NUM-2): it neither wraps nor saturates. So is a
-  `duration` multiplied or divided by a NaN or an infinity.
+  `duration` multiplied or divided by a NaN or an infinity. A `date` with a
+  `duration` added or taken away is the `civil_datetime` that far from the
+  start of the date, whatever the duration.
 
 | Operator | Operands | Result |
 | --- | --- | --- |
 | `+` | `str` and `str` | `str` |
 | `+` | `duration` and `duration` | `duration` |
-| `+` | An instant and a `duration`, in either order | The instant's type |
+| `+` | A `datetime`, `civil_datetime`, or `zoned_datetime` and a `duration`, in either order | That instant's type |
+| `+` | `date` and `duration`, in either order | `civil_datetime` |
 | `+` | `date` and `time` | `civil_datetime` |
 | `-` | `duration` less `duration` | `duration` |
-| `-` | An instant less a `duration` | The instant's type |
+| `-` | A `datetime`, `civil_datetime`, or `zoned_datetime` less a `duration` | That instant's type |
+| `-` | `date` less a `duration` | `civil_datetime` |
 | `-` | `datetime` less `datetime`, `date` less `date`, `civil_datetime` less `civil_datetime` | `duration` |
 | `*` | `duration` and `i64` or `f64`, in either order | `duration` |
 | `*` | `str` and `i64`, in either order | `str` |
@@ -171,6 +175,14 @@ an error (OPS-10):
 | `1us / 3`; `2us / 3` | `0us`; `1us` |
 | A duration times an infinity or a NaN | HGL error with code `numeric.out_of_range` |
 | `@9999-12-31T23:59:59Z + 1d` | HGL error with code `numeric.out_of_range` |
+
+A date and a duration give a civil datetime (OPS-1, OPS-10):
+
+| Expression | Result |
+| --- | --- |
+| `@2026-09-03 + 2d`; `2d + @2026-09-03` | `@2026-09-05T00:00` |
+| `@2026-09-03 + 36h` | `@2026-09-04T12:00` |
+| `@2026-09-03 - 1h` | `@2026-09-02T23:00` |
 
 Accepted illustration of equality between values that hold others (OPS-2),
 complete module:
