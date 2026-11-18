@@ -10,7 +10,8 @@ test mixed_numeric_arithmetic {
     assert mul_(real, integer) == 1.0
 }
 
-# OPS-1: the instant's type and zone are retained in either operand order.
+# OPS-1: the instant's type and zone are retained in either operand order,
+# and a date gives a civil datetime (OPS-10).
 test reverse_instant_addition {
     let instant = @2026-09-03T09:30Z
     let day = @2026-09-03
@@ -18,8 +19,10 @@ test reverse_instant_addition {
     let zoned = @2026-09-03T09:30+01:00[Europe/London]
     assert add_(instant, 5m) == @2026-09-03T09:35Z
     assert add_(5m, instant) == @2026-09-03T09:35Z
-    assert add_(day, 24h) == @2026-09-04
-    assert add_(24h, day) == @2026-09-04
+    assert add_(day, 24h) == @2026-09-04T00:00
+    assert add_(24h, day) == @2026-09-04T00:00
+    assert add_(day, 36h) == @2026-09-04T12:00
+    assert sub_(day, 1h) == @2026-09-02T23:00
     assert add_(civil, 5m) == @2026-09-03T09:35
     assert add_(5m, civil) == @2026-09-03T09:35
     assert add_(zoned, 5m) == @2026-09-03T09:35+01:00[Europe/London]

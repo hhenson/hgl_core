@@ -85,15 +85,16 @@ native impl const fn neg_(value: duration) -> duration
 native impl const fn add_(lhs: str, rhs: str) -> str
 native impl const fn add_(lhs: duration, rhs: duration) -> duration
 native impl const fn add_(lhs: datetime, rhs: duration) -> datetime
-native impl const fn add_(lhs: date, rhs: duration) -> date
+native impl const fn add_(lhs: date, rhs: duration) -> civil_datetime
 native impl const fn add_(lhs: civil_datetime, rhs: duration) -> civil_datetime
 native impl const fn add_(lhs: zoned_datetime, rhs: duration) -> zoned_datetime
 native impl const fn add_(lhs: date, rhs: time) -> civil_datetime
 
-# OPS-1: `-`. An instant less a duration; two instants of one type.
+# OPS-1: `-`. An instant less a duration; two instants of one type. A date
+# and a duration give a civil datetime, here and in `+` (OPS-10).
 native impl const fn sub_(lhs: duration, rhs: duration) -> duration
 native impl const fn sub_(lhs: datetime, rhs: duration) -> datetime
-native impl const fn sub_(lhs: date, rhs: duration) -> date
+native impl const fn sub_(lhs: date, rhs: duration) -> civil_datetime
 native impl const fn sub_(lhs: civil_datetime, rhs: duration) -> civil_datetime
 native impl const fn sub_(lhs: zoned_datetime, rhs: duration) -> zoned_datetime
 native impl const fn sub_(lhs: datetime, rhs: datetime) -> duration

@@ -126,7 +126,7 @@ impl const fn mul_(lhs: f64, rhs: i64) -> f64 => mul_(rhs, lhs)
 
 # OPS-1: temporal addition, duration scaling, and string repetition.
 impl const fn add_(lhs: duration, rhs: datetime) -> datetime => add_(rhs, lhs)
-impl const fn add_(lhs: duration, rhs: date) -> date => add_(rhs, lhs)
+impl const fn add_(lhs: duration, rhs: date) -> civil_datetime => add_(rhs, lhs)
 impl const fn add_(lhs: duration, rhs: civil_datetime) -> civil_datetime => add_(rhs, lhs)
 impl const fn add_(lhs: duration, rhs: zoned_datetime) -> zoned_datetime => add_(rhs, lhs)
 impl const fn add_(lhs: time, rhs: date) -> civil_datetime => add_(rhs, lhs)
