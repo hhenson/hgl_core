@@ -49,12 +49,15 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 - **OPS-6.** A conversion yields what the third table below says.
   `convert<list<B>>(values)` is admitted too, where `values` is a `list<A>`
   and the struct `A` inherits from the abstract struct `B`; it yields the same
-  elements.
+  elements. The text of a number is all of the text: nothing stands before or
+  after it, a space among them. The text a number converts to converts back
+  to that number, a NaN to a NaN.
 - **OPS-7.** A conversion is configured as division is (NUM-3, NUM-9).
   Options select how an `f64` is rounded to an `i64` and what a NaN becomes,
   an error or a sentinel value. A conversion can fail: an `f64` that is NaN,
-  an infinity, or outside `i64` once rounded; text that is no literal of the
-  type asked for; bytes that are not well-formed UTF-8. Its error policy is
+  an infinity, or outside `i64` once rounded; text that is not what the
+  third table reads as the type asked for; bytes that are not well-formed
+  UTF-8. Its error policy is
   checked wherever it can be: the conversion then returns `result<T, error>`,
   and a failure is an Err, ordinary result data (NUM-10). A policy under
   which a failure escapes instead is an option.
@@ -124,8 +127,12 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 | `f64` to `i64` | The integer its rounding selects (OPS-7) |
 | `i64` or `f64` to `bool` | False for zero, true otherwise; NaN is true |
 | `bool` to `i64` or `f64` | 0 or 1 |
-| A number or a `bool` to `str` | The text of the literal that denotes the value |
-| `str` to `i64`, `f64`, or `bool` | The value of the literal the text is |
+| `i64` to `str` | Its decimal digits, after a `-` where it is below zero: `42`, `-3` |
+| `f64` to `str` | The shortest decimal text that reads back as the same `f64`, always with a `.` or an exponent, after a `-` where its sign is negative: `3.0`, `0.1`, `-2.5`, `-0.0`. It has an exponent where the number is 1e16 or more, or below 1e-4 and not zero, in size: `1e21`, `1.5e-7`. A NaN is `nan`, and the infinities are `inf` and `-inf` |
+| `bool` to `str` | `true` or `false` |
+| `str` to `i64` | The number the text writes: an integer literal, after one optional `-`: `"42"`, `"-3"`, `"0x1F"`, `"1_000"`. A number outside `i64` fails |
+| `str` to `f64` | The `f64` nearest the number the text writes, a tie to the even one: a float or an integer literal, after one optional `-`: `"2.5"`, `"-1e5"`, `"3"`. One that rounds to an infinity fails, as its literal is rejected (the language's LEX-20). `"nan"` is a NaN, and `"inf"` and `"-inf"` are the infinities |
+| `str` to `bool` | True for `"true"` and false for `"false"` |
 | `str` to `bytes`, `bytes` to `str` | UTF-8 |
 | `date` to `datetime` | The start of that date, in UTC |
 | `datetime` to `date` | The date of the instant, in UTC |
@@ -135,7 +142,7 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 | --- | --- | --- | --- |
 | `rounding` | `f64` to `i64` | `.truncate`, toward zero; `.floor`, toward negative infinity; `.ceiling`, toward positive infinity; `.half_even`, to the nearest, a tie to the even integer; `.half_up`, to the nearest, a tie away from zero; `.half_down`, to the nearest, a tie toward zero | `.truncate` |
 | `nan` | `f64` to `i64` | An `i64?`: the value a NaN converts to. Null leaves a NaN to `invalid` | null |
-| `invalid` | Every conversion that can fail (OPS-7) | `.error`: the conversion returns `result<T, error>`, and a failure is an Err carrying error code `convert.invalid`. `.fail`: it returns T, and a failure is an escaping HGL error | `.error` |
+| `invalid` | Every conversion that can fail (OPS-7) | `.error`: the conversion returns `result<T, error>`, and a failure is an Err carrying error code `convert.invalid`. `.fail`: it returns T, and a failure is an escaping HGL error with that code | `.error` |
 
 | Valid inputs under `invalid: .identity` (OPS-9) | Addition | Subtraction |
 | --- | --- | --- |
