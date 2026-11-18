@@ -69,10 +69,14 @@ export const fn log_error(logger: Logger, message: str) {
     log(logger, .error, message)
 }
 
+# `replay` and `record` are a run's own (CEVAL-1, CRUN-8). They are not
+# exported: a run wires them, and no module names them, so a program may
+# use either name for a declaration of its own.
+
 # The publications a replay list holds, each at its time (CEVAL-2,
 # CEVAL-3). An eval's run wires one to each temporal input of its target
 # (CEVAL-1).
-export fn replay<T>(const items: list<tuple<datetime, delta<T>>>) -> T {
+fn replay<T>(const items: list<tuple<datetime, delta<T>>>) -> T {
     for item in items {
         yield item[0]: item[1]
     }
@@ -81,7 +85,7 @@ export fn replay<T>(const items: list<tuple<datetime, delta<T>>>) -> T {
 # Each publication of `input`, with its evaluation time, put in the store
 # under `key` at stop (CEVAL-4). A run wires one to its entry's result
 # under the run's key (CRUN-8).
-export fn record<T>(input: T, const key: str) {
+fn record<T>(input: T, const key: str) {
     cache entries: list<tuple<datetime, delta<T>>> = []
     inject clock, global_state
     when valid(input) && modified(input) {

@@ -66,16 +66,18 @@ ends, and what it gives back.
 ## Replay and record
 
 `replay` and `record` are ordinary HGL: no native function is theirs alone.
-They are source in `hgl/core/core.hgl`:
+They are source in `hgl/core/core.hgl`, and are not exported: a run wires
+them, and no module names them. A program may so use either name for a
+declaration of its own.
 
 ```hgl
-export fn replay<T>(const items: list<tuple<datetime, delta<T>>>) -> T {
+fn replay<T>(const items: list<tuple<datetime, delta<T>>>) -> T {
     for item in items {
         yield item[0]: item[1]
     }
 }
 
-export fn record<T>(input: T, const key: str) {
+fn record<T>(input: T, const key: str) {
     cache entries: list<tuple<datetime, delta<T>>> = []
     inject clock, global_state
     when valid(input) && modified(input) {
@@ -98,13 +100,17 @@ fn positive(value: i64) -> i64 {
     when value > 0 { return value }
 }
 
-# The entry generated for eval(positive(value: [7, _, 0, 9, _])).
-fn wired_positive(const value: list<tuple<datetime, delta<i64>>>) -> i64 {
-    positive(replay<i64>(value))
-}
-
 test silent_ticks {
     assert eval(positive(value: [7, _, 0, 9, _])) == [7, _, _, 9]
+}
+```
+
+The entry the eval generates is this graph, which the run writes and no
+module does: `replay` is the run's to name.
+
+```hgl
+fn wired_positive(const value: list<tuple<datetime, delta<i64>>>) -> i64 {
+    positive(replay<i64>(value))
 }
 ```
 
