@@ -8,6 +8,13 @@ struct Closed {
 impl const fn business_day(calendar: Closed, day: date) -> bool =>
     day != calendar.day && business_day(Weekdays(), day)
 
+# A calendar with one business day.
+struct Only {
+    day: date
+}
+
+impl const fn business_day(calendar: Only, day: date) -> bool => day == calendar.day
+
 # A rolling rule of a library's own: the day as it is.
 struct Unrolled {}
 
@@ -107,6 +114,13 @@ test a_rule_rolls_to_a_business_day {
     let closed = Closed(day: @2026-02-02)
     assert @2026-01-31 +{rolling_rule: Rolling.following, calendar: closed} 0D == @2026-02-03
     assert @2026-01-31 +{rolling_rule: Unrolled()} 0D == @2026-01-31
+    # A rule looks only the way it needs: this calendar has no business
+    # day before its one, and none after it.
+    let only = Only(day: @2026-01-05)
+    assert @2026-01-03 +{rolling_rule: Rolling.following, calendar: only} 0D == @2026-01-05
+    assert @2026-01-07 +{rolling_rule: Rolling.preceding, calendar: only} 0D == @2026-01-05
+    assert @2026-01-03 +{rolling_rule: Rolling.modified_following, calendar: only} 0D == @2026-01-05
+    assert @2026-01-07 +{rolling_rule: Rolling.modified_preceding, calendar: only} 0D == @2026-01-05
 }
 
 # TEN-9: a tenor's text has its largest units.

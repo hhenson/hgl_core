@@ -120,17 +120,18 @@ impl const fn sub_<R, C>(lhs: date, rhs: tenor, rolling_rule: R, calendar: C) ->
 # TEN-2: a tenor scaled, in the other order.
 impl const fn mul_(lhs: i64, rhs: tenor) -> tenor => mul_(rhs, lhs)
 
-# TEN-8: core's rolling rules, on any calendar.
+# TEN-8: core's rolling rules, on any calendar. Each looks only the way
+# its rule needs: a calendar may have no business day the other way.
 impl const fn roll<C>(rolling_rule: Rolling, calendar: C, day: date) -> date
     requires business_day(C, date) -> bool {
-    let after = on_or_after(day, calendar)
-    let before = on_or_before(day, calendar)
-    if rolling_rule == .following { return after }
-    if rolling_rule == .preceding { return before }
+    if rolling_rule == .following { return on_or_after(day, calendar) }
+    if rolling_rule == .preceding { return on_or_before(day, calendar) }
     if rolling_rule == .modified_following {
+        let after = on_or_after(day, calendar)
         if same_month(after, day) { return after }
-        return before
+        return on_or_before(day, calendar)
     }
+    let before = on_or_before(day, calendar)
     if same_month(before, day) { return before }
-    return after
+    return on_or_after(day, calendar)
 }
