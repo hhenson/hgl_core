@@ -16,10 +16,11 @@ owns endpoint interpretation, handler selection, and phase admission.
 | `modified(value)` | bool; whether the endpoint published in the current cycle |
 | Runtime parameter payload | T; requires readable valid input, subject to declared nullable/default argument binding |
 | `delta_value(value)` | `delta<T>` (the language's TYPE-16): T for a scalar input, and for a nullable scalar the optional that holds what was published; see END-3 |
+| `is_active(input)` | bool; current activity of this direct input, including while invalid |
 | `last_modified(value)` | Agreed `datetime?`; see END-6 |
 
 `valid`, `modified`, `delta_value`, `last_modified`, `invalidate`,
-`activate`, and `passivate` are declared in `hgl/native/endpoints.hgl` as
+`is_active`, `activate`, and `passivate` are declared in `hgl/native/endpoints.hgl` as
 native value functions that take the endpoint and not its payload, an
 `endpoint<T>` (the language's TIME-9). Runtime metadata reads create no graph
 nodes. Composition forms and empty/multi-argument handler
@@ -50,7 +51,12 @@ selectors follow the language contract rather than this one-endpoint table.
   value repeats. Further writes to the already modified endpoint in the same
   evaluation update its publication without notifying again. A downstream
   node runs at most once per cycle and reads the completed value and delta.
-  Active and passive inputs read the same endpoint state.
+  Activity belongs to each input binding and controls whether it schedules
+  its node. When the node runs, a publication on a passive input still
+  satisfies `modified(input)` in that cycle. `is_active(input)` returns
+  the current activity of the receiving node's direct input. A handler
+  that requires both writes `when modified(input) && is_active(input)`.
+  Active and passive inputs read the same validity, payload and delta.
 - **END-6.** `last_modified(value)` returns `datetime?`. It returns null while
   the endpoint is invalid, including before its first publication and after
   invalidation. While valid, it returns the retained publication's UTC

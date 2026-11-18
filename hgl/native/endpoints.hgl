@@ -1,7 +1,7 @@
 module core part endpoints
 
 # The operations on an endpoint (the language's TIME-9): each takes the
-# endpoint of a temporal input, or of `out`, and not its payload. Contract:
+# endpoint itself. Activity belongs to the receiving node's input. Contract:
 # spec/temporal-endpoints.md.
 
 # END-1, END-4: whether the endpoint holds a payload.
@@ -20,6 +20,7 @@ export native const fn last_modified<T>(input: endpoint<T>) -> datetime?
 # END-4: clear validity, modification, payload, and delta.
 export native const fn invalidate<T>(input: endpoint<T>)
 
-# The language's TIME-9: select a direct temporal input's activity.
+# END-5, TIME-9: read or change the receiving node's direct input activity.
+export native const fn is_active<T>(input: endpoint<T>) -> bool
 export native const fn activate<T>(input: endpoint<T>)
 export native const fn passivate<T>(input: endpoint<T>)
