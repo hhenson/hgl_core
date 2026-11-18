@@ -42,8 +42,9 @@ selectors follow the language contract rather than this one-endpoint table.
   null is `delta<i64?>()` for an `i64?` endpoint, and is no absent delta.
   The checker must prove `x` is valid and modified at the call.
 - **END-4.** Invalidation clears validity, modification, payload, and delta.
-  The transition to invalid notifies active subscribers. Each handler's
-  validity requirements still apply. Repeated invalidation while invalid is
+  The transition to invalid notifies active subscribers. A node awakened by
+  it can observe the invalid input in `when valid([])`. An explicit
+  `modified(input)` guard is false on that transition, even on an active input. Repeated invalidation while invalid is
   silent. Within a producer evaluation the last action determines the state:
   publish then invalidate leaves the endpoint invalid. Invalidate then publish
   leaves it valid and modified.

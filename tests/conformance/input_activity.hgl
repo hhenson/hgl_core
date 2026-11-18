@@ -119,7 +119,7 @@ test activity_belongs_to_the_binding {
     assert eval(compare_bindings(value: [7, _, 7])) == [true, _, true]
 }
 
-fn count_notifications(control: bool, data: i64, sample: bool) -> i64 {
+fn count_publications_when_sampled(control: bool, data: i64, sample: bool) -> i64 {
     state count: i64 = 0
     when modified(control) && valid(control) {
         if control { activate(data) }
@@ -130,12 +130,12 @@ fn count_notifications(control: bool, data: i64, sample: bool) -> i64 {
 }
 
 fn sample_notifications(control: bool, command: i64, sample: bool) -> i64 =>
-    count_notifications(control, produce(command), sample)
+    count_publications_when_sampled(control, produce(command), sample)
 
 /**
 An idle sample cannot turn an earlier passive invalidation into a new notification.
-Zero clears the data endpoint between samples. After reactivation a publication
-and an active invalidation each count once before the final sample.
+Zero clears the data endpoint between samples. After reactivation only the
+publication of 9 increments the count. The final zero invalidates it again.
 
 :Rules: END-2, END-4, END-5, TIME-3
 :Status: agreed
@@ -145,5 +145,38 @@ test a_later_probe_does_not_replay_a_passive_invalidation {
         control: [true, false, _,    _, true, _, _,    _],
         command: [   7,     _, 0,    _,    _, 9, 0,    _],
         sample:  [true,  true, _, true, true, _, _, true],
-    )) ==        [   1,     1, _,    1,    1, _, _,    3]
+    )) ==        [   1,     1, _,    1,    1, _, _,    2]
+}
+
+fn describe_notification(control: bool, data: i64, sample: bool) -> str {
+    when modified(control) && valid(control) {
+        if control { activate(data) }
+        else { passivate(data) }
+    }
+    when modified(data) && valid([]) { return "data handler" }
+    when modified(sample) && valid(sample) {
+        if modified(data) { return "modified" }
+        if valid(data) { return "valid" }
+        return "invalid"
+    }
+}
+
+fn probe_clear(control: bool, command: i64, sample: bool) -> str =>
+    describe_notification(control, produce(command), sample)
+
+/**
+Invalidating a passive input on a probe tick leaves its modification guard false.
+The probe sees a valid retained 7 after passivation. When zero clears the
+endpoint, the data handler skips and the probe sees invalid, unmodified data.
+A new publication on the following probe does reach the data handler.
+
+:Rules: END-2, END-4, END-5, TIME-3
+:Status: agreed
+*/
+test a_passive_invalidation_is_visible_but_unmodified_on_a_probe {
+    assert eval(probe_clear(
+        control: [          true,   false,         _,              _],
+        command: [             7,       _,         0,              9],
+        sample:  [          true,    true,      true,           true],
+    )) ==        ["data handler", "valid", "invalid", "data handler"]
 }

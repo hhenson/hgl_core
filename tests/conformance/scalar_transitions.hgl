@@ -81,25 +81,52 @@ test stop_can_distinguish_input_and_output_publication_times {
     }
 }
 
-fn validity_with_two_handlers(watched: i64, other: bool) -> bool {
-    when modified(watched) && valid([]) { return valid(watched) }
-    when modified(other) && valid([]) { return true }
+fn mark_publication(watched: i64) -> bool {
+    when modified(watched) && valid([]) { return true }
 }
 
-fn observe_with_two_handlers(command: i64, other: bool) -> bool =>
-    validity_with_two_handlers(produce(command), other)
+fn mark_produced_publications(command: i64) -> bool =>
+    mark_publication(produce(command))
 
 /**
-An active subscriber sees invalidation even when its node has another handler.
-A positive command publishes and zero invalidates. The second handler's input
-stays idle. Only the first transition to invalid wakes the subscriber.
+A single handler guarded by modified(watched) skips an active input's invalidation.
+Zero clears the input. The guard checks for a publication even though the
+handler has no validity requirement. Publishing 7 again supplies its next tick.
 
-:Rules: END-4, TIME-3
+:Rules: END-2, END-4, TIME-3
 :Status: agreed
 */
-test invalidation_wakes_the_subscribed_handler {
-    assert eval(observe_with_two_handlers(command: [7, 0, 0, 7], other: [])) ==
-        [true, false, _, true]
+test a_single_modified_guard_skips_invalidation {
+    assert eval(mark_produced_publications(command: [7, 0, 0, 7])) ==
+        [true, _, _, true]
+}
+
+fn describe_wake(watched: i64, other: bool) -> str {
+    when modified(watched) && valid([]) { return "data tick" }
+    when modified(other) && valid([]) { return "other tick" }
+    when valid([]) {
+        if !valid(watched) { return "data invalid" }
+    }
+}
+
+fn describe_produced_wake(command: i64, other: bool) -> str =>
+    describe_wake(produce(command), other)
+
+/**
+Active invalidation wakes the node with the cleared endpoint unmodified.
+On the first zero, the handler with valid([]) observes the cleared input.
+The second zero stays silent.
+After recovery, another zero coincides with an actual tick on the other input.
+That input's modification guard runs.
+
+:Rules: END-2, END-4, TIME-2, TIME-3
+:Status: agreed
+*/
+test an_active_invalidation_wakes_the_node_without_a_data_tick {
+    assert eval(describe_produced_wake(
+        command: [          7,              0, 0,           9,            0],
+        other:   [          _,              _, _,           _,         true],
+    )) ==        ["data tick", "data invalid", _, "data tick", "other tick"]
 }
 
 enum WriteOrder { clear_then_publish, publish_then_clear }
