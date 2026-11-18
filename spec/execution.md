@@ -52,9 +52,10 @@ ends, and what it gives back.
   reverse of the order they started in. A failure names its node and its
   phase: construction, start, evaluation or stop. A run that failed has no
   output.
-- **CRUN-7.** A run has one store (CAP-6), which is empty when its graph is
-  built. Nothing outside the program puts a value there: an entry is
-  configured by its `const` arguments.
+- **CRUN-7.** A run has one store (CAP-6). When its graph is built the store
+  holds what the run's application put there before its run statement (the
+  language's UNIT-14), and nothing else: the store of a test's eval is empty.
+  Nothing outside the program puts a value there.
 - **CRUN-8.** The output of a run of an entry whose result type is T is a
   `list<tuple<datetime, delta<T>>>` (the language's TST-16): one tuple for
   each publication of the result, in time order, holding the evaluation time
