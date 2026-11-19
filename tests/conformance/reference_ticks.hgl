@@ -19,14 +19,14 @@ test switching_keys_follows_the_new_child {
     )) ==            [  7,   _,  20,   _,  21]
 }
 
-fn pick_reference(flag: bool, low: ref<i64>, high: ref<i64>) -> ref<i64> {
+fn pick_reference(flag: bool, ref low: i64, ref high: i64) -> ref i64 {
     when modified(flag) {
         if flag { return high }
         return low
     }
 }
 
-fn count_designations(target: ref<i64>) -> i64 {
+fn count_designations(ref target: i64) -> i64 {
     state count: i64 = 0
     when {
         count += 1
@@ -39,11 +39,11 @@ fn designation_changes(flag: bool, low: i64, high: i64) -> i64 =>
 
 /**
 A reference published again with the same designation does not tick its reader.
-Each `ref<i64>` input is given a connection of `i64`. The flag picks the
-high input twice, then the low one: the reader counts two designations.
-A later tick of the low input, its target, does not wake it.
+Each `ref` parameter of `i64` is given a connection of `i64`. The flag
+picks the high input twice, then the low one: the reader counts two
+designations. A later tick of the low input, its target, does not wake it.
 
-:Rules: TIME-10, TYPE-12, END-10
+:Rules: TIME-10, FN-16, END-10
 :Status: agreed
 */
 test a_reference_published_again_does_not_tick_its_reader {
@@ -52,6 +52,40 @@ test a_reference_published_again_does_not_tick_its_reader {
         low:  [   1,    _,     _, 4],
         high: [   2,    _,     _, _],
     )) ==     [   1,    _,     2]
+}
+
+fn route_item<T>(idx: i64, items: list<T, 3>) -> ref T {
+    when modified(idx) { return items[idx] }
+}
+
+fn set_one_item(slot: i64, reading: i64) -> list<i64, 3> {
+    when { return delta<list<i64, 3>>(updated: [slot: reading]) }
+}
+
+fn follow_item(item: i64) -> i64 {
+    when { return item }
+}
+
+fn follow_routed_item(idx: i64, slot: i64, reading: i64) -> i64 =>
+    follow_item(route_item(idx, set_one_item(slot, reading)))
+
+/**
+A `ref` result designates the list's element it names, and its reader follows that element.
+`items` is no `ref` parameter, and `route_item` subscribes to `idx` alone. While
+`idx` is 1, a tick of element 1 reaches the reader and one of element 0
+does not. `idx` then selects element 2, which has not published: the
+reader is silent until it does. The last switch, to element 0, lands with
+that element's tick.
+
+:Rules: FN-16, TIME-1, TIME-3, TIME-10, END-10
+:Status: agreed
+*/
+test a_ref_result_follows_the_element_it_designates {
+    assert eval(follow_routed_item(
+        idx:     [ 1,  _,  _, 2,  _,  0],
+        slot:    [ 1,  1,  0, _,  2,  0],
+        reading: [20, 21, 10, _, 30, 11],
+    )) ==        [20, 21,  _, _, 30, 11]
 }
 
 fn sample_selection(use_left: bool, left: i64, right: i64, probe: bool) -> i64 {

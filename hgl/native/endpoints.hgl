@@ -5,7 +5,8 @@ module core part endpoints
 # spec/temporal-endpoints.md.
 
 # END-1, END-4, END-7, END-9: whether the endpoint holds a payload, and for
-# a window whether it holds a value.
+# a window whether it holds a value. END-10, proposed: for a `ref`
+# parameter, whether it designates something.
 export native const fn valid<T>(input: endpoint<T>) -> bool
 
 # END-7: whether every element, field or entry of a list, tuple, struct
@@ -18,10 +19,13 @@ export native const fn all_valid<T>(input: endpoint<T>) -> bool
 export native const fn modified<T>(input: endpoint<T>) -> bool
 
 # END-3: what the endpoint published in the current cycle (the language's
-# TYPE-16): the value itself for a scalar.
+# TYPE-16): the value itself for a scalar. A `ref` parameter is not given
+# to it (the language's FN-16).
 export native const fn delta_value<T>(input: endpoint<T>) -> delta<T>
 
 # END-6: when the retained publication was made; null while invalid.
+# END-10, proposed: for a `ref` parameter, when its designation last
+# changed.
 export native const fn last_modified<T>(input: endpoint<T>) -> datetime?
 
 # END-4: clear validity, modification, payload, and delta.
