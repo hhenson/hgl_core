@@ -195,3 +195,35 @@ test a_wake_before_now_is_dropped {
     assert eval(wake_in_the_past(value: [7, _, 9])) == ["asked", _, "asked"]
     assert eval(alarm_in_the_past(value: [7, _, 9])) == ["asked", _, "asked"]
 }
+
+fn due_after_reset() -> bool {
+    inject scheduler
+    start {
+        schedule(scheduler, 1us, tag: "first")
+        schedule(scheduler, 3us, tag: "second")
+    }
+    when scheduled() {
+        reset(scheduler)
+        return scheduler.is_scheduled_now
+    }
+}
+
+# The values a trace of a bool result holds, whenever each was published.
+const fn published(seen: list<tuple<datetime, bool>>) -> list<bool> {
+    var values: list<bool> = []
+    for tick in seen { append(values, tick[1]) }
+    return values
+}
+
+/**
+After `reset` inside a wake, `is_scheduled_now` stays true for the rest of that wake.
+Two wakes are asked for in `start`. The first resets the scheduler, which
+cancels the second, and then reads the property. The run publishes once,
+true, wherever the wake lands.
+
+:Rules: CAP-4, TIME-9, TST-16
+:Status: agreed
+*/
+test a_wake_stays_due_after_a_reset_inside_it {
+    assert published(eval(due_after_reset())) == [true]
+}

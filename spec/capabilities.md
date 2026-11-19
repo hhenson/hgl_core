@@ -42,9 +42,10 @@ dictionary's (the language's ERR-6).
 - **CAP-4.** A scheduler has three properties: `next_scheduled_time`, a
   `datetime?`, and `is_scheduled` and `is_scheduled_now`, each a `bool`.
   `is_scheduled_now` is whether a wake asked of the scheduler is due in the
-  current evaluation, whether or not an input has ticked in it; the
-  language's `scheduled()` is this property in a node that injects a
-  scheduler (TIME-9). `schedule(scheduler, at)` asks
+  current evaluation, whether or not an input has ticked in it, and it
+  stays true for the rest of that evaluation after `un_schedule` or `reset`
+  in it; the language's `scheduled()` is this property in a node that
+  injects a scheduler (TIME-9). `schedule(scheduler, at)` asks
   for a wake: `at` is a `duration` or a `datetime`. It takes a `tag`, a
   `str?` that is null when omitted, and `on_wall_clock`, a `bool` that is
   false when omitted. `un_schedule(scheduler)` and
