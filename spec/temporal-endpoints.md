@@ -8,7 +8,7 @@ begins "Proposed:", which is proposed.
 This slice covers owned scalar outputs and fixed, directly bound scalar
 inputs during evaluation. Nullable scalar values are included. END-7 gives
 the validity of a collection, END-8 the read of its child, END-9 a window's
-readiness and exits, and END-10 when a reference ticks. Other collection
+readiness and what it holds, and END-10 when a reference ticks. Other collection
 observations, the rest of a reference's contract, sampled/rebound inputs,
 and source scheduling have their separate contracts. The [language temporal model](https://github.com/hhenson/hgl_spec/blob/main/spec/language/temporal-model.md)
 owns endpoint interpretation, handler selection, and phase admission.
@@ -119,9 +119,9 @@ selectors follow the language contract rather than this one-endpoint table.
   count, that many values; of a duration, values whose arrival times span
   at least the minimum, from the oldest held to the newest. A read of its
   value before it is all valid fails. In a window of a duration, a value
-  that arrived at t is held while the evaluation time is at most t plus the
-  maximum, and leaves a microsecond later whether or not a value arrives
-  then; the exit notifies the window's subscribers. The
+  is still held when its age is the maximum, and one older leaves when the
+  next value arrives, and not before. An exit is no tick and notifies no
+  subscriber. A minimum of zero is read as the maximum. The
   [window cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/window_ticks.hgl)
   check a window of ticks. The read gives a `list<V>` of the values held,
   oldest first, and fails with `value.unset_read`.
