@@ -373,3 +373,146 @@ test a_tuple_is_valid_once_one_position_is_and_all_valid_once_both_are {
         value: [   _,    3,    _,     8],
     )) == [[false, false], [true, false], [true, false], [true, true]]
 }
+
+fn relay_quote(quote: MarketQuote) -> MarketQuote {
+    when all_valid(quote) { return quote }
+}
+
+/**
+A whole struct is a trace cell, for an input and for an expectation.
+The first input cell publishes the quote whole and the third its ask alone.
+Each expectation cell is written whole and is compared with the quote the
+result holds after its cycle.
+
+:Rules: TST-5, TST-9, TIME-7, TIME-9
+:Status: agreed
+*/
+test a_whole_struct_is_a_trace_cell {
+    assert eval(relay_quote(quote: [
+        MarketQuote(bid: 10, ask: 12),
+        _,
+        delta<MarketQuote>(ask: 13),
+    ])) == [
+        MarketQuote(bid: 10, ask: 12),
+        _,
+        MarketQuote(bid: 10, ask: 13),
+    ]
+}
+
+fn relay_book(book: dict<str, i64>) -> dict<str, i64> {
+    when all_valid(book) { return book }
+}
+
+/**
+A whole dictionary is a trace cell, and replaces the entries the input held.
+The third cell holds only the bid, so the ask is gone from the input and
+from the relayed result.
+
+:Rules: TST-5, TST-9, TIME-7, TIME-9
+:Status: agreed
+*/
+test a_whole_dictionary_is_a_trace_cell {
+    assert eval(relay_book(book: [
+        ["bid": 10, "ask": 12],
+        _,
+        ["bid": 11],
+    ])) == [
+        ["bid": 10, "ask": 12],
+        _,
+        ["bid": 11],
+    ]
+}
+
+fn read_slot(pair: list<i64, 2>, slot: i64) -> i64 {
+    when { return pair[slot] }
+}
+
+fn slot_of_pair(position: i64, reading: i64, slot: i64) -> i64 =>
+    read_slot(set_one_position(position, reading), slot)
+
+/**
+A read of a child that is not valid, at an index known only when it runs, fails.
+Position 0 alone publishes, as 3. Reading it gives 3; reading position 1,
+which has never published, fails the run with `value.unset_read`.
+
+:Rules: TIME-1, ERR-14, END-8, CEVAL-6
+:Status: agreed
+*/
+test reading_an_invalid_child_at_a_runtime_index_fails {
+    assert eval(slot_of_pair(position: [0], reading: [3], slot: [0])) == [3]
+    assert raises("value.unset_read") {
+        eval(slot_of_pair(position: [0, _], reading: [3, _], slot: [0, 1]))
+    }
+}
+
+fn checked_slot(pair: list<i64, 2>, slot: i64) -> result<i64, error> {
+    when { return pair[slot] }
+}
+
+const fn outcome_code(outcome: result<i64, error>) -> str {
+    if is_ok(outcome) { return "ok" }
+    let code = outcome.error.code
+    if code == null { return "no code" }
+    return code
+}
+
+fn slot_outcome(position: i64, reading: i64, slot: i64) -> str =>
+    outcome_code(checked_slot(set_one_position(position, reading), slot))
+
+/**
+A `result` accepts the read of a child that is not valid as an error.
+The same stimulus as the previous case: reading position 1 gives an error
+coded `value.unset_read`, and the node does not fail.
+
+:Rules: TIME-1, ERR-14, END-8
+:Status: agreed
+*/
+test a_result_accepts_the_read_of_an_invalid_child {
+    assert eval(slot_outcome(
+        position: [0, _],
+        reading:  [3, _],
+        slot:     [0, 1],
+    )) ==         ["ok", "value.unset_read"]
+}
+
+fn reduce_readings(count: i64) -> list<i64> {
+    when {
+        if count == 0 { return [1, 2, 3] }
+        return delta<list<i64>>(size_modified: -count)
+    }
+}
+
+fn total_after_reduction(count: i64) -> i64 => sum_readings(reduce_readings(count))
+
+/**
+A negative size in a list's delta reduces the list by that count.
+The list [1, 2, 3] is published whole, then a delta with a size of -1
+drops the last position. The helper sums [1, 2].
+
+:Rules: TYPE-16, END-3, TIME-7, FN-12
+:Status: agreed
+*/
+test a_negative_size_reduces_the_list_by_that_count {
+    assert eval(total_after_reduction(count: [0, _, 1])) == [6, _, 3]
+}
+
+fn extend_readings(reading: i64) -> list<i64> {
+    when {
+        if reading == 0 { return [1, 2] }
+        return delta<list<i64>>(updated: [2: reading])
+    }
+}
+
+fn total_after_extension(reading: i64) -> i64 => sum_readings(extend_readings(reading))
+
+/**
+An updated entry at the position after a list's last extends the list.
+The list [1, 2] is published whole, then a delta updates position 2 and
+writes no size. The helper sums [1, 2, 5].
+
+:Rules: TYPE-16, END-3, TIME-7, FN-12
+:Status: agreed
+*/
+test an_entry_after_the_last_position_extends_the_list {
+    assert eval(total_after_extension(reading: [0, _, 5])) == [3, _, 8]
+}
