@@ -153,16 +153,54 @@ fn wake_failures(delay: duration) -> bool {
 }
 
 /**
-A wake asked of the scheduler with a duration that is not more than zero fails.
-The delay is an input, so the compiler does not see it. A delay of 1us
-is asked for without failure; one of 0s fails the node, and its capture's
-error stream ticks.
+A wake asked of the scheduler outside `start` with a duration that is not more than zero fails.
+The delay is an input, asked for in a `when`, so the compiler does not see
+it. A delay of 1us is asked for without failure; one of 0s fails the node,
+and its capture's error stream ticks.
 
 :Rules: TIME-8, CAP-4, ERR-7
 :Status: agreed
 */
 test a_zero_duration_asked_of_the_scheduler_fails {
     assert eval(wake_failures(delay: [1us, 0s])) == [_, true]
+}
+
+fn wake_at_start(value: i64) -> str {
+    inject scheduler
+    start { schedule(scheduler, 0s) }
+    when scheduled() && valid([]) { return "scheduled" }
+    when modified(value) { return "input" }
+}
+
+/**
+A zero duration asked of the scheduler in `start` wakes the node's first evaluation.
+The input is silent at the start, so the first evaluation is the scheduled
+wake alone; the input's later tick is handled as an input.
+
+:Rules: TIME-8, CAP-4, TIME-7
+:Status: agreed
+*/
+test a_zero_duration_in_start_wakes_the_first_evaluation {
+    assert eval(wake_at_start(value: [_, 7])) == ["scheduled", "input"]
+}
+
+fn alarm_at_start(value: i64) -> str {
+    inject alarm
+    start { schedule(alarm, 0s) }
+    when scheduled() && valid([]) { return "alarm" }
+    when modified(value) { return "input" }
+}
+
+/**
+A zero duration asked of the alarm in `start` wakes the node's first evaluation.
+The input is silent at the start, so the first evaluation is the alarm's
+wake alone; the input's later tick is handled as an input.
+
+:Rules: TIME-8, CAP-5, TIME-7
+:Status: agreed
+*/
+test a_zero_duration_in_start_wakes_the_alarm_at_the_first_evaluation {
+    assert eval(alarm_at_start(value: [_, 7])) == ["alarm", "input"]
 }
 
 fn wake_in_the_past(value: i64) -> str {

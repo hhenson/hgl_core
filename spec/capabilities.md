@@ -51,8 +51,10 @@ dictionary's (the language's ERR-6).
   false when omitted. `un_schedule(scheduler)` and
   `un_schedule(scheduler, tag: name)` cancel a pending wake, and
   `reset(scheduler)` every one. A wake asked for with a `duration` takes
-  one more than zero: one that is not fails the call (the language's
-  TIME-8, which rejects one the compiler sees). One asked for at a
+  one more than zero, but in `start`, where `schedule(scheduler, 0s)` asks
+  for a wake at the start, the node's first evaluation. A duration that is
+  not admitted, a negative one in `start` included, fails the call (the
+  language's TIME-8, which rejects one the compiler sees). One asked for at a
   `datetime` before the current evaluation time is dropped: there is no
   wake, and no failure. Proposed: the failure's code is
   `schedule.non_positive_duration`.
@@ -61,10 +63,11 @@ dictionary's (the language's ERR-6).
   `at` a `duration` or a `datetime`; asking again keeps the earliest. It has
   no property, no tag, no wall clock, and no cancellation. A node injects it
   in place of `scheduler`, with temporal inputs or none. It keeps no record
-  of a wake: the language tells one from the node's inputs (TIME-9). A
-  wake asked of it with a `duration` that is not more than zero fails, and
-  one at a `datetime` before the current evaluation time is dropped, as
-  CAP-4 has them for the scheduler.
+  of a wake: the language tells one from the node's inputs (TIME-9). What
+  may be asked of it is what CAP-4 says may be asked of the scheduler,
+  alike: a `duration` more than zero, or zero in `start`, which asks for a
+  wake at the start, the node's first evaluation; a `datetime` before the
+  current evaluation time is dropped.
 - **CAP-6.** The global store is a run-wide store of ordinary values under
   string keys, each fixed when the graph is built (the language's FN-1).
   `get<V>(global_state, key)` is the value under `key`, of the type the call
