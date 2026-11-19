@@ -122,7 +122,7 @@ const fn span(low: i64, high: i64) -> i64 => high - low
 
 fn set_one_position(slot: i64, reading: i64) -> list<i64, 2> {
     when {
-        return delta<list<i64, 2>>(modified: [slot: reading])
+        return delta<list<i64, 2>>(updated: [slot: reading])
     }
 }
 
@@ -154,21 +154,21 @@ fn pair_delta(slot: i64, reading: i64) -> list<i64, 2> =>
     read_pair_delta(set_one_position(slot, reading))
 
 /**
-A fixed list's delta reports each position given a value in `modified`.
+A fixed list's delta reports each changed position in `updated`.
 Position 0 publishes 3, then position 1 publishes 8. Neither delta
 removes a position or changes the size.
 
 :Rules: TYPE-16, END-3
 :Status: agreed
 */
-test a_fixed_list_delta_reports_the_position_in_modified {
+test a_fixed_list_delta_reports_the_position_in_updated {
     assert eval(pair_delta(
         slot:    [0, _, 1],
         reading: [3, _, 8],
     )) == [
-        delta<list<i64, 2>>(modified: [0: 3]),
+        delta<list<i64, 2>>(updated: [0: 3]),
         _,
-        delta<list<i64, 2>>(modified: [1: 8]),
+        delta<list<i64, 2>>(updated: [1: 8]),
     ]
 }
 
