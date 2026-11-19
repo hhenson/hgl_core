@@ -516,3 +516,69 @@ writes no size. The helper sums [1, 2, 5].
 test an_entry_after_the_last_position_extends_the_list {
     assert eval(total_after_extension(reading: [0, _, 5])) == [3, _, 8]
 }
+
+/**
+A negative size larger than the list leaves it empty, and is no failure.
+The list [1, 2, 3] is published whole, then a delta with a size of -5
+reduces it past its length. The helper sums the empty list.
+
+:Rules: TYPE-16, END-3, TIME-9, FN-12
+:Status: agreed
+*/
+test reducing_a_list_past_its_length_leaves_it_empty {
+    assert eval(total_after_reduction(count: [0, _, 5])) == [6, _, 0]
+}
+
+fn failure_seen(failure: error) -> bool {
+    when { return true }
+}
+
+fn fixed_entry_failures(slot: i64, reading: i64) -> bool {
+    let boundary = capture(set_one_position, slot, reading)
+    return failure_seen(boundary.error)
+}
+
+/**
+An entry past a fixed list's bounds, in a delta made as the program runs, fails.
+Position 0 of a two-position list publishes 3; then the producer writes
+position 2, and its capture's error stream ticks.
+
+:Rules: TYPE-16, END-3, ERR-7
+:Status: agreed
+*/
+test an_entry_past_a_fixed_lists_end_fails {
+    assert eval(fixed_entry_failures(slot: [0, 2], reading: [3, 8])) == [_, true]
+}
+
+fn extend_with_gap(reading: i64) -> list<i64> {
+    when {
+        if reading == 0 { return [1, 2] }
+        return delta<list<i64>>(updated: [3: reading])
+    }
+}
+
+fn gap_validity(probe: bool, values: list<i64>) -> list<bool, 3> {
+    when modified(probe) && valid([]) {
+        return [valid(values[2]), valid(values[3]), all_valid(values)]
+    }
+}
+
+fn observe_gap(probe: bool, reading: i64) -> list<bool, 3> =>
+    gap_validity(probe, extend_with_gap(reading))
+
+/**
+An entry more than one past a growing list's end leaves the positions between not valid.
+The list [1, 2] is published whole, then a delta updates position 3. The
+probe reads, as `[valid(values[2]), valid(values[3]), all_valid(values)]`,
+a gap at position 2 that is not valid. It depends on the proposed gap
+sentence of the language's TYPE-16.
+
+:Rules: TYPE-16, END-3, TIME-9, TIME-1
+:Status: proposed
+*/
+test an_entry_past_a_gap_leaves_the_positions_between_not_valid {
+    assert eval(observe_gap(
+        probe:   [_, _, true],
+        reading: [0, _,    5],
+    )) ==        [_, _, [false, true, false]]
+}
