@@ -69,6 +69,27 @@ test lifting_observes_the_complete_list_including_empty {
     assert eval(total_of_snapshot(reading: [null, 2, _, 5])) == [0, 3, _, 6]
 }
 
+fn resize_readings(size: i64) -> list<i64> {
+    when {
+        if size == 3 { return [1, 2, 3] }
+        return delta<list<i64>>(size_modified: size)
+    }
+}
+
+fn total_after_resize(size: i64) -> i64 => sum_readings(resize_readings(size))
+
+/**
+A delta with only a smaller size shrinks the list.
+The list [1, 2, 3] is published whole, then a delta sets the size to 1
+without naming the dropped positions in `removed`. The helper sums [1].
+
+:Rules: TYPE-16, TIME-7, FN-12
+:Status: agreed
+*/
+test a_size_only_delta_shrinks_the_list {
+    assert eval(total_after_resize(size: [3, _, 1])) == [6, _, 1]
+}
+
 const fn keep_readings(readings: list<i64>) -> list<i64> => readings
 
 fn read_saved_second(current: list<i64>, save: bool) -> i64 {

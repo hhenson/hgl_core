@@ -41,6 +41,9 @@ selectors follow the language contract rather than this one-endpoint table.
   is the value published. For a nullable scalar it is the optional that
   type gives it, which holds the value published or the null: a published
   null is `delta<i64?>()` for an `i64?` endpoint, and is no absent delta.
+  For a list, the delta read on a shrink names the dropped tail positions
+  in `removed`, also where the delta written gave only a smaller
+  `size_modified` (the language's TYPE-16).
   The checker must prove `x` is valid and modified at the call.
 - **END-4.** Invalidation clears validity, modification, payload, and delta.
   The transition to invalid notifies active subscribers. A node awakened by
