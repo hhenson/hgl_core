@@ -1,7 +1,7 @@
 # Scalar temporal endpoint observations
 
-Status: END-1 through END-10 are agreed, but for the sentences of END-7
-and END-10 that begin "Proposed", which are proposed.
+Status: END-1 through END-10 are agreed, but for the sentences of END-3,
+END-7 and END-10 that begin "Proposed", which are proposed.
 
 ## Scope and API
 
@@ -61,7 +61,20 @@ selectors follow the language contract rather than this one-endpoint table.
   that publishes it fails. A `removed` that names a key a dictionary does
   not hold, a member a set does not hold, or a position of a list that
   holds no value, never set or already removed, is ignored, and is no
-  failure.
+  failure. A delta that names no change, `delta<set<i64>>()`,
+  `delta<dict<str, i64>>()` or `delta<list<i64>>()`, ticks only where it
+  changes validity (the language's TIME-7). Where a `list<V>`, a
+  dictionary or a set is not valid, never published or invalidated
+  (END-4), it makes the endpoint valid, empty and modified, and
+  `delta_value` returns that delta. Where the endpoint is valid it is no
+  publication (END-5). Such a delta of a struct, a tuple or a
+  `list<V, N>` sets no child and changes no validity (END-7): it is never
+  a tick. Proposed: a delta whose every entry is a removal ignored as
+  above names no change. The
+  [collection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/collection_ticks.hgl)
+  check a list and a set, and the
+  [dictionary cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/dictionary_ticks.hgl)
+  a dictionary.
   The checker must prove `x` is valid and modified at the call.
 - **END-4.** Invalidation clears validity, modification, payload, and delta.
   The transition to invalid notifies active subscribers. A node awakened by
@@ -71,8 +84,11 @@ selectors follow the language contract rather than this one-endpoint table.
   publish then invalidate leaves the endpoint invalid. Invalidate then publish
   leaves it valid and modified.
 - **END-5.** A publication notifies active subscribers, including when its
-  value repeats. Further writes to the already modified endpoint in the same
-  evaluation update its publication without notifying again. A downstream
+  value repeats. A delta that names no change, written where the endpoint
+  is valid, is no publication (END-3): it marks nothing modified, moves no
+  `last_modified` (END-6), and notifies no subscriber. Further writes to
+  the already modified endpoint in the same evaluation update its
+  publication without notifying again. A downstream
   node runs at most once per cycle and reads the completed value and delta.
   Activity belongs to each input binding and controls whether it schedules
   its node. When the node runs, a publication on a passive input still
