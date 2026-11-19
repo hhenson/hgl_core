@@ -101,7 +101,8 @@ selectors follow the language contract rather than this one-endpoint table.
   child that is not valid fails with `value.unset_read`, or gives an `err`
   of an `error` with that code where its place expects a
   `result<T, error>` (the language's ERR-14). A read of a struct, a tuple
-  or a fixed list whole is admitted where it is all valid; in the value
+  or a fixed list whole is admitted where it is all valid, a child among
+  them by its own `all_valid`, `all_valid(rows[0])`; in the value
   read, an optional child that is not valid is null, and its own `valid`
   tells that from a published null. One checked when it runs, `rows[i]`
   read whole, that is not all valid fails or gives an `err` as a child's
