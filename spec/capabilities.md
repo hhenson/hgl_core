@@ -1,8 +1,7 @@
 # Capabilities
 
-Status: CAP-1 to CAP-6 are agreed, but for the sentences of CAP-4 and
-CAP-5 that begin "Proposed:". The meanings under "Proposed behaviour" are
-proposed.
+Status: CAP-1 to CAP-6 are agreed, but for CAP-4's sentence that begins
+"Proposed:". The meanings under "Proposed behaviour" are proposed.
 
 ## Scope and API
 
@@ -64,11 +63,11 @@ dictionary's (the language's ERR-6).
   `at` a `duration` or a `datetime`; asking again keeps the earliest. It has
   no property, no tag, no wall clock, and no cancellation. A node injects it
   in place of `scheduler`, with temporal inputs or none. It keeps no record
-  of a wake: the language tells one from the node's inputs (TIME-9). A
-  wake asked of it with a `duration` that is not more than zero fails, and
-  one at a `datetime` before the current evaluation time is dropped, as
-  CAP-4 has them for the scheduler. Proposed: `schedule(alarm, 0s)` in
-  `start` asks for a wake at the start, as the scheduler's does.
+  of a wake: the language tells one from the node's inputs (TIME-9). What
+  may be asked of it is what CAP-4 says may be asked of the scheduler,
+  alike: a `duration` more than zero, or zero in `start`, which asks for a
+  wake at the start, the node's first evaluation; a `datetime` before the
+  current evaluation time is dropped.
 - **CAP-6.** The global store is a run-wide store of ordinary values under
   string keys, each fixed when the graph is built (the language's FN-1).
   `get<V>(global_state, key)` is the value under `key`, of the type the call

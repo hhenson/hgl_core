@@ -53,8 +53,8 @@ native impl const fn schedule(
 export native const fn un_schedule(scheduler: Scheduler, tag: str? = null)
 export native const fn reset(scheduler: Scheduler)
 
-# CAP-5: a wake on the alarm. It takes no tag and no clock. A duration must
-# be more than zero; a datetime before the evaluation time is dropped.
+# CAP-5: a wake on the alarm. It takes no tag and no clock. What may be
+# asked of it is what may be asked of the scheduler (CAP-4).
 native impl const fn schedule(capability: Alarm, at: duration)
 native impl const fn schedule(capability: Alarm, at: datetime)
 
