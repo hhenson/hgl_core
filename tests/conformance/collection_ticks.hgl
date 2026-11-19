@@ -203,3 +203,95 @@ test a_struct_delta_keeps_the_final_write_to_each_field {
         delta<MarketQuote>(bid: 11, ask: 14),
     ]
 }
+
+fn pair_valid(probe: bool, pair: list<i64, 2>) -> bool {
+    when modified(probe) && valid([]) { return valid(pair) }
+}
+
+fn pair_all_valid(probe: bool, pair: list<i64, 2>) -> bool {
+    when modified(probe) && valid([]) { return all_valid(pair) }
+}
+
+fn observe_pair_valid(probe: bool, slot: i64, reading: i64) -> bool =>
+    pair_valid(probe, set_one_position(slot, reading))
+
+fn observe_pair_all_valid(probe: bool, slot: i64, reading: i64) -> bool =>
+    pair_all_valid(probe, set_one_position(slot, reading))
+
+/**
+A fixed list is valid once any position is valid.
+Position 0 publishes on the second cycle and position 1 on the fourth.
+The probe reads the list every cycle.
+
+:Rules: TIME-9, END-7
+:Status: agreed
+*/
+test a_fixed_list_is_valid_once_one_position_is {
+    assert eval(observe_pair_valid(
+        probe:   [true, true, true, true],
+        slot:    [   _,    0,    _,    1],
+        reading: [   _,    3,    _,    8],
+    )) ==        [false, true, true, true]
+}
+
+/**
+A fixed list is all valid only once every position is valid.
+The same stimulus as the previous case: the list is all valid from the
+fourth cycle, when position 1 publishes.
+
+:Rules: TIME-9, END-7
+:Status: agreed
+*/
+test a_fixed_list_is_all_valid_once_every_position_is {
+    assert eval(observe_pair_all_valid(
+        probe:   [true,  true,  true,  true],
+        slot:    [   _,     0,     _,     1],
+        reading: [   _,     3,     _,     8],
+    )) ==        [false, false, false, true]
+}
+
+fn quote_valid(probe: bool, quote: MarketQuote) -> bool {
+    when modified(probe) && valid([]) { return valid(quote) }
+}
+
+fn quote_all_valid(probe: bool, quote: MarketQuote) -> bool {
+    when modified(probe) && valid([]) { return all_valid(quote) }
+}
+
+fn observe_quote_valid(probe: bool, is_bid: bool, price: i64) -> bool =>
+    quote_valid(probe, update_quote(is_bid, price))
+
+fn observe_quote_all_valid(probe: bool, is_bid: bool, price: i64) -> bool =>
+    quote_all_valid(probe, update_quote(is_bid, price))
+
+/**
+A struct is valid once any field is valid.
+The bid publishes on the second cycle and the ask on the fourth.
+The probe reads the struct every cycle.
+
+:Rules: TIME-9, END-7
+:Status: agreed
+*/
+test a_struct_is_valid_once_one_field_is {
+    assert eval(observe_quote_valid(
+        probe:  [true, true, true,  true],
+        is_bid: [   _, true,    _, false],
+        price:  [   _,   10,    _,    12],
+    )) ==       [false, true, true, true]
+}
+
+/**
+A struct is all valid only once every field is valid.
+The same stimulus as the previous case: the quote is all valid from the
+fourth cycle, when the ask publishes.
+
+:Rules: TIME-9, END-7
+:Status: agreed
+*/
+test a_struct_is_all_valid_once_every_field_is {
+    assert eval(observe_quote_all_valid(
+        probe:  [true,  true,  true,  true],
+        is_bid: [   _,  true,     _, false],
+        price:  [   _,    10,     _,    12],
+    )) ==       [false, false, false, true]
+}
