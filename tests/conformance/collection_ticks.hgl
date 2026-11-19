@@ -717,3 +717,102 @@ test removing_a_position_that_never_held_a_value_is_ignored {
         step:  [0, 1,    2],
     )) ==      [_, _, [false, true, false]]
 }
+
+# 0 writes a delta that names no change, 1 publishes [1] whole, 2 publishes
+# [1, 2] whole, 3 removes 9, which the set does not hold, and any other
+# step invalidates the set.
+fn write_members(step: i64) -> set<i64> {
+    inject out
+    when {
+        if step == 0 { return delta<set<i64>>() }
+        if step == 1 { return [1] }
+        if step == 2 { return [1, 2] }
+        if step == 3 { return delta<set<i64>>(removed: [9]) }
+        invalidate(out)
+    }
+}
+
+fn members_valid(members: set<i64>) -> bool {
+    when valid([]) { return valid(members) }
+}
+
+fn member_wakes(step: i64) -> bool => members_valid(write_members(step))
+
+fn total_of_members(step: i64) -> i64 => sum_members(write_members(step))
+
+/**
+An empty set delta ticks only where it makes the set valid.
+The first makes the set valid and empty, and the second finds it valid,
+changes nothing and wakes no reader. After an invalidation the next one
+makes the set valid again. The reader publishes `valid(members)` at each
+wake, and the lifted sum reads the set empty.
+
+:Rules: TIME-7, END-3, END-4, END-5, TIME-3, FN-12
+:Status: agreed
+*/
+test an_empty_set_delta_ticks_only_where_it_makes_the_set_valid {
+    assert eval(member_wakes(step: [0, 0, 4, 0])) == [true, _, false, true]
+    assert eval(total_of_members(step: [0, 0, 1])) == [0, _, 1]
+}
+
+/**
+A set delta that only removes a member the set does not hold is no tick.
+The set [1] is published whole; removing 9 changes nothing and wakes no
+reader, and publishing [1, 2] then does.
+
+:Rules: TIME-7, TYPE-16, END-3, END-5
+:Status: proposed
+*/
+test removing_only_an_absent_member_is_no_tick {
+    assert eval(member_wakes(step: [1, 3, 2])) == [true, _, true]
+}
+
+# 0 writes a delta that names no change, 1 publishes [1, 2] whole, 2
+# updates position 3, so that position 2 holds no value, 3 removes
+# position 2, and any other step invalidates the list.
+fn write_readings(step: i64) -> list<i64> {
+    inject out
+    when {
+        if step == 0 { return delta<list<i64>>() }
+        if step == 1 { return [1, 2] }
+        if step == 2 { return delta<list<i64>>(updated: [3: 5]) }
+        if step == 3 { return delta<list<i64>>(removed: [2]) }
+        invalidate(out)
+    }
+}
+
+fn readings_valid(readings: list<i64>) -> bool {
+    when valid([]) { return valid(readings) }
+}
+
+fn reading_wakes(step: i64) -> bool => readings_valid(write_readings(step))
+
+fn total_of_readings(step: i64) -> i64 => sum_readings(write_readings(step))
+
+/**
+An empty list delta ticks only where it makes the list valid.
+The first makes the list valid and empty, and the second finds it valid,
+changes nothing and wakes no reader. After an invalidation the next one
+makes the list valid again. The reader publishes `valid(readings)` at
+each wake, and the lifted sum reads the list empty.
+
+:Rules: TIME-7, END-3, END-4, END-5, TIME-3, FN-12
+:Status: agreed
+*/
+test an_empty_list_delta_ticks_only_where_it_makes_the_list_valid {
+    assert eval(reading_wakes(step: [0, 0, 4, 0])) == [true, _, false, true]
+    assert eval(total_of_readings(step: [0, 0, 1])) == [0, _, 3]
+}
+
+/**
+A list delta that only removes a position that holds no value is no tick.
+The list [1, 2] is published whole and a delta updates position 3. The
+removal of position 2, which never held a value, changes nothing and wakes
+no reader; publishing [1, 2] whole again does.
+
+:Rules: TIME-7, TYPE-16, END-3, END-5
+:Status: proposed
+*/
+test removing_only_a_position_that_holds_no_value_is_no_tick {
+    assert eval(reading_wakes(step: [1, 2, 3, 1])) == [true, true, _, true]
+}

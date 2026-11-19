@@ -49,3 +49,52 @@ test removing_an_absent_key_is_ignored {
         probe:       [true, true, true],
     )) ==            [   7,    7,    9]
 }
+
+# 0 writes a delta that names no change, 1 sets A to 7, 2 sets A to 9, 3
+# removes B, which the dictionary does not hold, and any other step
+# invalidates the dictionary.
+fn write_book(step: i64) -> dict<str, i64> {
+    inject out
+    when {
+        if step == 0 { return delta<dict<str, i64>>() }
+        if step == 1 { return delta<dict<str, i64>>(updated: ["A": 7]) }
+        if step == 2 { return delta<dict<str, i64>>(updated: ["A": 9]) }
+        if step == 3 { return delta<dict<str, i64>>(removed: ["B"]) }
+        invalidate(out)
+    }
+}
+
+fn book_valid(book: dict<str, i64>) -> bool {
+    when valid([]) { return valid(book) }
+}
+
+fn book_wakes(step: i64) -> bool => book_valid(write_book(step))
+
+fn price_of_a(step: i64) -> i64? => lookup_a(write_book(step))
+
+/**
+An empty dictionary delta ticks only where it makes the dictionary valid.
+The first makes the dictionary valid and empty, and the second finds it
+valid, changes nothing and wakes no reader. After an invalidation the next
+one makes it valid again. The reader publishes `valid(book)` at each wake,
+and the lifted lookup finds no A.
+
+:Rules: TIME-7, END-3, END-4, END-5, TIME-3, FN-12
+:Status: agreed
+*/
+test an_empty_dictionary_delta_ticks_only_where_it_makes_the_dictionary_valid {
+    assert eval(book_wakes(step: [0, 0, 4, 0])) == [true, _, false, true]
+    assert eval(price_of_a(step: [0, 0, 1])) == [null, _, 7]
+}
+
+/**
+A dictionary delta that only removes a key the dictionary does not hold is no tick.
+A is set to 7; removing B changes nothing and wakes no reader, and setting
+A to 9 then does.
+
+:Rules: TIME-7, TYPE-16, END-3, END-5
+:Status: proposed
+*/
+test removing_only_an_absent_key_is_no_tick {
+    assert eval(book_wakes(step: [1, 3, 2])) == [true, _, true]
+}
