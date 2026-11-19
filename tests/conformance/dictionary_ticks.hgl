@@ -30,7 +30,7 @@ test a_removed_key_is_absent_until_added_again {
 
 const fn probe_a(prices: dict<str, i64>, probe: bool) -> i64? => get(prices, "A")
 
-fn probe_a_after_writes(changed_key: str, price: i64?, probe: bool) -> i64? =>
+fn probe_a_after_writes(changed_key: str, probe: bool, price: i64?) -> i64? =>
     probe_a(write_price(changed_key, price), probe)
 
 /**
