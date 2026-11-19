@@ -45,11 +45,10 @@ A read of a window's value before it is all valid fails.
 Under `all_valid` the read waits for the second reading, and the fourth
 drops the first: the totals are 3, 6 and 9. Under ordinary validity the
 first reading is read alone, and the run fails with `value.unset_read`.
-It depends on the proposed read of a window's value, a `list<V>` of the
-values held, oldest first, and on its proposed code.
+A window's value is read as a `list<V>` of the values held, oldest first.
 
 :Rules: TYPE-11, END-9, CEVAL-6
-:Status: proposed
+:Status: agreed
 */
 test reading_a_window_before_it_is_all_valid_fails {
     assert eval(ready_total(reading: [1, 2, 3, 4])) == [_, 3, 6, 9]

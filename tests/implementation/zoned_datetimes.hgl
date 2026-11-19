@@ -36,11 +36,11 @@ test zoned_datetimes_are_equal_by_instant_and_zone {
 
 /**
 Compared as UTC, two zoned datetimes are equal when their instants are.
-The same values as the previous case. It depends on the proposed spelling
-of the option, `utc` (OPS-2).
+The same values as the previous case, compared with the option `utc`
+(OPS-2).
 
 :Rules: OPS-2, TYPE-2, EXPR-10
-:Status: proposed
+:Status: agreed
 */
 test zoned_datetimes_compared_as_utc_are_equal_by_instant {
     let london = @2026-09-03T09:30+01:00[Europe/London]

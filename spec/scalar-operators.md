@@ -3,9 +3,8 @@
 Status: agreed operator domains for the scalar types other than numbers, the
 rounding and range of a duration or an instant result, the comparison
 outcome type, the domains of the conversion operator, what each conversion
-yields, its options, and generic temporal identity handling. Proposed: the
-spelling of OPS-2's comparison as UTC. Runtime conformance execution and the
-native ABI remain pending.
+yields, its options, and generic temporal identity handling. Runtime
+conformance execution and the native ABI remain pending.
 
 ## Contract
 
@@ -26,8 +25,8 @@ owns symbol syntax, precedence, and phase checking. An instant is a
   `duration`. `==` and `!=` compare two values of one type. The zoned types
   have no order. Two `zoned_datetime` values are equal when their instants
   and their zone names both are; compared as UTC, they are equal when their
-  instants are (the language's TYPE-2). Proposed: the option is `utc`, a
-  `bool` that is false unless given, `a =={utc: true} b`, declared by the
+  instants are (the language's TYPE-2). The option is `utc`, a `bool`
+  that is false unless given, `a =={utc: true} b`, declared by the
   candidates of `eq_` and `ne_` for two zoned datetimes. A `tenor`'s
   order is its own (TEN-3). Numbers
   compare as the numeric contract says, an `i64` with an `f64` included.
@@ -212,7 +211,7 @@ forward an hour at 01:00 UTC on 29 March 2026:
 | `@2026-03-28T12:00+00:00[Europe/London] + 1d` | `@2026-03-29T13:00+01:00[Europe/London]`: 86,400 seconds later |
 | `@2026-03-29T00:30+00:00[Europe/London] + 1h` | `@2026-03-29T02:30+01:00[Europe/London]` |
 | `@2026-09-03T09:30+01:00[Europe/London] == @2026-09-03T08:30+00:00[UTC]` | false: one instant, two zones |
-| `@2026-09-03T09:30+01:00[Europe/London] =={utc: true} @2026-09-03T08:30+00:00[UTC]` | true; the spelling is proposed |
+| `@2026-09-03T09:30+01:00[Europe/London] =={utc: true} @2026-09-03T08:30+00:00[UTC]` | true |
 
 The [zoned datetime cases](https://github.com/hhenson/hgl_core/blob/main/tests/implementation/zoned_datetimes.hgl)
 check these.

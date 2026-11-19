@@ -1,7 +1,7 @@
 # Scalar temporal endpoint observations
 
-Status: END-1 through END-10 are agreed, but for the sentences of END-7
-and END-9 that begin "Proposed:", which are proposed.
+Status: END-1 through END-10 are agreed, but for END-7's sentence that
+begins "Proposed:", which is proposed.
 
 ## Scope and API
 
@@ -123,8 +123,8 @@ selectors follow the language contract rather than this one-endpoint table.
   maximum, and leaves a microsecond later whether or not a value arrives
   then; the exit notifies the window's subscribers. The
   [window cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/window_ticks.hgl)
-  check a window of ticks. Proposed: the read gives a `list<V>` of the
-  values held, oldest first, and fails with `value.unset_read`.
+  check a window of ticks. The read gives a `list<V>` of the values held,
+  oldest first, and fails with `value.unset_read`.
 - **END-10.** A reference, the language's `ref<T>`, is modified where its
   designation changes (the language's TIME-10). A publication of the
   designation it holds is no tick: unlike a value's (END-2, END-5), it
