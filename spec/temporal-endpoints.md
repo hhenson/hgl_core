@@ -13,7 +13,7 @@ owns endpoint interpretation, handler selection, and phase admission.
 | HGL observation | Runtime result / admission |
 | --- | --- |
 | `valid(value)` | bool; may inspect an invalid endpoint; for a collection, see END-7 |
-| `all_valid(value)` | bool; a list, struct or dictionary only; see END-7 |
+| `all_valid(value)` | bool; a list, tuple, struct or dictionary only; see END-7 |
 | `modified(value)` | bool; whether the endpoint published in the current cycle |
 | Runtime parameter payload | T; requires readable valid input, subject to declared nullable/default argument binding |
 | `delta_value(value)` | `delta<T>` (the language's TYPE-16): T for a scalar input, and for a nullable scalar the optional that holds what was published; see END-3 |
@@ -67,15 +67,15 @@ selectors follow the language contract rather than this one-endpoint table.
   invalidation. While valid, it returns the retained publication's UTC
   evaluation time. Silence preserves that time and an equal publication
   supplies its own time. A publication with a null payload has a timestamp.
-- **END-7.** `valid(x)` of a list, a struct or a dictionary returns true
+- **END-7.** `valid(x)` of a list, a tuple, a struct or a dictionary returns true
   where any element, field or entry is valid, and for a published empty
   list or dictionary, which has none. `all_valid(x)` returns true
   where every one is valid by its own `valid`, one level deep: for a list
   of lists, each contained list is present and has a valid element or is
   a published empty list. It returns true for a valid empty collection. It
-  takes only a list, a struct or a dictionary (the language's TIME-9).
+  takes only these collections (the language's TIME-9).
   The [collection validity cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/collection_ticks.hgl)
-  check a fixed list and a struct.
+  check a fixed list, a tuple and a struct.
 
 ## Publication and silence
 
