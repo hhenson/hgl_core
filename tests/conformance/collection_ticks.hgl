@@ -69,6 +69,27 @@ test lifting_observes_the_complete_list_including_empty {
     assert eval(total_of_snapshot(reading: [null, 2, _, 5])) == [0, 3, _, 6]
 }
 
+fn resize_readings(size: i64) -> list<i64> {
+    when {
+        if size == 3 { return [1, 2, 3] }
+        return delta<list<i64>>(size_modified: size)
+    }
+}
+
+fn total_after_resize(size: i64) -> i64 => sum_readings(resize_readings(size))
+
+/**
+A delta with only a smaller size shrinks the list.
+The list [1, 2, 3] is published whole, then a delta sets the size to 1
+without naming the dropped positions in `removed`. The helper sums [1].
+
+:Rules: TYPE-16, TIME-7, FN-12
+:Status: agreed
+*/
+test a_size_only_delta_shrinks_the_list {
+    assert eval(total_after_resize(size: [3, _, 1])) == [6, _, 1]
+}
+
 const fn keep_readings(readings: list<i64>) -> list<i64> => readings
 
 fn read_saved_second(current: list<i64>, save: bool) -> i64 {
@@ -101,8 +122,7 @@ const fn span(low: i64, high: i64) -> i64 => high - low
 
 fn set_one_position(slot: i64, reading: i64) -> list<i64, 2> {
     when {
-        let change: delta<list<i64, 2>> = [slot: reading]
-        return change
+        return delta<list<i64, 2>>(updated: [slot: reading])
     }
 }
 
@@ -124,6 +144,32 @@ test fixed_list_children_become_readable_independently {
         slot:    [0, 1, _, 0],
         reading: [3, 8, _, 4],
     )) ==        [_, 5, _, 4]
+}
+
+fn read_pair_delta(pair: list<i64, 2>) -> list<i64, 2> {
+    when { return delta_value(pair) }
+}
+
+fn pair_delta(slot: i64, reading: i64) -> list<i64, 2> =>
+    read_pair_delta(set_one_position(slot, reading))
+
+/**
+A fixed list's delta reports each changed position in `updated`.
+Position 0 publishes 3, then position 1 publishes 8. Neither delta
+removes a position or changes the size.
+
+:Rules: TYPE-16, END-3
+:Status: agreed
+*/
+test a_fixed_list_delta_reports_the_position_in_updated {
+    assert eval(pair_delta(
+        slot:    [0, _, 1],
+        reading: [3, _, 8],
+    )) == [
+        delta<list<i64, 2>>(updated: [0: 3]),
+        _,
+        delta<list<i64, 2>>(updated: [1: 8]),
+    ]
 }
 
 struct MarketQuote {
@@ -202,4 +248,128 @@ test a_struct_delta_keeps_the_final_write_to_each_field {
         _,
         delta<MarketQuote>(bid: 11, ask: 14),
     ]
+}
+
+fn pair_valid(probe: bool, pair: list<i64, 2>) -> bool {
+    when modified(probe) && valid([]) { return valid(pair) }
+}
+
+fn pair_all_valid(probe: bool, pair: list<i64, 2>) -> bool {
+    when modified(probe) && valid([]) { return all_valid(pair) }
+}
+
+fn observe_pair_valid(probe: bool, slot: i64, reading: i64) -> bool =>
+    pair_valid(probe, set_one_position(slot, reading))
+
+fn observe_pair_all_valid(probe: bool, slot: i64, reading: i64) -> bool =>
+    pair_all_valid(probe, set_one_position(slot, reading))
+
+/**
+A fixed list is valid once any position is valid.
+Position 0 publishes on the second cycle and position 1 on the fourth.
+The probe reads the list every cycle.
+
+:Rules: TIME-9, END-7
+:Status: agreed
+*/
+test a_fixed_list_is_valid_once_one_position_is {
+    assert eval(observe_pair_valid(
+        probe:   [true, true, true, true],
+        slot:    [   _,    0,    _,    1],
+        reading: [   _,    3,    _,    8],
+    )) ==        [false, true, true, true]
+}
+
+/**
+A fixed list is all valid only once every position is valid.
+The same stimulus as the previous case: the list is all valid from the
+fourth cycle, when position 1 publishes.
+
+:Rules: TIME-9, END-7
+:Status: agreed
+*/
+test a_fixed_list_is_all_valid_once_every_position_is {
+    assert eval(observe_pair_all_valid(
+        probe:   [true,  true,  true,  true],
+        slot:    [   _,     0,     _,     1],
+        reading: [   _,     3,     _,     8],
+    )) ==        [false, false, false, true]
+}
+
+fn quote_valid(probe: bool, quote: MarketQuote) -> bool {
+    when modified(probe) && valid([]) { return valid(quote) }
+}
+
+fn quote_all_valid(probe: bool, quote: MarketQuote) -> bool {
+    when modified(probe) && valid([]) { return all_valid(quote) }
+}
+
+fn observe_quote_valid(probe: bool, is_bid: bool, price: i64) -> bool =>
+    quote_valid(probe, update_quote(is_bid, price))
+
+fn observe_quote_all_valid(probe: bool, is_bid: bool, price: i64) -> bool =>
+    quote_all_valid(probe, update_quote(is_bid, price))
+
+/**
+A struct is valid once any field is valid.
+The bid publishes on the second cycle and the ask on the fourth.
+The probe reads the struct every cycle.
+
+:Rules: TIME-9, END-7
+:Status: agreed
+*/
+test a_struct_is_valid_once_one_field_is {
+    assert eval(observe_quote_valid(
+        probe:  [true, true, true,  true],
+        is_bid: [   _, true,    _, false],
+        price:  [   _,   10,    _,    12],
+    )) ==       [false, true, true, true]
+}
+
+/**
+A struct is all valid only once every field is valid.
+The same stimulus as the previous case: the quote is all valid from the
+fourth cycle, when the ask publishes.
+
+:Rules: TIME-9, END-7
+:Status: agreed
+*/
+test a_struct_is_all_valid_once_every_field_is {
+    assert eval(observe_quote_all_valid(
+        probe:  [true,  true,  true,  true],
+        is_bid: [   _,  true,     _, false],
+        price:  [   _,    10,     _,    12],
+    )) ==       [false, false, false, true]
+}
+
+fn set_one_part(first: bool, value: i64) -> tuple<i64, i64> {
+    when {
+        let only_first: delta<tuple<i64, i64>> = (value, null)
+        let only_second: delta<tuple<i64, i64>> = (null, value)
+        if first { return only_first }
+        return only_second
+    }
+}
+
+fn part_validity(probe: bool, parts: tuple<i64, i64>) -> list<bool, 2> {
+    when modified(probe) && valid([]) { return [valid(parts), all_valid(parts)] }
+}
+
+fn observe_part_validity(probe: bool, first: bool, value: i64) -> list<bool, 2> =>
+    part_validity(probe, set_one_part(first, value))
+
+/**
+A tuple is valid once one position is, and all valid once both are.
+Each delta sets one position: position 0 on the second cycle and
+position 1 on the fourth. Each tick is `[valid, all_valid]`.
+
+:Rules: TIME-9, END-7
+:Status: agreed
+*/
+test a_tuple_is_valid_once_one_position_is_and_all_valid_once_both_are {
+    assert eval(observe_part_validity(
+        probe: [true, true, true, true],
+        first: [   _, true,    _, false],
+        value: [   _,    3,    _,     8],
+    )) == [[false, false], [true, false], [true, false], [true, true]]
 }
