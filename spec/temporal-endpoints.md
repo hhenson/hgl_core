@@ -1,21 +1,22 @@
 # Scalar temporal endpoint observations
 
-Status: END-1 through END-8 are agreed, but for END-3's last sentence, on a
-gap in a list, which is proposed.
+Status: END-1 through END-10 are agreed, but for END-9's last sentence, on
+what the read of a window's value gives, which is proposed.
 
 ## Scope and API
 
 This slice covers owned scalar outputs and fixed, directly bound scalar
 inputs during evaluation. Nullable scalar values are included. END-7 gives
-the validity of a collection, and END-8 the read of its child. Other
-collection observations, references, sampled/rebound inputs, and source
-scheduling retain their separate contracts. The [language temporal model](https://github.com/hhenson/hgl_spec/blob/main/spec/language/temporal-model.md)
+the validity of a collection, END-8 the read of its child, END-9 a window's
+readiness and exits, and END-10 when a reference ticks. Other collection
+observations, the rest of a reference's contract, sampled/rebound inputs,
+and source scheduling have their separate contracts. The [language temporal model](https://github.com/hhenson/hgl_spec/blob/main/spec/language/temporal-model.md)
 owns endpoint interpretation, handler selection, and phase admission.
 
 | HGL observation | Runtime result / admission |
 | --- | --- |
 | `valid(value)` | bool; may inspect an invalid endpoint; for a collection, see END-7 |
-| `all_valid(value)` | bool; a list, tuple, struct or dictionary only; see END-7 |
+| `all_valid(value)` | bool; a list, tuple, struct, dictionary or window only; see END-7 and END-9 |
 | `modified(value)` | bool; whether the endpoint published in the current cycle |
 | Runtime parameter payload | T; requires readable valid input, subject to declared nullable/default argument binding |
 | A collection's child, `parts[1]`, `quote.bid` | An endpoint, valid or not; its payload requires its own admission; see END-8 |
@@ -52,10 +53,11 @@ selectors follow the language contract rather than this one-endpoint table.
   `updated` entry written at the position after a `list<V>`'s last, with
   no `size_modified`, extends the list. An entry past a `list<V, N>`'s
   bounds in a delta made as the program runs fails the write that
-  publishes it (the language's TYPE-16).
-  The checker must prove `x` is valid and modified at the call. Proposed:
-  an entry written further past a `list<V>`'s last position extends the
-  list as well, and the positions between are not valid.
+  publishes it (the language's TYPE-16). An entry written further past a
+  `list<V>`'s last position extends the list as well, and the positions
+  between are not valid. A `removed` that names a key a dictionary does not
+  hold, or a member a set does not hold, is ignored, and is no failure.
+  The checker must prove `x` is valid and modified at the call.
 - **END-4.** Invalidation clears validity, modification, payload, and delta.
   The transition to invalid notifies active subscribers. A node awakened by
   it can observe the invalid input in `when valid([])`. An explicit
@@ -84,7 +86,7 @@ selectors follow the language contract rather than this one-endpoint table.
   where every one is valid by its own `valid`, one level deep: for a list
   of lists, each contained list is present and has a valid element or is
   a published empty list. It returns true for a valid empty collection. It
-  takes only these collections (the language's TIME-9).
+  takes only these collections and a window (END-9; the language's TIME-9).
   The [collection validity cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/collection_ticks.hgl)
   check a fixed list, a tuple and a struct.
 - **END-8.** A child of a collection is an endpoint whether or not it is
@@ -99,6 +101,26 @@ selectors follow the language contract rather than this one-endpoint table.
   check both reads, and the
   [rejection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/rejections/collection_children.hgl)
   an unadmitted read at a constant index and of a field.
+- **END-9.** A window (the language's TYPE-11) holds the values that arrived
+  at it, oldest first. `valid(x)` of one returns true once it holds a
+  value, and `all_valid(x)` where it holds at least its minimum: of a tick
+  count, that many values; of a duration, values whose arrival times span
+  at least the minimum, from the oldest held to the newest. A read of its
+  value before it is all valid fails. In a window of a duration, a value
+  that arrived at t is held while the evaluation time is at most t plus the
+  maximum, and leaves a microsecond later whether or not a value arrives
+  then; the exit notifies the window's subscribers. The
+  [window cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/window_ticks.hgl)
+  check a window of ticks. Proposed: the read gives a `list<V>` of the
+  values held, oldest first, and fails with `value.unset_read`.
+- **END-10.** A reference, the language's `ref<T>`, is modified where its
+  designation changes (the language's TIME-10). A publication of the
+  designation it holds is no tick: unlike a value's (END-2, END-5), it
+  leaves the endpoint unmodified and notifies no subscriber. A `ref<T>`
+  input given a connection of T designates that connection's endpoint (the
+  language's TYPE-12). The
+  [reference cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/reference_ticks.hgl)
+  check a reference published twice.
 
 ## Publication and silence
 

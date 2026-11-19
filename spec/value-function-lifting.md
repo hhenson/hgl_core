@@ -58,7 +58,7 @@ is invoked once with the list; no per-element lifting is introduced.
 | No input notification to an existing lifted node, but a fallback is available | Fallback alone creates no evaluation or tick |
 | Valid unsized list changes length | Use the current list; no required N is inferred |
 | Valid empty unsized list passed to `total` | Invoke and publish 0.0 |
-| Fixed-size list or window has not met its type's readiness contract | Preserve that contract; lifting does not admit unreadable required data |
+| Fixed-size list that is not valid, or window that is not all valid (END-9) | No invocation: lifting does not admit unreadable required data |
 | Temporal input changes after a returned value is retained | Earlier retained result remains unchanged |
 | Helper uses an admitted borrowed view | View stays within its permitted lifetime; lifting does not grant ownership |
 

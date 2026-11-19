@@ -27,3 +27,25 @@ test a_removed_key_is_absent_until_added_again {
         price:       [  20,   7, null,   21,   9],
     )) ==            [null,   7, null, null,   9]
 }
+
+const fn probe_a(prices: dict<str, i64>, probe: bool) -> i64? => get(prices, "A")
+
+fn probe_a_after_writes(changed_key: str, price: i64?, probe: bool) -> i64? =>
+    probe_a(write_price(changed_key, price), probe)
+
+/**
+A delta that removes a key the dictionary does not hold is ignored, and is no failure.
+A is set to 7; the second delta removes B, which was never added. A probe
+looks A up in every cycle, so the case does not depend on whether that
+delta ticks. A keeps 7 until it is set to 9.
+
+:Rules: TYPE-16, END-3, FN-12, ERR-6
+:Status: agreed
+*/
+test removing_an_absent_key_is_ignored {
+    assert eval(probe_a_after_writes(
+        changed_key: [ "A",  "B",  "A"],
+        price:       [   7, null,    9],
+        probe:       [true, true, true],
+    )) ==            [   7,    7,    9]
+}

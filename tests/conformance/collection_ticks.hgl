@@ -570,11 +570,10 @@ fn observe_gap(probe: bool, reading: i64) -> list<bool, 3> =>
 An entry more than one past a growing list's end leaves the positions between not valid.
 The list [1, 2] is published whole, then a delta updates position 3. The
 probe reads, as `[valid(values[2]), valid(values[3]), all_valid(values)]`,
-a gap at position 2 that is not valid. It depends on the proposed gap
-sentence of the language's TYPE-16.
+a gap at position 2 that is not valid.
 
 :Rules: TYPE-16, END-3, TIME-9, TIME-1
-:Status: proposed
+:Status: agreed
 */
 test an_entry_past_a_gap_leaves_the_positions_between_not_valid {
     assert eval(observe_gap(

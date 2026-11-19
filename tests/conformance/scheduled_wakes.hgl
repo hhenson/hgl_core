@@ -62,6 +62,25 @@ test a_scheduler_wake_can_coincide_with_an_input {
         ["input", _, "input and scheduler", _, "scheduler"]
 }
 
+fn empty_selection_at_wake(value: i64) -> list<bool, 2> {
+    inject scheduler
+    start { schedule(scheduler, 2us) }
+    when modified([]) && valid([]) { return [modified([]), modified(value)] }
+}
+
+/**
+In a handler whose header selects `modified([])`, it is true at a wake that lands with an input's tick.
+No input wakes the handler, so the first input leaves it silent. The
+proposed duration deadline places the wake on the second input: each
+tick is `[modified([]), modified(value)]`.
+
+:Rules: TIME-3, CAP-4
+:Status: proposed
+*/
+test an_empty_selection_is_true_in_its_handler_when_an_input_ticks {
+    assert eval(empty_selection_at_wake(value: [7, _, 9])) == [_, _, [true, true]]
+}
+
 enum PendingWakes { keep_both, cancel_later, reset_all }
 
 fn wake_without_inputs(const pending: PendingWakes) -> bool {
