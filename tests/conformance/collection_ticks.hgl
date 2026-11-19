@@ -101,8 +101,7 @@ const fn span(low: i64, high: i64) -> i64 => high - low
 
 fn set_one_position(slot: i64, reading: i64) -> list<i64, 2> {
     when {
-        let change: delta<list<i64, 2>> = [slot: reading]
-        return change
+        return delta<list<i64, 2>>(modified: [slot: reading])
     }
 }
 
@@ -124,6 +123,32 @@ test fixed_list_children_become_readable_independently {
         slot:    [0, 1, _, 0],
         reading: [3, 8, _, 4],
     )) ==        [_, 5, _, 4]
+}
+
+fn read_pair_delta(pair: list<i64, 2>) -> list<i64, 2> {
+    when { return delta_value(pair) }
+}
+
+fn pair_delta(slot: i64, reading: i64) -> list<i64, 2> =>
+    read_pair_delta(set_one_position(slot, reading))
+
+/**
+A fixed list's delta reports each position given a value in `modified`.
+Position 0 publishes 3, then position 1 publishes 8. Neither delta
+removes a position or changes the size.
+
+:Rules: TYPE-16, END-3
+:Status: agreed
+*/
+test a_fixed_list_delta_reports_the_position_in_modified {
+    assert eval(pair_delta(
+        slot:    [0, _, 1],
+        reading: [3, _, 8],
+    )) == [
+        delta<list<i64, 2>>(modified: [0: 3]),
+        _,
+        delta<list<i64, 2>>(modified: [1: 8]),
+    ]
 }
 
 struct MarketQuote {
