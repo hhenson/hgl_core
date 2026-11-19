@@ -1,7 +1,7 @@
 # Scalar temporal endpoint observations
 
-Status: END-1 through END-10 are agreed, but for the sentences of END-7,
-END-8 and END-10 that begin "Proposed", which are proposed.
+Status: END-1 through END-10 are agreed, but for the sentences of END-7
+and END-10 that begin "Proposed", which are proposed.
 
 ## Scope and API
 
@@ -114,11 +114,10 @@ selectors follow the language contract rather than this one-endpoint table.
   read does. A dictionary or an unsized list is read whole where it is
   valid (the language's TIME-1). A position of an unsized list that holds
   no value reads in the whole value as the language's TIME-1 table has it
-  for the element type: NaN for an `f64`, null for a `V?`, and for an
-  `i64`, which has no value for it, the read fails with `value.unset_read`,
-  or gives an `err` where its place expects a `result<T, error>`.
-  Proposed, as that table has it: a failure for every other element
-  type.
+  for the element type: NaN for an `f64`, null for a `V?`, and for every
+  other element type, which has no value for it, the read fails with
+  `value.unset_read`, or gives an `err` where its place expects a
+  `result<T, error>`.
   The
   [collection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/collection_ticks.hgl)
   check both reads and a whole read, and the
