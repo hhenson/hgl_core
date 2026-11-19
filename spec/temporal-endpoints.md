@@ -1,6 +1,7 @@
 # Scalar temporal endpoint observations
 
-Status: END-1 through END-8 are agreed.
+Status: END-1 through END-8 are agreed, but for END-3's last sentence, on a
+gap in a list, which is proposed.
 
 ## Scope and API
 
@@ -48,11 +49,13 @@ selectors follow the language contract rather than this one-endpoint table.
   `removed`, also where the delta written gave only a smaller
   `size_modified`, or a negative one, which reduces the list by that
   count and leaves it empty where the count is more than it holds. An
-  `updated` entry written past a `list<V>`'s last position, with no
-  `size_modified`, extends the list, and the positions between are not
-  valid. An entry past a `list<V, N>`'s bounds in a delta made as the
-  program runs fails the write that publishes it (the language's TYPE-16).
-  The checker must prove `x` is valid and modified at the call.
+  `updated` entry written at the position after a `list<V>`'s last, with
+  no `size_modified`, extends the list. An entry past a `list<V, N>`'s
+  bounds in a delta made as the program runs fails the write that
+  publishes it (the language's TYPE-16).
+  The checker must prove `x` is valid and modified at the call. Proposed:
+  an entry written further past a `list<V>`'s last position extends the
+  list as well, and the positions between are not valid.
 - **END-4.** Invalidation clears validity, modification, payload, and delta.
   The transition to invalid notifies active subscribers. A node awakened by
   it can observe the invalid input in `when valid([])`. An explicit
