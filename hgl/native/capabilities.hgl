@@ -33,8 +33,9 @@ export native type GlobalState
 export native const fn log(logger: Logger, level: LogLevel, message: str)
 
 # CAP-4: a wake on the scheduler, under a tag or without one, on the
-# engine's clock or the wall clock. A duration must be more than zero; a
-# datetime before the evaluation time is dropped.
+# engine's clock or the wall clock. A duration must be more than zero, but
+# in `start`, where zero asks for a wake at the start; a datetime before
+# the evaluation time is dropped.
 native impl const fn schedule(
     capability: Scheduler,
     at: duration,
