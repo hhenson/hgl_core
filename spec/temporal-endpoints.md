@@ -1,7 +1,7 @@
 # Scalar temporal endpoint observations
 
-Status: END-1 through END-10 are agreed, but for END-7's sentence that
-begins "Proposed:", which is proposed.
+Status: END-1 through END-10 are agreed, but for the sentences of END-7
+and END-10 that begin "Proposed:", which are proposed.
 
 ## Scope and API
 
@@ -20,6 +20,7 @@ owns endpoint interpretation, handler selection, and phase admission.
 | `modified(value)` | bool; whether the endpoint published in the current cycle |
 | Runtime parameter payload | T; requires readable valid input, subject to declared nullable/default argument binding |
 | A collection's child, `parts[1]`, `quote.bid` | An endpoint, valid or not; its payload requires its own admission; see END-8 |
+| A `ref` parameter, `ref low: i64`, and its children | Endpoints, not values: no payload or `delta_value` read (the language's FN-16); see END-10 |
 | `delta_value(value)` | `delta<T>` (the language's TYPE-16): T for a scalar input, and for a nullable scalar the optional that holds what was published; see END-3 |
 | `is_active(input)` | bool; current activity of this direct input, including while invalid |
 | `last_modified(value)` | Agreed `datetime?`; see END-6 |
@@ -125,14 +126,23 @@ selectors follow the language contract rather than this one-endpoint table.
   [window cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/window_ticks.hgl)
   check a window of ticks. The read gives a `list<V>` of the values held,
   oldest first, and fails with `value.unset_read`.
-- **END-10.** A reference, the language's `ref<T>`, is modified where its
-  designation changes (the language's TIME-10). A publication of the
-  designation it holds is no tick: unlike a value's (END-2, END-5), it
-  leaves the endpoint unmodified and notifies no subscriber. A `ref<T>`
-  input given a connection of T designates that connection's endpoint (the
-  language's TYPE-12). The
+- **END-10.** A reference, a `ref` parameter or result (the language's
+  FN-16), is modified where its designation changes (the language's
+  TIME-10). A publication of the designation it holds is no tick: unlike a
+  value's (END-2, END-5), it leaves the endpoint unmodified and notifies no
+  subscriber. A `ref` parameter of T given a connection of T designates
+  that connection's endpoint. A `ref` result designates the endpoint its
+  `return` names, a child of an input among them, `items[idx]`, valid or
+  not: its readers follow what that endpoint is bound to, and the node is
+  not woken by that endpoint's ticks. Proposed: on a `ref` parameter,
+  `modified` is whether its designation changed, not whether its target
+  published; `valid` whether it designates something; and `last_modified`
+  when its designation last changed. The
   [reference cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/reference_ticks.hgl)
-  check a reference published twice.
+  check a reference published twice and a `ref` result that designates a
+  list's element, and the
+  [rejection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/rejections/references.hgl)
+  a read of a `ref` parameter's value and of its `delta_value`.
 
 ## Publication and silence
 

@@ -30,7 +30,8 @@ marker and leave the probe out of its subscriptions.
 | Window readiness | [Window ticks](window_ticks.hgl) |
 | Branch selection and failure propagation | [Conditional graphs](conditional_graphs.hgl) and [captured failures](captured_failures.hgl) |
 | Wakes and source suspension | [Scheduling](scheduled_wakes.hgl) and [source timing](source_timing.hgl) |
-| Source rejections | [Collection children](rejections/collection_children.hgl) |
+| References | [Reference ticks](reference_ticks.hgl) |
+| Source rejections | [Collection children](rejections/collection_children.hgl) and [references](rejections/references.hgl) |
 
 ## Writing a case
 

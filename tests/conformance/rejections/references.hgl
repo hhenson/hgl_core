@@ -1,0 +1,33 @@
+module conformance.rejections part references
+
+/**
+A `ref` parameter's value is not read.
+The body may give it to an endpoint operation, as `valid` or `modified`,
+or return it to a `ref` result, and reads nothing of it.
+The case relies on the proposed code `ref.read`.
+
+:Rules: FN-16
+:Status: proposed
+*/
+fn doubled_reference(ref price: i64) -> i64 {
+    when {
+        # expect-error(phase, "ref.read")
+        return price * 2
+    }
+}
+
+/**
+A `ref` parameter's `delta_value` is not read.
+It is the one endpoint operation that a `ref` parameter is not given; the
+header proves the parameter valid and modified, so nothing else rejects.
+The case relies on the proposed code `ref.read`.
+
+:Rules: FN-16, TIME-9
+:Status: proposed
+*/
+fn reference_delta(ref price: i64) -> i64 {
+    when modified(price) {
+        # expect-error(phase, "ref.read")
+        return delta_value(price)
+    }
+}
