@@ -1,7 +1,8 @@
 # Capabilities
 
-Status: CAP-1 to CAP-6 are agreed, but for CAP-4's sentence that begins
-"Proposed:". The meanings under "Proposed behaviour" are proposed.
+Status: CAP-1 to CAP-6 are agreed, but for the sentences of CAP-4 and
+CAP-5 that begin "Proposed:". The meanings under "Proposed behaviour" are
+proposed.
 
 ## Scope and API
 
@@ -51,8 +52,10 @@ dictionary's (the language's ERR-6).
   false when omitted. `un_schedule(scheduler)` and
   `un_schedule(scheduler, tag: name)` cancel a pending wake, and
   `reset(scheduler)` every one. A wake asked for with a `duration` takes
-  one more than zero: one that is not fails the call (the language's
-  TIME-8, which rejects one the compiler sees). One asked for at a
+  one more than zero, but in `start`, where `schedule(scheduler, 0s)` asks
+  for a wake at the start, the node's first evaluation. A duration that is
+  not admitted, a negative one in `start` included, fails the call (the
+  language's TIME-8, which rejects one the compiler sees). One asked for at a
   `datetime` before the current evaluation time is dropped: there is no
   wake, and no failure. Proposed: the failure's code is
   `schedule.non_positive_duration`.
@@ -64,7 +67,8 @@ dictionary's (the language's ERR-6).
   of a wake: the language tells one from the node's inputs (TIME-9). A
   wake asked of it with a `duration` that is not more than zero fails, and
   one at a `datetime` before the current evaluation time is dropped, as
-  CAP-4 has them for the scheduler.
+  CAP-4 has them for the scheduler. Proposed: `schedule(alarm, 0s)` in
+  `start` asks for a wake at the start, as the scheduler's does.
 - **CAP-6.** The global store is a run-wide store of ordinary values under
   string keys, each fixed when the graph is built (the language's FN-1).
   `get<V>(global_state, key)` is the value under `key`, of the type the call
