@@ -27,6 +27,7 @@ marker and leave the probe out of its subscriptions.
 | Fan-in and logical time | [Graph cycles](graph_cycles.hgl) |
 | Node lifetime and shared state | [Run lifecycle](run_lifecycle.hgl) and [run-wide store](run_store.hgl) |
 | Lifted values, fields and collection updates | [Lifted inputs](lifted_inputs.hgl) and [collection ticks](collection_ticks.hgl) |
+| Window readiness | [Window ticks](window_ticks.hgl) |
 | Branch selection and failure propagation | [Conditional graphs](conditional_graphs.hgl) and [captured failures](captured_failures.hgl) |
 | Wakes and source suspension | [Scheduling](scheduled_wakes.hgl) and [source timing](source_timing.hgl) |
 | Source rejections | [Collection children](rejections/collection_children.hgl) |

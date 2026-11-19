@@ -4,14 +4,17 @@ module core part endpoints
 # endpoint itself. Activity belongs to the receiving node's input. Contract:
 # spec/temporal-endpoints.md.
 
-# END-1, END-4, END-7: whether the endpoint holds a payload.
+# END-1, END-4, END-7, END-9: whether the endpoint holds a payload, and for
+# a window whether it holds a value.
 export native const fn valid<T>(input: endpoint<T>) -> bool
 
 # END-7: whether every element, field or entry of a list, tuple, struct
-# or dictionary is valid, one level deep.
+# or dictionary is valid, one level deep. END-9: whether a window holds at
+# least its minimum.
 export native const fn all_valid<T>(input: endpoint<T>) -> bool
 
-# END-2: whether the endpoint published in the current cycle.
+# END-2: whether the endpoint published in the current cycle. END-10: for
+# a reference, whether its designation changed.
 export native const fn modified<T>(input: endpoint<T>) -> bool
 
 # END-3: what the endpoint published in the current cycle (the language's

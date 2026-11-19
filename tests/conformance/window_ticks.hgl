@@ -1,0 +1,59 @@
+module conformance part window_ticks
+
+# A window of three values at most and two at least, of each reading.
+fn collect_readings(reading: i64) -> rolling_window<i64, 3, 2> {
+    when { return reading }
+}
+
+fn window_validity(probe: bool, readings: rolling_window<i64, 3, 2>) -> list<bool, 2> {
+    when modified(probe) && valid([]) { return [valid(readings), all_valid(readings)] }
+}
+
+fn observe_window_validity(probe: bool, reading: i64) -> list<bool, 2> =>
+    window_validity(probe, collect_readings(reading))
+
+/**
+A window is valid once it holds a value, and all valid once it holds its minimum.
+The first reading arrives on the second cycle and the second on the
+fourth; the probe reads the window every cycle. Each tick is
+`[valid, all_valid]`.
+
+:Rules: TYPE-11, TIME-9, END-9
+:Status: agreed
+*/
+test a_window_is_valid_before_its_minimum_and_all_valid_at_it {
+    assert eval(observe_window_validity(
+        probe:   [true, true, true, true],
+        reading: [   _,    1,    _,    2],
+    )) == [[false, false], [true, false], [true, false], [true, true]]
+}
+
+fn total_when_all_valid(readings: rolling_window<i64, 3, 2>) -> i64 {
+    when all_valid(readings) { return sum_readings(readings) }
+}
+
+fn total_when_valid(readings: rolling_window<i64, 3, 2>) -> i64 {
+    when { return sum_readings(readings) }
+}
+
+fn ready_total(reading: i64) -> i64 => total_when_all_valid(collect_readings(reading))
+
+fn early_total(reading: i64) -> i64 => total_when_valid(collect_readings(reading))
+
+/**
+A read of a window's value before it is all valid fails.
+Under `all_valid` the read waits for the second reading, and the fourth
+drops the first: the totals are 3, 6 and 9. Under ordinary validity the
+first reading is read alone, and the run fails with `value.unset_read`.
+It depends on the proposed read of a window's value, a `list<V>` of the
+values held, oldest first, and on its proposed code.
+
+:Rules: TYPE-11, END-9, CEVAL-6
+:Status: proposed
+*/
+test reading_a_window_before_it_is_all_valid_fails {
+    assert eval(ready_total(reading: [1, 2, 3, 4])) == [_, 3, 6, 9]
+    assert raises("value.unset_read") {
+        eval(early_total(reading: [1, 2]))
+    }
+}
