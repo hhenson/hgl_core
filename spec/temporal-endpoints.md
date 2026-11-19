@@ -1,7 +1,7 @@
 # Scalar temporal endpoint observations
 
-Status: END-1 through END-10 are agreed, but for the sentences of END-7
-and END-10 that begin "Proposed:", which are proposed.
+Status: END-1 through END-10 are agreed, but for the sentences of END-7,
+END-8 and END-10 that begin "Proposed", which are proposed.
 
 ## Scope and API
 
@@ -56,8 +56,12 @@ selectors follow the language contract rather than this one-endpoint table.
   bounds in a delta made as the program runs fails the write that
   publishes it (the language's TYPE-16). An entry written further past a
   `list<V>`'s last position extends the list as well, and the positions
-  between are not valid. A `removed` that names a key a dictionary does not
-  hold, or a member a set does not hold, is ignored, and is no failure.
+  between are not valid. An `updated` entry at or past the size that a
+  `size_modified` in the same delta gives contradicts it, and the write
+  that publishes it fails. A `removed` that names a key a dictionary does
+  not hold, a member a set does not hold, or a position of a list that
+  holds no value, never set or already removed, is ignored, and is no
+  failure.
   The checker must prove `x` is valid and modified at the call.
 - **END-4.** Invalidation clears validity, modification, payload, and delta.
   The transition to invalid notifies active subscribers. A node awakened by
@@ -108,7 +112,14 @@ selectors follow the language contract rather than this one-endpoint table.
   tells that from a published null. One checked when it runs, `rows[i]`
   read whole, that is not all valid fails or gives an `err` as a child's
   read does. A dictionary or an unsized list is read whole where it is
-  valid (the language's TIME-1). The
+  valid (the language's TIME-1). A position of an unsized list that holds
+  no value reads in the whole value as the language's TIME-1 table has it
+  for the element type: NaN for an `f64`, null for a `V?`, and for an
+  `i64`, which has no value for it, the read fails with `value.unset_read`,
+  or gives an `err` where its place expects a `result<T, error>`.
+  Proposed, as that table has it: a failure for every other element
+  type.
+  The
   [collection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/collection_ticks.hgl)
   check both reads and a whole read, and the
   [rejection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/rejections/collection_children.hgl)

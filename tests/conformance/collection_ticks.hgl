@@ -617,3 +617,103 @@ test a_struct_with_an_optional_field_is_all_valid_and_read_whole {
         bid:   [   _,    5],
     )) ==      [   _, [true, true, false]]
 }
+
+fn extend_f64_with_gap(reading: f64) -> list<f64> {
+    when {
+        if reading == 0.0 { return [1.0, 2.0] }
+        return delta<list<f64>>(updated: [3: reading])
+    }
+}
+
+# Whether the list has a fourth position and its third is NaN.
+const fn third_is_nan(values: list<f64>) -> bool {
+    var count: i64 = 0
+    for value in values { count += 1 }
+    if count < 4 { return false }
+    return values[2] != values[2]
+}
+
+fn nan_in_gap(reading: f64) -> bool => third_is_nan(extend_f64_with_gap(reading))
+
+/**
+A growing list of `f64` read whole gives NaN at a position that holds no value.
+The list [1.0, 2.0] is published whole, then a delta updates position 3. A
+lifted helper is given the whole list, whose third position is the gap.
+
+:Rules: TIME-1, TYPE-16, FN-12, END-8
+:Status: agreed
+*/
+test a_whole_f64_list_reads_nan_in_a_gap {
+    assert eval(nan_in_gap(reading: [0.0, _, 5.0])) == [false, _, true]
+}
+
+fn total_with_gap(reading: i64) -> i64 => sum_readings(extend_with_gap(reading))
+
+/**
+A growing list of `i64` read whole fails while a position holds no value.
+The list [1, 2] alone is read whole. Once a delta updates position 3, the
+whole read that lifting makes fails with `value.unset_read`: an `i64` has
+no value for "not set".
+
+:Rules: TIME-1, TYPE-16, FN-12, END-8, CEVAL-6
+:Status: agreed
+*/
+test a_whole_i64_list_with_a_gap_fails {
+    assert eval(total_with_gap(reading: [0])) == [3]
+    assert raises("value.unset_read") {
+        eval(total_with_gap(reading: [0, _, 5]))
+    }
+}
+
+fn resize_and_update(at: i64) -> list<i64> {
+    when {
+        if at < 0 { return [1, 2, 3] }
+        return delta<list<i64>>(updated: [at: 9], size_modified: 2)
+    }
+}
+
+fn contradiction_failures(at: i64) -> bool {
+    let boundary = capture(resize_and_update, at)
+    return failure_seen(boundary.error)
+}
+
+/**
+A delta with an `updated` entry at or past the size it writes fails.
+The list [1, 2, 3] is published whole. A delta that sets the size to 2 and
+updates position 1 is written; one that updates position 2 contradicts its
+own size, and the capture's error stream ticks.
+
+:Rules: TYPE-16, END-3, ERR-7
+:Status: agreed
+*/
+test an_entry_at_or_past_the_size_written_with_it_fails {
+    assert eval(contradiction_failures(at: [-1, 1, 2])) == [_, _, true]
+}
+
+fn gap_then_removal(step: i64) -> list<i64> {
+    when {
+        if step == 0 { return [1, 2] }
+        if step == 1 { return delta<list<i64>>(updated: [3: 5]) }
+        return delta<list<i64>>(removed: [2])
+    }
+}
+
+fn observe_removal(probe: bool, step: i64) -> list<bool, 3> =>
+    gap_validity(probe, gap_then_removal(step))
+
+/**
+Removing a position of a list that holds no value is ignored, and is no failure.
+The list [1, 2] is published whole, a delta updates position 3, and a
+third delta removes position 2, the gap, which never held a value. The
+probe reads, as `[valid(values[2]), valid(values[3]), all_valid(values)]`,
+the list as it was.
+
+:Rules: TYPE-16, END-3, TIME-9
+:Status: agreed
+*/
+test removing_a_position_that_never_held_a_value_is_ignored {
+    assert eval(observe_removal(
+        probe: [_, _, true],
+        step:  [0, 1,    2],
+    )) ==      [_, _, [false, true, false]]
+}
