@@ -1,7 +1,7 @@
 # Scalar temporal endpoint observations
 
-Status: END-1 through END-10 are agreed, but for END-9's last sentence, on
-what the read of a window's value gives, which is proposed.
+Status: END-1 through END-10 are agreed, but for the sentences of END-7
+and END-9 that begin "Proposed:", which are proposed.
 
 ## Scope and API
 
@@ -83,12 +83,16 @@ selectors follow the language contract rather than this one-endpoint table.
 - **END-7.** `valid(x)` of a list, a tuple, a struct or a dictionary returns true
   where any element, field or entry is valid, and for a published empty
   list or dictionary, which has none. `all_valid(x)` returns true
-  where every one is valid by its own `valid`, one level deep: for a list
-  of lists, each contained list is present and has a valid element or is
-  a published empty list. It returns true for a valid empty collection. It
-  takes only these collections and a window (END-9; the language's TIME-9).
+  where every one is valid by its own `valid`, one level deep, but for an
+  optional child, whose type is `T?` or a field the language's TYPE-4 makes
+  optional, which it does not ask: for a list of lists, each contained list
+  is present and has a valid element or is a published empty list. It
+  returns true for a valid empty collection. It takes only these
+  collections and a window (END-9; the language's TIME-9).
   The [collection validity cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/collection_ticks.hgl)
-  check a fixed list, a tuple and a struct.
+  check a fixed list, a tuple and a struct, and a struct with an optional
+  field. Proposed: `all_valid(x)` of a collection that is not valid
+  returns false.
 - **END-8.** A child of a collection is an endpoint whether or not it is
   valid: `valid`, `modified`, `delta_value` and `last_modified` take it,
   and `all_valid` where it is a collection, `valid(parts[1])`. Its value
@@ -96,11 +100,18 @@ selectors follow the language contract rather than this one-endpoint table.
   TIME-1). A read at an index known only when it runs, `parts[i]`, of a
   child that is not valid fails with `value.unset_read`, or gives an `err`
   of an `error` with that code where its place expects a
-  `result<T, error>` (the language's ERR-14). The
+  `result<T, error>` (the language's ERR-14). A read of a struct, a tuple
+  or a fixed list whole is admitted where it is all valid; in the value
+  read, an optional child that is not valid is null, and its own `valid`
+  tells that from a published null. One checked when it runs, `rows[i]`
+  read whole, that is not all valid fails or gives an `err` as a child's
+  read does. A dictionary or an unsized list is read whole where it is
+  valid (the language's TIME-1). The
   [collection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/collection_ticks.hgl)
-  check both reads, and the
+  check both reads and a whole read, and the
   [rejection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/rejections/collection_children.hgl)
-  an unadmitted read at a constant index and of a field.
+  an unadmitted read at a constant index, of a field, and of a struct
+  whole.
 - **END-9.** A window (the language's TYPE-11) holds the values that arrived
   at it, oldest first. `valid(x)` of one returns true once it holds a
   value, and `all_valid(x)` where it holds at least its minimum: of a tick

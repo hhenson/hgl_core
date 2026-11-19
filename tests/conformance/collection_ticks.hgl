@@ -581,3 +581,39 @@ test an_entry_past_a_gap_leaves_the_positions_between_not_valid {
         reading: [0, _,    5],
     )) ==        [_, _, [false, true, false]]
 }
+
+struct NotedQuote {
+    bid: i64
+    note: str?
+}
+
+fn write_bid(bid: i64) -> NotedQuote {
+    when { return delta<NotedQuote>(bid: bid) }
+}
+
+const fn note_is_null(quote: NotedQuote) -> bool => quote.note == null
+
+fn read_noted_quote(probe: bool, quote: NotedQuote) -> list<bool, 3> {
+    when modified(probe) && all_valid(quote) {
+        return [all_valid(quote), note_is_null(quote), valid(quote.note)]
+    }
+}
+
+fn observe_noted_quote(probe: bool, bid: i64) -> list<bool, 3> =>
+    read_noted_quote(probe, write_bid(bid))
+
+/**
+A struct whose optional field never published is all valid, and is read whole with that field null.
+The bid publishes on the second cycle and the note never does. The tick is
+`[all_valid(quote), note_is_null(quote), valid(quote.note)]`: the whole
+value has a null note, and the field's own `valid` says nothing published it.
+
+:Rules: TIME-1, TIME-9, TYPE-15, END-7, END-8
+:Status: agreed
+*/
+test a_struct_with_an_optional_field_is_all_valid_and_read_whole {
+    assert eval(observe_noted_quote(
+        probe: [true, true],
+        bid:   [   _,    5],
+    )) ==      [   _, [true, true, false]]
+}
