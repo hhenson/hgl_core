@@ -29,6 +29,7 @@ marker and leave the probe out of its subscriptions.
 | Lifted values, fields and collection updates | [Lifted inputs](lifted_inputs.hgl) and [collection ticks](collection_ticks.hgl) |
 | Branch selection and failure propagation | [Conditional graphs](conditional_graphs.hgl) and [captured failures](captured_failures.hgl) |
 | Wakes and source suspension | [Scheduling](scheduled_wakes.hgl) and [source timing](source_timing.hgl) |
+| Source rejections | [Collection children](rejections/collection_children.hgl) |
 
 ## Writing a case
 
@@ -46,6 +47,13 @@ the attached comment and the HGL assertion together. Keep the literal
 expected trace in the test so a change to a tick is visible in review.
 When existing backend tests describe the same observable behavior, choose
 one small example that distinguishes it.
+
+A source rejection is a declaration of the `conformance.rejections` module,
+in `rejections/`. The language's `# expect-error(category, "code")`
+annotation stands alone on the line before the rejected one (TST-12), and
+the documentation comment is attached to the declaration. `hgl test`
+matches the rejection; other commands read the annotation as a comment
+(TST-14).
 
 ## Running the cases
 

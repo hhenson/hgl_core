@@ -1,13 +1,14 @@
 # Scalar temporal endpoint observations
 
-Status: END-1 through END-7 are agreed.
+Status: END-1 through END-8 are agreed.
 
 ## Scope and API
 
 This slice covers owned scalar outputs and fixed, directly bound scalar
 inputs during evaluation. Nullable scalar values are included. END-7 gives
-the validity of a collection. Other collection observations, references, sampled/rebound inputs, and source scheduling retain their separate
-contracts. The [language temporal model](https://github.com/hhenson/hgl_spec/blob/main/spec/language/temporal-model.md)
+the validity of a collection, and END-8 the read of its child. Other
+collection observations, references, sampled/rebound inputs, and source
+scheduling retain their separate contracts. The [language temporal model](https://github.com/hhenson/hgl_spec/blob/main/spec/language/temporal-model.md)
 owns endpoint interpretation, handler selection, and phase admission.
 
 | HGL observation | Runtime result / admission |
@@ -16,6 +17,7 @@ owns endpoint interpretation, handler selection, and phase admission.
 | `all_valid(value)` | bool; a list, tuple, struct or dictionary only; see END-7 |
 | `modified(value)` | bool; whether the endpoint published in the current cycle |
 | Runtime parameter payload | T; requires readable valid input, subject to declared nullable/default argument binding |
+| A collection's child, `parts[1]`, `quote.bid` | An endpoint, valid or not; its payload requires its own admission; see END-8 |
 | `delta_value(value)` | `delta<T>` (the language's TYPE-16): T for a scalar input, and for a nullable scalar the optional that holds what was published; see END-3 |
 | `is_active(input)` | bool; current activity of this direct input, including while invalid |
 | `last_modified(value)` | Agreed `datetime?`; see END-6 |
@@ -41,9 +43,12 @@ selectors follow the language contract rather than this one-endpoint table.
   is the value published. For a nullable scalar it is the optional that
   type gives it, which holds the value published or the null: a published
   null is `delta<i64?>()` for an `i64?` endpoint, and is no absent delta.
-  For a list, the delta read on a shrink names the dropped tail positions
-  in `removed`, also where the delta written gave only a smaller
-  `size_modified` (the language's TYPE-16).
+  For a list, the delta read gives the new size where it moves, never a
+  negative one, and on a shrink names the dropped tail positions in
+  `removed`, also where the delta written gave only a smaller
+  `size_modified`, or a negative one, which reduces the list by that
+  count. An `updated` entry written at the position after a `list<V>`'s
+  last, with no `size_modified`, extends the list (the language's TYPE-16).
   The checker must prove `x` is valid and modified at the call.
 - **END-4.** Invalidation clears validity, modification, payload, and delta.
   The transition to invalid notifies active subscribers. A node awakened by
@@ -76,6 +81,18 @@ selectors follow the language contract rather than this one-endpoint table.
   takes only these collections (the language's TIME-9).
   The [collection validity cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/collection_ticks.hgl)
   check a fixed list, a tuple and a struct.
+- **END-8.** A child of a collection is an endpoint whether or not it is
+  valid: `valid`, `modified`, `delta_value` and `last_modified` take it,
+  and `all_valid` where it is a collection, `valid(parts[1])`. Its value
+  and its delta are read where the child is admitted (the language's
+  TIME-1). A read at an index known only when it runs, `parts[i]`, of a
+  child that is not valid fails with `value.unset_read`, or gives an `err`
+  of an `error` with that code where its place expects a
+  `result<T, error>` (the language's ERR-14). The
+  [collection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/collection_ticks.hgl)
+  check both reads, and the
+  [rejection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/rejections/collection_children.hgl)
+  an unadmitted read at a constant index and of a field.
 
 ## Publication and silence
 
