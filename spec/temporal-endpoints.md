@@ -185,10 +185,21 @@ selectors follow the language contract rather than this one-endpoint table.
   and the proposed validity of a window emptied by exits and `delta_value`
   at an exit.
 - **END-10.** A reference, a `ref` parameter or result (the language's
-  FN-16), is modified where its designation changes (the language's
-  TIME-10). A publication of the designation it holds is no tick: unlike a
-  value's (END-2, END-5), it leaves the endpoint unmodified and notifies no
-  subscriber. A `ref` parameter of T given a connection of T designates
+  FN-16), is a temporal value of a designation (the language's TIME-10).
+  A runtime is held to what the use of a reference produces, the ticks
+  that reach a reader and what wakes a node, and not to how it carries a
+  reference between them. An ordinary reader of a `ref` result observes
+  the endpoint designated as if wired to it: valid where that endpoint is,
+  ticking where it publishes. Where the result comes to designate another
+  endpoint, the reader ticks in that cycle with the value that endpoint
+  holds, whether or not the endpoint publishes then; where the endpoint
+  holds none, the reader is not valid and is silent until it publishes;
+  and the endpoint left behind no longer reaches it. A result given the
+  designation it holds leaves its reader undisturbed. In a node, a `ref`
+  parameter is passive to what it designates: a publication of that
+  endpoint does not wake the node. A handler that subscribes to the
+  parameter is woken where the parameter is given a designation. A `ref`
+  parameter of T given a connection of T designates
   that connection's endpoint. Returning a whole `ref` parameter samples
   its current designation. Its reader continues to receive publications
   from that target across later changes to the parameter's designation,
@@ -197,14 +208,13 @@ selectors follow the language contract rather than this one-endpoint table.
   valid or not. Readers follow its binding (FN-16). A `ref` result designates one
   endpoint whole: an assignment to a part of its `out`, `out.bid = x` or
   `out[0] = x`, is rejected. So is `ref` on a `signal` parameter, which
-  has no payload to designate (the language's FN-16, TYPE-12). Proposed:
-  on a `ref` parameter,
-  `modified` is whether its designation changed, not whether its target
-  published; `valid` whether it designates something; and `last_modified`
-  when its designation last changed. The
+  has no payload to designate (the language's FN-16, TYPE-12). The
   [reference cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/reference_ticks.hgl)
-  check repeated publication, sampling a `ref` parameter, and designating a
-  list element. The
+  check what a reader observes of a designation given again, of a change
+  to a target that holds a value and to one that holds none, and of a
+  list element; that a `ref` parameter does not wake its node for its
+  target; and a relay that samples its `ref` parameter and one that
+  follows it. The
   [rejection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/rejections/references.hgl)
   cover a read of a `ref` parameter's value and of its `delta_value`, an
   assignment to a part of a `ref` result's `out`, and a `signal`
