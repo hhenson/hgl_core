@@ -79,10 +79,10 @@ test a_reader_waits_for_a_target_that_has_not_published {
 }
 
 /**
-A reader of a `ref` result is not valid while its target holds no value.
-The same run, with a probe reading the reader's validity in every cycle:
-it is false in the one cycle the high input is picked and has not
-published.
+An ordinary input given a `ref` result is not valid while the result's target holds no value.
+`item_is_valid` takes the result as `item: i64`, no `ref` parameter, and
+a probe reads `valid(item)` in every cycle of the same run: it is false
+in the one cycle the high input is picked and has not published.
 
 :Rules: TIME-10, END-10
 :Status: proposed
@@ -94,6 +94,26 @@ test a_reader_is_not_valid_while_its_target_holds_no_value {
         low:   [    1,     _,    _,    _,     _],
         high:  [    _,     _,    7,    _,     _],
     )) ==      [ true, false, true, true,  true]
+}
+
+fn reference_is_present(probe: bool, ref target: i64) -> bool {
+    when modified(probe) && valid(probe) { return valid(target) }
+}
+
+/**
+`valid` of a `ref` parameter is whether a reference is present.
+The parameter is given a connection that first publishes in the third
+cycle. A reference is present from the first, so `valid(target)` is true
+throughout: nothing of the target is seen through the parameter.
+
+:Rules: TIME-10, FN-16, END-10
+:Status: agreed
+*/
+test valid_of_a_ref_parameter_is_whether_a_reference_is_present {
+    assert eval(reference_is_present(
+        probe:  [true, true, true],
+        target: [   _,    _,    7],
+    )) ==       [true, true, true]
 }
 
 fn count_wakes(ref target: i64) -> i64 {
