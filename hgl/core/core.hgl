@@ -75,17 +75,19 @@ export const fn log_error(logger: Logger, message: str) {
 # use either name for a declaration of its own.
 
 # The publications a replay list holds, each at its time (CEVAL-2,
-# CEVAL-3). An eval's run wires one to each temporal input of its target
-# (CEVAL-1).
+# CEVAL-3). A window's delta appends its `added`; the window takes its
+# values out itself (END-9). An eval's run wires one to each temporal
+# input of its target (CEVAL-1).
 fn replay<T>(const items: list<tuple<datetime, delta<T>>>) -> T {
     for item in items {
         yield item[0]: item[1]
     }
 }
 
-# Each publication of `input`, with its evaluation time, put in the store
-# under `key` at stop (CEVAL-4). A run wires one to its entry's result
-# under the run's key (CRUN-8).
+# Each publication of `input`, and each exit of a window, which is
+# modified then (END-9), with its evaluation time, put in the store under
+# `key` at stop (CEVAL-4). A run wires one to its entry's result under the
+# run's key (CRUN-8).
 fn record<T>(input: T, const key: str) {
     cache entries: list<tuple<datetime, delta<T>>> = []
     inject clock, global_state

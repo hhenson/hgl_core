@@ -206,28 +206,92 @@ test a_window_emptied_by_exits_stays_valid {
         [[true, false], _, _, _, [true, false]]
 }
 
-fn arrival_at_tick(readings: rolling_window<i64, 3us, 1us>) -> i64 {
+# A window of two values, of each reading.
+fn collect_pair(reading: i64) -> rolling_window<i64, 2> {
+    when { return reading }
+}
+
+fn pair_change(readings: rolling_window<i64, 2>) -> delta<rolling_window<i64, 2>> {
     when modified(readings) { return delta_value(readings) }
 }
 
-fn observe_recent_arrivals(reading: i64) -> i64 =>
-    arrival_at_tick(collect_recent(reading))
+fn observe_pair_changes(reading: i64) -> delta<rolling_window<i64, 2>> =>
+    pair_change(collect_pair(reading))
 
 /**
-A window's delta is the value that arrived, and at an exit with none arriving its read fails.
-The reading of 1 arrives at 0us, and that of 2 at 4us, as the first
-leaves: one tick, whose delta is 2. The run ends before 2 leaves. Run on
-alone, the reading of 1 leaves at 4us with nothing arriving, and the read
-of the delta there fails with `value.unset_read`: that failure is
-proposed.
+An arrival at a full window of ticks pushes the oldest value out, and its delta has both.
+The window holds two readings. Its delta is read at the first, before the
+window is all valid. The third reading pushes the first out: its delta has
+the 3 that arrived and the 1 that left.
 
 :Rules: TYPE-11, TYPE-16, END-3, END-9
-:Status: proposed
+:Status: agreed
 */
-test a_window_delta_at_an_exit_alone_has_no_value {
-    assert eval(observe_recent_arrivals(reading: [1, _, _, _, 2]), RunConfig(length: 5us)) ==
-        [1, _, _, _, 2]
-    assert raises("value.unset_read") {
-        eval(observe_recent_arrivals(reading: [1]))
-    }
+test an_arrival_at_a_full_window_of_ticks_has_the_value_it_pushes_out {
+    assert eval(observe_pair_changes(reading: [1, 2, 3])) == [
+        delta<rolling_window<i64, 2>>(added: 1),
+        delta<rolling_window<i64, 2>>(added: 2),
+        delta<rolling_window<i64, 2>>(added: 3, removed: 1),
+    ]
+}
+
+fn recent_change(readings: rolling_window<i64, 3us, 1us>) -> delta<rolling_window<i64, 3us, 1us>> {
+    when modified(readings) { return delta_value(readings) }
+}
+
+fn observe_recent_changes(reading: i64) -> delta<rolling_window<i64, 3us, 1us>> =>
+    recent_change(collect_recent(reading))
+
+/**
+A window's delta has what arrived and what left, and an exit with nothing arriving has only what left.
+The readings of 1 and 2 arrive at 0us and 1us. The 1 leaves at 4us with
+nothing arriving, and the 3 arrives at 5us as the 2 leaves: one tick,
+whose delta has both. At 0us, 4us and 5us the window is not all valid,
+and its delta is read there as elsewhere. The run ends before the 3
+leaves.
+
+:Rules: TYPE-11, TYPE-16, END-3, END-9
+:Status: agreed
+*/
+test a_window_delta_has_what_arrived_and_what_left {
+    assert eval(observe_recent_changes(reading: [1, 2, _, _, _, 3]), RunConfig(length: 6us)) == [
+        delta<rolling_window<i64, 3us, 1us>>(added: 1),
+        delta<rolling_window<i64, 3us, 1us>>(added: 2),
+        _,
+        _,
+        delta<rolling_window<i64, 3us, 1us>>(removed: 1),
+        delta<rolling_window<i64, 3us, 1us>>(added: 3, removed: 2),
+    ]
+}
+
+/**
+A recording of a window holds its exits, and a replayed window delta appends what arrived and removes nothing.
+Recorded as the result, the window of the readings 1 and 2 has an exit
+with nothing arriving at 4us. Replayed to the reader, the third delta
+names the 2 as removed as the 3 arrives at 2us: the 2 is held until its
+own exit at 5us, and the 1 until its exit at 4us.
+
+:Rules: TYPE-11, TYPE-16, TST-16, CEVAL-3, CEVAL-4, END-9
+:Status: agreed
+*/
+test a_window_is_recorded_with_its_exits_and_replayed_by_what_arrived {
+    assert eval(collect_recent(reading: [1, 2]), RunConfig(length: 5us)) == [
+        delta<rolling_window<i64, 3us, 1us>>(added: 1),
+        delta<rolling_window<i64, 3us, 1us>>(added: 2),
+        _,
+        _,
+        delta<rolling_window<i64, 3us, 1us>>(removed: 1),
+    ]
+    assert eval(recent_change(readings: [
+        delta<rolling_window<i64, 3us, 1us>>(added: 1),
+        delta<rolling_window<i64, 3us, 1us>>(added: 2),
+        delta<rolling_window<i64, 3us, 1us>>(added: 3, removed: 2),
+    ]), RunConfig(length: 6us)) == [
+        delta<rolling_window<i64, 3us, 1us>>(added: 1),
+        delta<rolling_window<i64, 3us, 1us>>(added: 2),
+        delta<rolling_window<i64, 3us, 1us>>(added: 3),
+        _,
+        delta<rolling_window<i64, 3us, 1us>>(removed: 1),
+        delta<rolling_window<i64, 3us, 1us>>(removed: 2),
+    ]
 }
