@@ -85,7 +85,7 @@ a probe reads `valid(item)` in every cycle of the same run: it is false
 in the one cycle the high input is picked and has not published.
 
 :Rules: TIME-10, END-10
-:Status: proposed
+:Status: agreed
 */
 test a_reader_is_not_valid_while_its_target_holds_no_value {
     assert eval(picked_is_valid(
