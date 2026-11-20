@@ -19,7 +19,10 @@ owns symbol syntax, precedence, and phase checking. An instant is a
   [tenor contract](tenor-operations.md). Every other pairing is a
   source rejection, `operator.no_candidate`. An operation that commutes admits
   its operands in either order; one that does not admits the order shown. A
-  division of a duration takes `zero` as NUM-12 says.
+  division of a duration takes `zero` as NUM-12 says. A `str` and an `i64`
+  give the text repeated that many times, the empty text for a count of
+  zero; a count below zero is an HGL error with code
+  `numeric.out_of_range`.
 - **OPS-2.** `<`, `<=`, `>`, `>=`, and `<=>` compare two values of one type
   among `str`, `bool`, `date`, `time`, `datetime`, `civil_datetime`, and
   `duration`. `==` and `!=` compare two values of one type. The zoned types
@@ -193,6 +196,14 @@ an error (OPS-10):
 | `1us / 3`; `2us / 3` | `0us`; `1us` |
 | A duration times an infinity or a NaN | HGL error with code `numeric.out_of_range` |
 | `@9999-12-31T23:59:59Z + 1d` | HGL error with code `numeric.out_of_range` |
+
+Text is repeated a count, in either order (OPS-1):
+
+| Expression | Result |
+| --- | --- |
+| `"ab" * 2`; `2 * "ab"` | `"abab"` |
+| `"ab" * 0` | `""` |
+| `"ab" * -1` | HGL error with code `numeric.out_of_range` |
 
 A date and a duration give a civil datetime (OPS-1, OPS-10):
 

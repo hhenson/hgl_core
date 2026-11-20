@@ -104,6 +104,8 @@ native impl const fn sub_(lhs: civil_datetime, rhs: civil_datetime) -> duration
 # OPS-1: `*`, `/`, `//` on durations and strings.
 native impl const fn mul_(lhs: duration, rhs: i64) -> duration
 native impl const fn mul_(lhs: duration, rhs: f64) -> duration
+# OPS-1: the text repeated `rhs` times. A count below zero is an HGL error
+# with code `numeric.out_of_range`.
 native impl const fn mul_(lhs: str, rhs: i64) -> str
 native impl const fn div_<const zero: ZeroPolicy = .fail>(lhs: duration, rhs: i64) -> duration
     requires zero == .fail

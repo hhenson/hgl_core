@@ -4,9 +4,9 @@ These HGL cases check the behavior of core's operators, portable bodies and eval
 
 | Part | What it checks |
 | --- | --- |
-| `scalar_operator_wrappers` | Operand order, numeric precision, tolerance options and special values |
+| `scalar_operator_wrappers` | Operand order, numeric precision, tolerance options, special values and text repeated a count |
 | `identity_arithmetic` | Addition and subtraction under the identity policy, ordinary lifting and generic candidates |
-| `lists` | Append, extend and independence of an earlier list value |
+| `lists` | Append, extend, independence of an earlier list value, and an index outside a list |
 | `dense_traces` | Empty frames, leading and trailing silence, and recording through the last publication |
 | `recorded_ticks` | Absolute recording times for published nullable deltas |
 | `record_eval` | Empty recordings and retention of earlier recorded deltas |
