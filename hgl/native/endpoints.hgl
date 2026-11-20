@@ -14,8 +14,10 @@ export native const fn valid<T>(input: endpoint<T>) -> bool
 # least its minimum.
 export native const fn all_valid<T>(input: endpoint<T>) -> bool
 
-# END-2: whether the endpoint published in the current cycle. END-10: for
-# a reference, whether its designation changed.
+# END-2: whether the endpoint published in the current cycle, or, for an
+# input of a branch as it starts, whether it is bound to one already
+# valid; as a guard it admits a read as `valid` does. END-10: for a
+# reference, whether its designation changed.
 export native const fn modified<T>(input: endpoint<T>) -> bool
 
 # END-3: what the endpoint published in the current cycle (the language's

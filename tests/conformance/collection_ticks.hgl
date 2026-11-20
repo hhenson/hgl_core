@@ -761,7 +761,7 @@ The set [1] is published whole; removing 9 changes nothing and wakes no
 reader, and publishing [1, 2] then does.
 
 :Rules: TIME-7, TYPE-16, END-3, END-5
-:Status: proposed
+:Status: agreed
 */
 test removing_only_an_absent_member_is_no_tick {
     assert eval(member_wakes(step: [1, 3, 2])) == [true, _, true]
@@ -811,7 +811,7 @@ removal of position 2, which never held a value, changes nothing and wakes
 no reader; publishing [1, 2] whole again does.
 
 :Rules: TIME-7, TYPE-16, END-3, END-5
-:Status: proposed
+:Status: agreed
 */
 test removing_only_a_position_that_holds_no_value_is_no_tick {
     assert eval(reading_wakes(step: [1, 2, 3, 1])) == [true, true, _, true]

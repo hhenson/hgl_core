@@ -59,6 +59,7 @@ is invoked once with the list; no per-element lifting is introduced.
 | Valid unsized list changes length | Use the current list; no required N is inferred |
 | Valid empty unsized list passed to `total` | Invoke and publish 0.0 |
 | Struct, tuple or fixed-size list that is not all valid (END-8), or window that is not (END-9) | No invocation: lifting does not admit unreadable required data |
+| A parameter with a default given a struct, tuple, fixed-size list or window that is valid and not all valid | No invocation: the default binds for an input that is not valid, and not for this one (the language's FN-11) |
 | Struct that is all valid with an optional field never published (END-7) | Invoke with that field null |
 | Temporal input changes after a returned value is retained | Earlier retained result remains unchanged |
 | Helper uses an admitted borrowed view | View stays within its permitted lifetime; lifting does not grant ownership |
