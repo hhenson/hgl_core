@@ -1,7 +1,7 @@
 # Scalar temporal endpoint observations
 
-Status: END-1 through END-10 are agreed, but for the sentences of END-7
-and END-10 that begin "Proposed", which are proposed.
+Status: END-1 through END-10 are agreed, but for the sentences of END-7,
+END-9 and END-10 that begin "Proposed", which are proposed.
 
 ## Scope and API
 
@@ -17,7 +17,7 @@ owns endpoint interpretation, handler selection, and phase admission.
 | --- | --- |
 | `valid(value)` | bool; may inspect an invalid endpoint; for a collection, see END-7 |
 | `all_valid(value)` | bool; a list, tuple, struct, dictionary or window only; see END-7 and END-9 |
-| `modified(value)` | bool; whether the endpoint published in the current cycle, but for an input of a branch as it starts (END-2); a guard that admits a payload read as `valid` does |
+| `modified(value)` | bool; whether the endpoint published in the current cycle, but for an input of a branch as it starts (END-2) and a window of a duration at an exit (END-9); a guard that admits a payload read as `valid` does |
 | Runtime parameter payload | T; requires readable valid input, subject to declared nullable/default argument binding |
 | A collection's child, `parts[1]`, `quote.bid` | An endpoint, valid or not; its payload requires its own admission; see END-8 |
 | A `ref` parameter, `ref low: i64`, and its children | Endpoints, not values: no payload or `delta_value` read (the language's FN-16); see END-10 |
@@ -40,12 +40,14 @@ selectors follow the language contract rather than this one-endpoint table.
 - **END-2.** A scalar publication marks its endpoint modified for the current
   cycle, including when the payload repeats. An idle cycle leaves the endpoint
   unmodified and preserves its retained payload. A fixed, directly bound input
-  observes its output's state. The one exception is an input of a node in a
+  observes its output's state. One exception is an input of a node in a
   branch started while the program runs (the language's CTRL-2): bound to
   an endpoint that is already valid, it is modified in the cycle the branch
   starts, published in that cycle or not, and wakes its node as a
   publication does, so the branch's nodes run once with the values held.
-  Other inputs bound to that endpoint see it as it is. An input is not
+  Other inputs bound to that endpoint see it as it is. The other is a
+  window of a duration, modified at an exit with nothing published
+  (END-9). An input is not
   modified without being valid: `modified(x)`, as a guard, admits a read
   of `x` as `valid(x)` does (the language's TIME-4). The
   [conditional cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/conditional_graphs.hgl)
@@ -155,21 +157,33 @@ selectors follow the language contract rather than this one-endpoint table.
   at it, oldest first. `valid(x)` of one returns true once it holds a
   value, and `all_valid(x)` where it holds at least its minimum: of a tick
   count, that many values; of a duration, values whose arrival times span
-  at least the minimum, from the oldest held to the newest. In a window of
-  a duration, a value
-  is still held when its age is the maximum, and one older leaves when the
-  next value arrives, and not before. An exit is no tick and notifies no
-  subscriber. A minimum of zero is read as the maximum. A read of its
-  value gives a `list<V>` of the values held, oldest first. Before the
+  at least the minimum, from the oldest held to the newest. A minimum of
+  zero is held by the first value, and an empty window is not all valid.
+  A window of a tick count drops its oldest value only at an arrival. In
+  one of a duration, a value is still held when its age is the maximum,
+  and leaves one smallest step later (CRUN-3), whether or not a value
+  arrives then. The window ticks for that exit: it is modified, and
+  notifies its active subscribers as a publication does (END-5). Each
+  value leaves in a cycle of its own, and an exit and an arrival in one
+  cycle are one tick. When the last value leaves, the window is empty. So
+  `all_valid(x)` becomes true only at an arrival, and may become false at
+  an exit. A read of a window's value gives a `list<V>` of the values
+  held, oldest first. Before the
   window is all valid that read fails with `value.unset_read`, or gives an `err` of an `error`
   with that code where its place expects a `result<list<V>, error>` (the
   language's ERR-14). A lifted value function is given the window only
   where it is all valid: one that is valid and not all valid does not
   invoke it, though its parameter has a default (the language's FN-11).
+  Proposed: a window emptied by exits stays valid; where a value leaves
+  and none arrives, `delta_value(x)` has no value, and its read fails with
+  `value.unset_read`; and `last_modified(x)` is then the exit's time.
   The
   [window cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/window_ticks.hgl)
   check a window of ticks, its read where a `result` is taken, and a
-  lifted parameter with a default.
+  lifted parameter with a default; and, in a window of a duration, an
+  exit with nothing arriving, `all_valid` falling back, a minimum of zero,
+  and the proposed validity of a window emptied by exits and `delta_value`
+  at an exit.
 - **END-10.** A reference, a `ref` parameter or result (the language's
   FN-16), is modified where its designation changes (the language's
   TIME-10). A publication of the designation it holds is no tick: unlike a
