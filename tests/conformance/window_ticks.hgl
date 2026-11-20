@@ -195,11 +195,10 @@ fn observe_recent_validity(reading: i64) -> list<bool, 2> =>
 /**
 A window of a duration emptied by exits stays valid, and is not all valid.
 The one reading arrives at 0us and leaves at 4us, and the reader is woken
-by the window alone. Each tick is `[valid, all_valid]`. That the emptied
-window stays valid is proposed.
+by the window alone. Each tick is `[valid, all_valid]`.
 
 :Rules: TYPE-11, END-9
-:Status: proposed
+:Status: agreed
 */
 test a_window_emptied_by_exits_stays_valid {
     assert eval(observe_recent_validity(reading: [1])) ==

@@ -11,12 +11,12 @@ const fn climb<const N: i64>(x: i64) -> i64 {
 A call whose instances never end when the program is compiled is rejected.
 `climb<0>(3)` makes `climb<0>`, `climb<1>`, `climb<2>` and on without end.
 An implementation has a bound on the instances of one declaration, and
-rejects the program where they pass it. The case relies on the proposed
-code `generic.instance_limit`, reported at the call that makes the first
-of them.
+rejects the program where they pass it, with the code
+`generic.instance_limit`, reported at the call that makes the first of
+them.
 
 :Rules: GEN-13
-:Status: proposed
+:Status: agreed
 */
 const fn climbed() -> i64 {
     # expect-error(type, "generic.instance_limit")
