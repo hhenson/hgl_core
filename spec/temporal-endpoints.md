@@ -1,7 +1,7 @@
 # Scalar temporal endpoint observations
 
-Status: END-1 through END-10 are agreed, but for the sentences of END-9
-and END-10 that begin "Proposed:", which are proposed.
+Status: END-1 through END-10 are agreed, but for the sentence of END-9
+that begins "Proposed:", which is proposed.
 
 ## Scope and API
 
@@ -211,8 +211,8 @@ selectors follow the language contract rather than this one-endpoint table.
   (the language's TYPE-11, TYPE-16): `delta_value(x)` gives
   `delta<f64?>(value: 1.0)` for 1.0 and `delta<f64?>()` for a null. Such
   a window also takes its delta as the arrival it holds, as `replay`
-  publishes a recorded one (the language's TIME-7). Proposed:
-  `removed_value(x)` of it gives the V itself, null included.
+  publishes a recorded one (the language's TIME-7). `removed_value(x)`
+  of it gives the V itself, null included.
   A window emptied by exits stays valid. Proposed: where a value leaves
   and none arrives, `last_modified(x)` is the exit's time.
   The
@@ -257,9 +257,9 @@ selectors follow the language contract rather than this one-endpoint table.
   endpoint whole: an assignment to a part of its `out`, `out.bid = x` or
   `out[0] = x`, is rejected. So is `ref` on a `signal` parameter, which
   has no payload to designate (the language's FN-16, TYPE-12), and so is
-  `ref` on a parameter or a result whose type is a window. Proposed: the
-  code of that rejection is `ref.position`, and `removed_value` is not
-  read of a window that is a child of a `ref` parameter or of `out` of a
+  `ref` on a parameter or a result whose type is a window. The code of
+  that rejection is `ref.position`, and `removed_value` is not read of a
+  window that is a child of a `ref` parameter or of `out` of a
   `ref` result, as `delta_value` is not (the language's FN-16). The
   [reference cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/reference_ticks.hgl)
   check what a reader observes of a designation given again, of a change
@@ -272,8 +272,7 @@ selectors follow the language contract rather than this one-endpoint table.
   [rejection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/rejections/references.hgl)
   cover a read of a `ref` parameter's value and of its `delta_value`, an
   assignment to a part of a `ref` result's `out`, a `signal` parameter
-  marked `ref`, and, under the proposed code, a window parameter marked
-  `ref`.
+  marked `ref`, and a window parameter marked `ref`.
 
 ## Publication and silence
 

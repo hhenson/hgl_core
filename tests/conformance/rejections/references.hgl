@@ -75,11 +75,11 @@ fn counted_ticks(
 
 /**
 A window parameter is not marked `ref`.
-`ref` stands on no window, as a parameter or as a result. The code of the
-rejection, `ref.position`, is proposed.
+`ref` stands on no window, as a parameter or as a result. The mark
+rejects with the code `ref.position`.
 
 :Rules: FN-16, END-10
-:Status: proposed
+:Status: agreed
 */
 fn latest_price(
     # expect-error(function-kind, "ref.position")
