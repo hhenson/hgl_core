@@ -66,6 +66,30 @@ fn follow_item(item: i64) -> i64 {
     when { return item }
 }
 
+fn sample_reference(take: bool, ref target: i64) -> ref i64 {
+    when modified(take) { return target }
+}
+
+fn followed_sample(take: bool, high_first: bool, low: i64, high: i64) -> i64 =>
+    follow_item(sample_reference(take, pick_reference(high_first, low, high)))
+
+/**
+Returning a ref parameter samples the target selected when the node runs.
+The selector changes to high at step two. The relay continues to forward
+low until the next take, when it selects high and reads its retained value.
+
+:Rules: FN-16, TIME-10, END-10
+:Status: agreed
+*/
+test a_relay_samples_its_ref_parameter_when_it_runs {
+    assert eval(followed_sample(
+        take:       [ true,    _,  _, true,  _],
+        high_first: [false, true,  _,    _,  _],
+        low:        [    1,    2,  3,    4,  5],
+        high:       [   10,   10, 11,    _, 12],
+    )) ==           [    1,    2,  3,   11, 12]
+}
+
 fn follow_routed_item(idx: i64, slot: i64, reading: i64) -> i64 =>
     follow_item(route_item(idx, set_one_item(slot, reading)))
 

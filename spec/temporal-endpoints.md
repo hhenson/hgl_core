@@ -189,10 +189,12 @@ selectors follow the language contract rather than this one-endpoint table.
   TIME-10). A publication of the designation it holds is no tick: unlike a
   value's (END-2, END-5), it leaves the endpoint unmodified and notifies no
   subscriber. A `ref` parameter of T given a connection of T designates
-  that connection's endpoint. A `ref` result designates the endpoint its
-  `return` names, a child of an input among them, `items[idx]`, valid or
-  not: its readers follow what that endpoint is bound to, and the node is
-  not woken by that endpoint's ticks. A `ref` result designates one
+  that connection's endpoint. Returning a whole `ref` parameter samples
+  its current designation. Its reader continues to receive publications
+  from that target across later changes to the parameter's designation,
+  until the node writes the result again. Returning an ordinary input or
+  a child path such as `items[idx]` designates that logical endpoint,
+  valid or not. Readers follow its binding (FN-16). A `ref` result designates one
   endpoint whole: an assignment to a part of its `out`, `out.bid = x` or
   `out[0] = x`, is rejected. So is `ref` on a `signal` parameter, which
   has no payload to designate (the language's FN-16, TYPE-12). Proposed:
@@ -201,10 +203,10 @@ selectors follow the language contract rather than this one-endpoint table.
   published; `valid` whether it designates something; and `last_modified`
   when its designation last changed. The
   [reference cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/reference_ticks.hgl)
-  check a reference published twice and a `ref` result that designates a
-  list's element, and the
+  check repeated publication, sampling a `ref` parameter, and designating a
+  list element. The
   [rejection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/rejections/references.hgl)
-  a read of a `ref` parameter's value and of its `delta_value`, an
+  cover a read of a `ref` parameter's value and of its `delta_value`, an
   assignment to a part of a `ref` result's `out`, and a `signal`
   parameter marked `ref`.
 
