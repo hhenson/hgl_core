@@ -61,12 +61,11 @@ ends, and what it gives back.
   program puts a value there.
 - **CRUN-8.** The output of a run of an entry whose result type is T is a
   `list<tuple<datetime, delta<T>>>` (the language's TST-16): one tuple for
-  each publication of the result, and for each exit of a window (END-9), in
-  time order, holding the evaluation time and that cycle's delta. An
-  entry with no result has no output. The run wires `record` to the
-  entry's result under the key `"run.output"`, and its output is the value
-  under that key once the run has stopped. That key is the run's: a
-  program that names it is rejected when its graph is built.
+  each publication of the result, in time order, holding the evaluation time
+  and what was published. An entry with no result has no output. The run
+  wires `record` to the entry's result under the key `"run.output"`, and its
+  output is the value under that key once the run has stopped. That key is
+  the run's: a program that names it is rejected when its graph is built.
 
 ## Replay and record
 
@@ -86,7 +85,8 @@ fn record<T>(input: T, const key: str) {
     cache entries: list<tuple<datetime, delta<T>>> = []
     inject clock, global_state
     when valid(input) && modified(input) {
-        append(entries, (clock.evaluation_time, delta_value(input)))
+        let change: result<delta<T>, error> = delta_value(input)
+        if is_ok(change) { append(entries, (clock.evaluation_time, change.value)) }
     }
     stop { put(global_state, key, entries) }
 }
@@ -94,7 +94,9 @@ fn record<T>(input: T, const key: str) {
 
 `replay` is a source that yields each entry at its time. `record` keeps
 its recording in a `cache`, which [`append`](list-operations.md) gives one
-more tuple at each publication.
+more tuple at each publication. It reads the delta where a `result` is
+taken (END-3): in a cycle in which a value only leaves a window of a
+duration there is none, and it adds no tuple.
 
 Illustration, complete module:
 

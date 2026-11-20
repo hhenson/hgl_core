@@ -21,12 +21,13 @@ owns endpoint interpretation, handler selection, and phase admission.
 | Runtime parameter payload | T; requires readable valid input, subject to declared nullable/default argument binding |
 | A collection's child, `parts[1]`, `quote.bid` | An endpoint, valid or not; its payload requires its own admission; see END-8 |
 | A `ref` parameter, `ref low: i64`, and its children | Endpoints, not values: no payload or `delta_value` read (the language's FN-16); see END-10 |
-| `delta_value(value)` | `delta<T>` (the language's TYPE-16): T for a scalar input, for a nullable scalar the optional that holds what was published, and for a window what arrived and what left; see END-3 and END-9 |
+| `delta_value(value)` | `delta<T>` (the language's TYPE-16): T for a scalar input, for a nullable scalar the optional that holds what was published, and for a window the value that arrived; a `result` where the place takes one, an `err` where there is no delta; see END-3 and END-9 |
+| `removed_value(window)` | `result<V, error>`: the value that left the window in the cycle, or an `err` where none left; see END-9 |
 | `is_active(input)` | bool; current activity of this direct input, including while invalid |
 | `last_modified(value)` | Agreed `datetime?`; see END-6 |
 
-`valid`, `all_valid`, `modified`, `delta_value`, `last_modified`, `invalidate`,
-`is_active`, `activate`, and `passivate` are declared in `hgl/native/endpoints.hgl` as
+`valid`, `all_valid`, `modified`, `delta_value`, `removed_value`, `last_modified`,
+`invalidate`, `is_active`, `activate`, and `passivate` are declared in `hgl/native/endpoints.hgl` as
 native value functions that take the endpoint and not its payload, an
 `endpoint<T>` (the language's TIME-9). Runtime metadata reads create no graph
 nodes. Composition forms and empty/multi-argument handler
@@ -59,12 +60,11 @@ selectors follow the language contract rather than this one-endpoint table.
   is the value published. For a nullable scalar it is the optional that
   type gives it, which holds the value published or the null: a published
   null is `delta<i64?>()` for an `i64?` endpoint, and is no absent delta.
-  For a window it has the value that arrived and the value that left, and
-  is read at each tick of the window, an exit with nothing arriving
-  included (END-9). For a list, the delta read gives the new size where
-  it moves, never a negative one, and on a shrink names the dropped tail
-  positions in `removed`, also where the delta written gave only a smaller
-  `size_modified`, or a negative one, which reduces the list by that
+  For a window it is the value that arrived (END-9). For a list, the
+  delta read gives the new size where it moves, never a negative one, and
+  on a shrink names the dropped tail positions in `removed`, also where
+  the delta written gave only a smaller `size_modified`, or a negative
+  one, which reduces the list by that
   count and leaves it empty where the count is more than it holds. An
   `updated` entry written at the position after a `list<V>`'s last, with
   no `size_modified`, extends the list. An entry past a `list<V, N>`'s
@@ -90,6 +90,13 @@ selectors follow the language contract rather than this one-endpoint table.
   check a list and a set, and the
   [dictionary cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/dictionary_ticks.hgl)
   a dictionary.
+  `delta_value(x)` takes its form from its place (the language's ERR-14):
+  where the place expects `result<delta<T>, error>` it gives `ok` of the
+  delta, or an `err` coded `value.unset_read` where `x` has no delta in
+  the cycle; elsewhere it gives the delta, and the read fails with that
+  code where there is none. Only a window of a duration has a tick with
+  no delta (END-9): for every other endpoint the `result` form is `ok`, so
+  generic code, `record` among it, reads a delta in that form.
   The checker must prove `x` is valid and modified at the call.
 - **END-4.** Invalidation clears validity, modification, payload, and delta.
   The transition to invalid notifies active subscribers. A node awakened by
@@ -180,33 +187,37 @@ selectors follow the language contract rather than this one-endpoint table.
   language's ERR-14). A lifted value function is given the window only
   where it is all valid: one that is valid and not all valid does not
   invoke it, though its parameter has a default (the language's FN-11).
-  `delta_value(x)` of a window has `added`, the value that arrived in the
-  cycle, and `removed`, the value that left in it, either absent (the
-  language's TYPE-11, TYPE-16): an arrival alone has `added`, an exit
-  alone `removed`, and an arrival and an exit in one cycle both. An exit
-  alone occurs only in a window of a duration; in one of a tick count a
-  value leaves only in a cycle in which another arrives. `delta_value(x)`
-  is read at each tick of the window, an exit alone included, before it
-  is all valid as after. `removed` is informational: it says what left.
-  A node publishes a V to a window, which arrives. A window's delta that
-  is published, as `replay` publishes a recorded one (CEVAL-3), appends
-  its `added`, and its `removed` removes nothing: a value leaves a window
-  by its count or its age alone.
-  `added` and `removed` are each a `V?`, null where absent; in
-  a window of a nullable V, `rolling_window<f64?, 5>`, each is the
-  optional a nullable's delta is, a `delta<f64?>?`, null where absent;
-  and a published window delta with no `added` adds no value, changes no
-  validity, and by itself is no tick (the language's TIME-7).
+  `delta_value(x)` of a window is the value that arrived in the cycle
+  (the language's TYPE-16), read before the window is all valid as after.
+  In a cycle in which a value only leaves a window of a duration, the
+  window ticks and has no delta: read where its place expects a
+  `result<V, error>`, `delta_value(x)` gives an `err` coded
+  `value.unset_read` there (END-3). A read of the delta of a window of a
+  duration whose place is not a `result` is rejected (`payload.unguarded`,
+  the language's TYPE-11): an arrival may be missing at its tick. One of a
+  window of a tick count is not: it ticks only at an arrival.
+  `removed_value(x)` is the value that left the window in the cycle: in
+  one of a tick count, the oldest value an arrival pushes out; in one of a
+  duration, the value that leaves by age, a value arriving then or not.
+  It is read only where its place expects a `result<V, error>`, and gives
+  `ok` of that value, or an `err` coded `value.unset_read` where none left
+  (the language's ERR-14); a read whose place is not a `result` is
+  rejected for every window (`payload.unguarded`). A node publishes a V to
+  a window, which arrives, and nothing else.
   A window emptied by exits stays valid. Proposed: where a value leaves
   and none arrives, `last_modified(x)` is the exit's time.
   The
   [window cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/window_ticks.hgl)
   check a window of ticks, its read where a `result` is taken, a lifted
-  parameter with a default, and its delta once it is full; in a window of
-  a duration, an exit with nothing arriving, `all_valid` falling back, a
-  minimum of zero, the delta at an arrival, at an exit alone and at both,
-  and the validity of a window emptied by exits; and a recording
-  of a window, its exits included, and the replay of a window's deltas.
+  parameter with a default, and its delta and `removed_value` once it is
+  full; in a window of a duration, an exit with nothing arriving,
+  `all_valid` falling back, a minimum of zero, the delta and
+  `removed_value` at an exit alone and at an exit with an arrival, and the
+  validity of a window emptied by exits; and a recording of a window of a
+  duration, which holds its arrivals, and its replay. The
+  [window rejection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/rejections/window_reads.hgl)
+  cover a plain read of the delta of a window of a duration and of
+  `removed_value`.
 - **END-10.** A reference, a `ref` parameter or result (the language's
   FN-16), is a temporal value of a designation (the language's TIME-10).
   A runtime is held to what the use of a reference produces, the ticks
