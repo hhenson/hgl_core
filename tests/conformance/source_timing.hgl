@@ -27,12 +27,12 @@ fn absolute_yields(const first: datetime, const second: datetime) -> i64 {
 }
 
 /**
-Under the proposed timing, absolute targets before the run start are skipped.
+Absolute targets before the run start are skipped, and the source goes on.
 A target exactly at the start publishes there, and a later target publishes
 at its stated time.
 
-:Rules: SOURCE-2, SOURCE-3
-:Status: proposed
+:Rules: SOURCE-3
+:Status: agreed
 */
 test absolute_targets_before_at_and_after_start {
     let opening = @2026-01-05T09:30:00Z
