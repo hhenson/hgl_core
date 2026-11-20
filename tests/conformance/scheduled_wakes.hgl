@@ -119,6 +119,28 @@ test cancelling_the_later_tag_preserves_the_earlier_wake {
     assert eval(wake_without_inputs(pending: .cancel_later)) == [_, true]
 }
 
+fn wall_clock_wakes() -> bool {
+    inject scheduler, clock
+    start {
+        schedule(scheduler, 1us, tag: "early", on_wall_clock: true)
+        schedule(scheduler, clock.evaluation_time + 3us, tag: "late", on_wall_clock: true)
+    }
+    when modified([]) { return scheduler.is_scheduled_now }
+}
+
+/**
+In simulation the wall-clock option changes nothing.
+A wake asked for with `on_wall_clock: true` is timed on evaluation time
+there, as one asked for without it: the duration 1us after the start, and
+the datetime at 3us from it.
+
+:Rules: CAP-4
+:Status: agreed
+*/
+test the_wall_clock_option_changes_nothing_in_simulation {
+    assert eval(wall_clock_wakes()) == [_, true, _, true]
+}
+
 fn alarm_or_input(value: i64) -> str {
     inject alarm
     start { schedule(alarm, 2us) }

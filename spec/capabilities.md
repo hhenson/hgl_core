@@ -56,11 +56,22 @@ dictionary's (the language's ERR-6).
   not admitted, a negative one in `start` included, fails the call (the
   language's TIME-8, which rejects one the compiler sees). One asked for at a
   `datetime` before the current evaluation time is dropped: there is no
-  wake, and no failure. The failure's code is
+  wake, and no failure. `on_wall_clock: true` times a wake on the wall
+  clock, `clock.now`, in a run in real time. The time the request is
+  measured from is then the later of the evaluation time and `clock.now`: a
+  `duration` asks for a wake that long after it, and a `datetime` is a time
+  on the wall clock. A wake of the option that is already due where it is
+  asked for, at or before that time, is not dropped: it comes in the next
+  cycle, at the later of that time and the evaluation time plus the
+  engine's smallest step, and in `start` at that time. So a node that asks
+  again and again for a wall-clock time just ahead keeps its wake where
+  the clock passes the target first. In simulation the option changes
+  nothing: the wake is timed on evaluation time, as one asked for without
+  it, so that a graph runs the same in either. The failure's code is
   `schedule.non_positive_duration`; the language rejects a duration the
   compiler sees with `schedule.duration_bounds`. The
   [scheduling cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/scheduled_wakes.hgl)
-  check the failure, and the
+  check the failure and the wall-clock option in simulation, and the
   [rejection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/rejections/scheduled_wakes.hgl)
   the rejection.
 - **CAP-5.** An alarm is a cheaper scheduler: best effort, with nothing
@@ -101,7 +112,6 @@ a requirement until agreed.
 | `scheduler.is_scheduled` | True while a wake is pending |
 | `scheduler.next_scheduled_time` | The time of the earliest pending wake; null with none |
 | `schedule(scheduler, at)` | With a `duration`, a wake that long after the current evaluation time; with a `datetime`, a wake then |
-| `schedule(scheduler, at, on_wall_clock: true)` | The wake is timed on the wall clock, which only a real-time engine accepts |
 | `un_schedule(scheduler)` | Cancels the earliest pending wake |
 | `un_schedule(scheduler, tag: name)` | Cancels the wake asked for under `name` |
 | `reset(scheduler)` | Cancels every pending wake |
