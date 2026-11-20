@@ -35,21 +35,23 @@ fn follow_picked(flag: bool, low: i64, high: i64) -> i64 =>
 
 /**
 A reader of a `ref` result is undisturbed by a designation given again.
-The flag picks the high input twice: the second return gives the result
-the designation it holds, and the reader does not tick. It then picks the
-low input, which does not publish in that cycle: the reader ticks with
-the 1 that input holds, and follows it. A later tick of the high input,
-left behind, does not reach the reader.
+The flag picks the high input three times. The second return gives the
+result the designation it holds in a cycle the high input publishes 3,
+which reaches the reader; the third in a cycle it does not, and the
+reader does not tick. The flag then picks the low input, which does not
+publish in that cycle: the reader ticks with the 1 that input holds, and
+follows it. A later tick of the high input, left behind, does not reach
+the reader.
 
 :Rules: TIME-10, FN-16, END-10
 :Status: agreed
 */
 test a_reader_is_undisturbed_by_a_designation_given_again {
     assert eval(follow_picked(
-        flag: [true, true, false, _, _],
-        low:  [   1,    _,     _, 4, _],
-        high: [   2,    _,     _, _, 5],
-    )) ==     [   2,    _,     1, 4, _]
+        flag: [true, true, true, false, _, _],
+        low:  [   1,    _,    _,     _, 4, _],
+        high: [   2,    3,    _,     _, _, 5],
+    )) ==     [   2,    3,    _,     1, 4, _]
 }
 
 fn item_is_valid(probe: bool, item: i64) -> bool {
@@ -61,9 +63,9 @@ fn picked_is_valid(probe: bool, flag: bool, low: i64, high: i64) -> bool =>
 
 /**
 A reader of a `ref` result waits for a target that has not published.
-The flag picks the high input before it holds a value: the reader is not
-valid and is silent until that input publishes 7. Picking the low input
-again ticks the reader with the 1 it holds.
+The flag picks the high input before it holds a value: the reader is
+silent until that input publishes 7. Picking the low input again ticks
+the reader with the 1 it holds.
 
 :Rules: TIME-10, FN-16, END-10
 :Status: agreed
@@ -74,6 +76,18 @@ test a_reader_waits_for_a_target_that_has_not_published {
         low:  [    1,    _, _, _,     _],
         high: [    _,    _, 7, _,     _],
     )) ==     [    1,    _, 7, _,     1]
+}
+
+/**
+A reader of a `ref` result is not valid while its target holds no value.
+The same run, with a probe reading the reader's validity in every cycle:
+it is false in the one cycle the high input is picked and has not
+published.
+
+:Rules: TIME-10, END-10
+:Status: proposed
+*/
+test a_reader_is_not_valid_while_its_target_holds_no_value {
     assert eval(picked_is_valid(
         probe: [ true,  true, true, true,  true],
         flag:  [false,  true,    _,    _, false],
@@ -93,11 +107,11 @@ fn count_wakes(ref target: i64) -> i64 {
 /**
 A `ref` parameter does not wake its node for its target.
 The node subscribes to its `ref` parameter and counts its wakes. It is
-woken where the parameter is given its designation, and not by the two
-later publications of the input designated.
+woken where the parameter is given its designation, which is the proposed
+part, and not by the two later publications of the input designated.
 
 :Rules: TIME-10, TIME-3, FN-16, END-10
-:Status: agreed
+:Status: proposed
 */
 test a_ref_parameter_does_not_wake_its_node_for_its_target {
     assert eval(count_wakes(target: [1, 2, 3])) == [1, _, _]
@@ -117,7 +131,7 @@ designation, so its reader moves from the low input to the high one in
 the cycle the flag picks it, and follows that input after.
 
 :Rules: FN-16, TIME-3, TIME-10, END-10
-:Status: agreed
+:Status: proposed
 */
 test a_relay_subscribed_to_its_ref_parameter_follows_it {
     assert eval(follow_followed(
