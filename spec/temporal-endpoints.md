@@ -21,7 +21,7 @@ owns endpoint interpretation, handler selection, and phase admission.
 | Runtime parameter payload | T; requires readable valid input, subject to declared nullable/default argument binding |
 | A collection's child, `parts[1]`, `quote.bid` | An endpoint, valid or not; its payload requires its own admission; see END-8 |
 | A `ref` parameter, `ref low: i64`, and its children | Endpoints, not values: no payload or `delta_value` read (the language's FN-16); see END-10 |
-| `delta_value(value)` | `delta<T>` (the language's TYPE-16): T for a scalar input, for a nullable scalar the optional that holds what was published, and for a window the value that arrived; a `result` where the place takes one, an `err` where there is no delta; see END-3 and END-9 |
+| `delta_value(value)` | `delta<T>` (the language's TYPE-16): T for a scalar input, for a nullable scalar the optional that holds what was published, and for a window the value that arrived (proposed: held in that optional for a nullable V); a `result` where the place takes one, an `err` where there is no delta; see END-3 and END-9 |
 | `removed_value(window)` | `result<V, error>`: the value that left the window in the cycle, or an `err` where none left; see END-9 |
 | `is_active(input)` | bool; current activity of this direct input, including while invalid |
 | `last_modified(value)` | Agreed `datetime?`; see END-6 |
@@ -191,7 +191,7 @@ selectors follow the language contract rather than this one-endpoint table.
   (the language's TYPE-16), read before the window is all valid as after.
   In a cycle in which a value only leaves a window of a duration, the
   window ticks and has no delta: read where its place expects a
-  `result<V, error>`, `delta_value(x)` gives an `err` coded
+  `result<delta<T>, error>`, `delta_value(x)` gives an `err` coded
   `value.unset_read` there (END-3). A read of the delta of a window of a
   duration whose place is not a `result` is rejected (`payload.unguarded`,
   the language's TYPE-11): an arrival may be missing at its tick. One of a
@@ -204,6 +204,15 @@ selectors follow the language contract rather than this one-endpoint table.
   (the language's ERR-14); a read whose place is not a `result` is
   rejected for every window (`payload.unguarded`). A node publishes a V to
   a window, which arrives, and nothing else.
+  Proposed: the delta of a window of a nullable V,
+  `rolling_window<f64?, 3>`, is the nullable's own delta, `delta<f64?>`,
+  which holds what arrived, a null among them, so that a null that
+  arrives is told from no change where the delta is a struct's field, a
+  tuple's position or an entry (the language's TYPE-11, TYPE-16): `delta_value(x)` gives
+  `delta<f64?>(value: 1.0)` for 1.0 and `delta<f64?>()` for a null, and
+  `removed_value(x)` gives the V itself, null included. Such a window
+  also takes its delta as the arrival it holds, as `replay` publishes a
+  recorded one (the language's TIME-7).
   A window emptied by exits stays valid. Proposed: where a value leaves
   and none arrives, `last_modified(x)` is the exit's time.
   The
