@@ -202,9 +202,8 @@ selectors follow the language contract rather than this one-endpoint table.
   a node, a `ref` parameter is passive to what it designates: a
   publication of that endpoint does not wake the node, and `valid` of
   the parameter is whether a reference is present, whatever the endpoint
-  it designates holds. Proposed: a handler that
-  subscribes to a `ref` parameter is woken where the parameter is given a
-  designation. A `ref`
+  it designates holds. Where a `ref` parameter is active, the node is
+  woken where the parameter is given a designation. A `ref`
   parameter of T given a connection of T designates
   that connection's endpoint. Returning a whole `ref` parameter samples
   its current designation. Its reader continues to receive publications
@@ -220,8 +219,8 @@ selectors follow the language contract rather than this one-endpoint table.
   to a target that holds a value and to one that holds none, and of a
   list element; a relay that samples its `ref` parameter; `valid` of a
   `ref` parameter whose target holds no value; a reader's validity
-  while its target holds no value; and, as proposed, a node
-  woken by its `ref` parameter and not by its target, and a relay that
+  while its target holds no value; a node
+  woken by its `ref` parameter and not by its target; and a relay that
   follows its `ref` parameter. The
   [rejection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/rejections/references.hgl)
   cover a read of a `ref` parameter's value and of its `delta_value`, an

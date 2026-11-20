@@ -127,11 +127,11 @@ fn count_wakes(ref target: i64) -> i64 {
 /**
 A `ref` parameter does not wake its node for its target.
 The node subscribes to its `ref` parameter and counts its wakes. It is
-woken where the parameter is given its designation, which is the proposed
-part, and not by the two later publications of the input designated.
+woken where the parameter is given its designation, and not by the two
+later publications of the input designated.
 
 :Rules: TIME-10, TIME-3, FN-16, END-10
-:Status: proposed
+:Status: agreed
 */
 test a_ref_parameter_does_not_wake_its_node_for_its_target {
     assert eval(count_wakes(target: [1, 2, 3])) == [1, _, _]
@@ -151,7 +151,7 @@ designation, so its reader moves from the low input to the high one in
 the cycle the flag picks it, and follows that input after.
 
 :Rules: FN-16, TIME-3, TIME-10, END-10
-:Status: proposed
+:Status: agreed
 */
 test a_relay_subscribed_to_its_ref_parameter_follows_it {
     assert eval(follow_followed(
