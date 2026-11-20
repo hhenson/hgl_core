@@ -24,11 +24,16 @@ export native const fn all_valid<T>(input: endpoint<T>) -> bool
 export native const fn modified<T>(input: endpoint<T>) -> bool
 
 # END-3: what the endpoint published in the current cycle (the language's
-# TYPE-16): the value itself for a scalar. END-9: for a window, `added`,
-# the value that arrived, and `removed`, the value that left, read at
-# each tick, an exit alone included. A `ref` parameter is not given to it
-# (the language's FN-16).
+# TYPE-16): the value itself for a scalar. Where the place takes a
+# `result`, an `err` for a tick with no delta. END-9: for a window, the
+# value that arrived; a window of a duration that a value only leaves has
+# no delta. A `ref` parameter is not given to it (the language's FN-16).
 export native const fn delta_value<T>(input: endpoint<T>) -> delta<T>
+
+# END-9: the value that left a window in the current cycle, read where
+# the place takes a `result<V, error>`, and an `err` where none left.
+# END-10, proposed: a `ref` parameter is not given to it.
+export native const fn removed_value<V, Max, Min>(input: endpoint<rolling_window<V, Max, Min>>) -> V
 
 # END-6: when the retained publication was made; null while invalid.
 # END-10: for a `ref` parameter, when the parameter was last given a
