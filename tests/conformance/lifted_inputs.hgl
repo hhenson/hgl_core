@@ -63,3 +63,23 @@ test published_null_takes_precedence_over_a_default {
         value:   [_,    null, _,    4]
     )) ==        [9,    null, null, 4]
 }
+
+# `<` has a candidate for each type the membership lists.
+const fn less_under_membership<T>(a: T, b: T) -> bool
+    requires T in {i64, f64} => a < b
+
+/**
+A generic body uses an operation that each type of its membership has a
+candidate for, and each instance selects its own.
+The `i64` instance compares two `i64` and the `f64` instance two `f64`;
+each is lifted over its two inputs.
+
+:Rules: GEN-3, GEN-7, FN-6
+:Status: agreed
+*/
+test a_membership_admits_what_each_listed_type_has {
+    assert eval(less_under_membership<i64>(a: [1, 3], b: [2, 2])) ==
+        [true, false]
+    assert eval(less_under_membership<f64>(a: [1.5, 2.5], b: [2.0, 2.0])) ==
+        [true, false]
+}
