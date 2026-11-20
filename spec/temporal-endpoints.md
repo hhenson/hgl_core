@@ -188,17 +188,23 @@ selectors follow the language contract rather than this one-endpoint table.
   FN-16), is a temporal value of a designation (the language's TIME-10).
   A runtime is held to what the use of a reference produces, the ticks
   that reach a reader and what wakes a node, and not to how it carries a
-  reference between them. An ordinary reader of a `ref` result observes
-  the endpoint designated as if wired to it: valid where that endpoint is,
-  ticking where it publishes. Where the result comes to designate another
+  reference between them. A reader of a `ref` result is an ordinary input
+  given that result, one that is no `ref` parameter. It observes the
+  endpoint designated as if wired to it, ticking where it publishes.
+  Where the result comes to designate another
   endpoint, the reader ticks in that cycle with the value that endpoint
   holds, whether or not the endpoint publishes then; where the endpoint
-  holds none, the reader is not valid and is silent until it publishes;
+  holds none, the reader is silent until it publishes;
   and the endpoint left behind no longer reaches it. A result given the
-  designation it holds leaves its reader undisturbed. In a node, a `ref`
-  parameter is passive to what it designates: a publication of that
-  endpoint does not wake the node. A handler that subscribes to the
-  parameter is woken where the parameter is given a designation. A `ref`
+  designation it holds gives its reader no tick: the reader goes on
+  observing the endpoint, a publication of it in that cycle included. In
+  a node, a `ref` parameter is passive to what it designates: a
+  publication of that endpoint does not wake the node, and `valid` of
+  the parameter is whether a reference is present, whatever the endpoint
+  it designates holds. Proposed: a reader, an ordinary input, is not
+  valid while the endpoint designated holds no value; and a handler that
+  subscribes to a `ref` parameter is woken where the parameter is given a
+  designation. A `ref`
   parameter of T given a connection of T designates
   that connection's endpoint. Returning a whole `ref` parameter samples
   its current designation. Its reader continues to receive publications
@@ -212,9 +218,11 @@ selectors follow the language contract rather than this one-endpoint table.
   [reference cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/reference_ticks.hgl)
   check what a reader observes of a designation given again, of a change
   to a target that holds a value and to one that holds none, and of a
-  list element; that a `ref` parameter does not wake its node for its
-  target; and a relay that samples its `ref` parameter and one that
-  follows it. The
+  list element; a relay that samples its `ref` parameter; `valid` of a
+  `ref` parameter whose target holds no value; and, as
+  proposed, a reader's validity while its target holds no value, a node
+  woken by its `ref` parameter and not by its target, and a relay that
+  follows its `ref` parameter. The
   [rejection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/rejections/references.hgl)
   cover a read of a `ref` parameter's value and of its `delta_value`, an
   assignment to a part of a `ref` result's `out`, and a `signal`
