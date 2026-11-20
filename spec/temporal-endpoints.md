@@ -21,7 +21,7 @@ owns endpoint interpretation, handler selection, and phase admission.
 | Runtime parameter payload | T; requires readable valid input, subject to declared nullable/default argument binding |
 | A collection's child, `parts[1]`, `quote.bid` | An endpoint, valid or not; its payload requires its own admission; see END-8 |
 | A `ref` parameter, `ref low: i64`, and its children | Endpoints, not values: no payload or `delta_value` read (the language's FN-16); see END-10 |
-| `delta_value(value)` | `delta<T>` (the language's TYPE-16): T for a scalar input, for a nullable scalar the optional that holds what was published, and for a window the value that arrived (proposed: held in that optional for a nullable V); a `result` where the place takes one, an `err` where there is no delta; see END-3 and END-9 |
+| `delta_value(value)` | `delta<T>` (the language's TYPE-16): T for a scalar input, for a nullable scalar the optional that holds what was published, and for a window the value that arrived, held in that optional for a nullable V; a `result` where the place takes one, an `err` where there is no delta; see END-3 and END-9 |
 | `removed_value(window)` | `result<V, error>`: the value that left the window in the cycle, or an `err` where none left; see END-9 |
 | `is_active(input)` | bool; current activity of this direct input, including while invalid |
 | `last_modified(value)` | Agreed `datetime?`; see END-6 |
@@ -204,15 +204,15 @@ selectors follow the language contract rather than this one-endpoint table.
   (the language's ERR-14); a read whose place is not a `result` is
   rejected for every window (`payload.unguarded`). A node publishes a V to
   a window, which arrives, and nothing else.
-  Proposed: the delta of a window of a nullable V,
-  `rolling_window<f64?, 3>`, is the nullable's own delta, `delta<f64?>`,
-  which holds what arrived, a null among them, so that a null that
-  arrives is told from no change where the delta is a struct's field, a
-  tuple's position or an entry (the language's TYPE-11, TYPE-16): `delta_value(x)` gives
-  `delta<f64?>(value: 1.0)` for 1.0 and `delta<f64?>()` for a null, and
-  `removed_value(x)` gives the V itself, null included. Such a window
-  also takes its delta as the arrival it holds, as `replay` publishes a
-  recorded one (the language's TIME-7).
+  The delta of a window of a nullable V, `rolling_window<f64?, 3>`, is
+  the nullable's own delta, `delta<f64?>`, which holds what arrived, a
+  null among them, so that a null that arrives is told from no change
+  where the delta is a struct's field, a tuple's position or an entry
+  (the language's TYPE-11, TYPE-16): `delta_value(x)` gives
+  `delta<f64?>(value: 1.0)` for 1.0 and `delta<f64?>()` for a null. Such
+  a window also takes its delta as the arrival it holds, as `replay`
+  publishes a recorded one (the language's TIME-7). Proposed:
+  `removed_value(x)` of it gives the V itself, null included.
   A window emptied by exits stays valid. Proposed: where a value leaves
   and none arrives, `last_modified(x)` is the exit's time.
   The
@@ -256,10 +256,11 @@ selectors follow the language contract rather than this one-endpoint table.
   valid or not. Readers follow its binding (FN-16). A `ref` result designates one
   endpoint whole: an assignment to a part of its `out`, `out.bid = x` or
   `out[0] = x`, is rejected. So is `ref` on a `signal` parameter, which
-  has no payload to designate (the language's FN-16, TYPE-12). Proposed:
-  `removed_value` is not read of a `ref` parameter, a child of one, or
-  `out` of a `ref` result, as `delta_value` is not (the language's
-  FN-16). The
+  has no payload to designate (the language's FN-16, TYPE-12), and so is
+  `ref` on a parameter or a result whose type is a window. Proposed: the
+  code of that rejection is `ref.position`, and `removed_value` is not
+  read of a window that is a child of a `ref` parameter or of `out` of a
+  `ref` result, as `delta_value` is not (the language's FN-16). The
   [reference cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/reference_ticks.hgl)
   check what a reader observes of a designation given again, of a change
   to a target that holds a value and to one that holds none, and of a
@@ -270,8 +271,9 @@ selectors follow the language contract rather than this one-endpoint table.
   follows its `ref` parameter. The
   [rejection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/rejections/references.hgl)
   cover a read of a `ref` parameter's value and of its `delta_value`, an
-  assignment to a part of a `ref` result's `out`, and a `signal`
-  parameter marked `ref`.
+  assignment to a part of a `ref` result's `out`, a `signal` parameter
+  marked `ref`, and, under the proposed code, a window parameter marked
+  `ref`.
 
 ## Publication and silence
 
