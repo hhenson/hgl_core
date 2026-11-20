@@ -32,6 +32,7 @@ export native const fn delta_value<T>(input: endpoint<T>) -> delta<T>
 
 # END-9: the value that left a window in the current cycle, read where
 # the place takes a `result<V, error>`, and an `err` where none left.
+# END-10, proposed: a `ref` parameter is not given to it.
 export native const fn removed_value<V, Max, Min>(input: endpoint<rolling_window<V, Max, Min>>) -> V
 
 # END-6: when the retained publication was made; null while invalid.

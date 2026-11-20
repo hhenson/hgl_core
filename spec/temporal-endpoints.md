@@ -1,7 +1,7 @@
 # Scalar temporal endpoint observations
 
-Status: END-1 through END-10 are agreed, but for the sentence of END-9
-that begins "Proposed:", which is proposed.
+Status: END-1 through END-10 are agreed, but for the sentences of END-9
+and END-10 that begin "Proposed:", which are proposed.
 
 ## Scope and API
 
@@ -247,7 +247,10 @@ selectors follow the language contract rather than this one-endpoint table.
   valid or not. Readers follow its binding (FN-16). A `ref` result designates one
   endpoint whole: an assignment to a part of its `out`, `out.bid = x` or
   `out[0] = x`, is rejected. So is `ref` on a `signal` parameter, which
-  has no payload to designate (the language's FN-16, TYPE-12). The
+  has no payload to designate (the language's FN-16, TYPE-12). Proposed:
+  `removed_value` is not read of a `ref` parameter, a child of one, or
+  `out` of a `ref` result, as `delta_value` is not (the language's
+  FN-16). The
   [reference cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/reference_ticks.hgl)
   check what a reader observes of a designation given again, of a change
   to a target that holds a value and to one that holds none, and of a
