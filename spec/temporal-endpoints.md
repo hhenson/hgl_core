@@ -192,7 +192,7 @@ selectors follow the language contract rather than this one-endpoint table.
   is published, as `replay` publishes a recorded one (CEVAL-3), appends
   its `added`, and its `removed` removes nothing: a value leaves a window
   by its count or its age alone.
-  Proposed: `added` and `removed` are each a `V?`, null where absent; in
+  `added` and `removed` are each a `V?`, null where absent; in
   a window of a nullable V, `rolling_window<f64?, 5>`, each is the
   optional a nullable's delta is, a `delta<f64?>?`, null where absent;
   and a published window delta with no `added` adds no value, changes no
