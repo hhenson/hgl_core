@@ -32,10 +32,12 @@ The remaining eval profile and pack mechanics are proposed.
   no work.
 - **CEVAL-3.** Replay publishes each scalar entry at its timestamp, including
   repeated values. Silent slots publish nothing. Replay applies collection
-  entries under their shape's publication rules.
+  entries under their shape's publication rules. A window's entry appends
+  its `added`, and its `removed` removes nothing: the replayed window's
+  own count or age takes each value out (END-9).
 - **CEVAL-4.** Record starts with an empty recording. Each publication of
-  its input adds a tuple of the evaluation time and an independently
-  retained delta. Later writes leave earlier tuples intact. At stop it puts
+  its input, and each exit of a window (END-9), adds a tuple of the
+  evaluation time and an independently retained delta. Later writes leave earlier tuples intact. At stop it puts
   the recording in the store under its key, an empty one included.
 - **CEVAL-5.** Each eval is a fresh run with independent node state, store
   and recording. Its value is the run's output (CRUN-8), written dense

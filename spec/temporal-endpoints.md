@@ -21,7 +21,7 @@ owns endpoint interpretation, handler selection, and phase admission.
 | Runtime parameter payload | T; requires readable valid input, subject to declared nullable/default argument binding |
 | A collection's child, `parts[1]`, `quote.bid` | An endpoint, valid or not; its payload requires its own admission; see END-8 |
 | A `ref` parameter, `ref low: i64`, and its children | Endpoints, not values: no payload or `delta_value` read (the language's FN-16); see END-10 |
-| `delta_value(value)` | `delta<T>` (the language's TYPE-16): T for a scalar input, and for a nullable scalar the optional that holds what was published; see END-3 |
+| `delta_value(value)` | `delta<T>` (the language's TYPE-16): T for a scalar input, for a nullable scalar the optional that holds what was published, and for a window what arrived and what left; see END-3 and END-9 |
 | `is_active(input)` | bool; current activity of this direct input, including while invalid |
 | `last_modified(value)` | Agreed `datetime?`; see END-6 |
 
@@ -59,9 +59,11 @@ selectors follow the language contract rather than this one-endpoint table.
   is the value published. For a nullable scalar it is the optional that
   type gives it, which holds the value published or the null: a published
   null is `delta<i64?>()` for an `i64?` endpoint, and is no absent delta.
-  For a list, the delta read gives the new size where it moves, never a
-  negative one, and on a shrink names the dropped tail positions in
-  `removed`, also where the delta written gave only a smaller
+  For a window it has the value that arrived and the value that left, and
+  is read at each tick of the window, an exit with nothing arriving
+  included (END-9). For a list, the delta read gives the new size where
+  it moves, never a negative one, and on a shrink names the dropped tail
+  positions in `removed`, also where the delta written gave only a smaller
   `size_modified`, or a negative one, which reduces the list by that
   count and leaves it empty where the count is more than it holds. An
   `updated` entry written at the position after a `list<V>`'s last, with
@@ -178,16 +180,33 @@ selectors follow the language contract rather than this one-endpoint table.
   language's ERR-14). A lifted value function is given the window only
   where it is all valid: one that is valid and not all valid does not
   invoke it, though its parameter has a default (the language's FN-11).
-  Proposed: a window emptied by exits stays valid; where a value leaves
-  and none arrives, `delta_value(x)` has no value, and its read fails with
-  `value.unset_read`; and `last_modified(x)` is then the exit's time.
+  `delta_value(x)` of a window has `added`, the value that arrived in the
+  cycle, and `removed`, the value that left in it, either absent (the
+  language's TYPE-11, TYPE-16): an arrival alone has `added`, an exit
+  alone `removed`, and an arrival and an exit in one cycle both. An exit
+  alone occurs only in a window of a duration; in one of a tick count a
+  value leaves only in a cycle in which another arrives. `delta_value(x)`
+  is read at each tick of the window, an exit alone included, before it
+  is all valid as after. `removed` is informational: it says what left.
+  A node publishes a V to a window, which arrives. A window's delta that
+  is published, as `replay` publishes a recorded one (CEVAL-3), appends
+  its `added`, and its `removed` removes nothing: a value leaves a window
+  by its count or its age alone.
+  Proposed: `added` and `removed` are each a `V?`, null where absent; in
+  a window of a nullable V, `rolling_window<f64?, 5>`, each is the
+  optional a nullable's delta is, a `delta<f64?>?`, null where absent;
+  and a published window delta with no `added` adds no value, changes no
+  validity, and by itself is no tick (the language's TIME-7).
+  Proposed: a window emptied by exits stays valid; and where a value
+  leaves and none arrives, `last_modified(x)` is the exit's time.
   The
   [window cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/window_ticks.hgl)
-  check a window of ticks, its read where a `result` is taken, and a
-  lifted parameter with a default; and, in a window of a duration, an
-  exit with nothing arriving, `all_valid` falling back, a minimum of zero,
-  and the proposed validity of a window emptied by exits and `delta_value`
-  at an exit.
+  check a window of ticks, its read where a `result` is taken, a lifted
+  parameter with a default, and its delta once it is full; in a window of
+  a duration, an exit with nothing arriving, `all_valid` falling back, a
+  minimum of zero, the delta at an arrival, at an exit alone and at both,
+  and the proposed validity of a window emptied by exits; and a recording
+  of a window, its exits included, and the replay of a window's deltas.
 - **END-10.** A reference, a `ref` parameter or result (the language's
   FN-16), is a temporal value of a designation (the language's TIME-10).
   A runtime is held to what the use of a reference produces, the ticks

@@ -61,11 +61,12 @@ ends, and what it gives back.
   program puts a value there.
 - **CRUN-8.** The output of a run of an entry whose result type is T is a
   `list<tuple<datetime, delta<T>>>` (the language's TST-16): one tuple for
-  each publication of the result, in time order, holding the evaluation time
-  and what was published. An entry with no result has no output. The run
-  wires `record` to the entry's result under the key `"run.output"`, and its
-  output is the value under that key once the run has stopped. That key is
-  the run's: a program that names it is rejected when its graph is built.
+  each publication of the result, and for each exit of a window (END-9), in
+  time order, holding the evaluation time and that cycle's delta. An
+  entry with no result has no output. The run wires `record` to the
+  entry's result under the key `"run.output"`, and its output is the value
+  under that key once the run has stopped. That key is the run's: a
+  program that names it is rejected when its graph is built.
 
 ## Replay and record
 

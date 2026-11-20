@@ -23,8 +23,10 @@ export native const fn all_valid<T>(input: endpoint<T>) -> bool
 export native const fn modified<T>(input: endpoint<T>) -> bool
 
 # END-3: what the endpoint published in the current cycle (the language's
-# TYPE-16): the value itself for a scalar. A `ref` parameter is not given
-# to it (the language's FN-16).
+# TYPE-16): the value itself for a scalar. END-9: for a window, `added`,
+# the value that arrived, and `removed`, the value that left, read at
+# each tick, an exit alone included. A `ref` parameter is not given to it
+# (the language's FN-16).
 export native const fn delta_value<T>(input: endpoint<T>) -> delta<T>
 
 # END-6: when the retained publication was made; null while invalid.
