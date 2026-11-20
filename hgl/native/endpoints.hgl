@@ -5,13 +5,14 @@ module core part endpoints
 # spec/temporal-endpoints.md.
 
 # END-1, END-4, END-7, END-9: whether the endpoint holds a payload, and for
-# a window whether it holds a value. END-10: for a `ref` parameter,
-# whether it has been given a designation, whatever its target holds.
+# a window whether it holds a value or exits emptied it. END-10: for a
+# `ref` parameter, whether it has been given a designation, whatever its
+# target holds.
 export native const fn valid<T>(input: endpoint<T>) -> bool
 
-# END-7: whether every element, field or entry of a list, tuple, struct
-# or dictionary is valid, one level deep. END-9: whether a window holds at
-# least its minimum.
+# END-7: whether a list, tuple, struct or dictionary is valid and every
+# element, field or entry of it is, one level deep. END-9: whether a window
+# holds at least its minimum.
 export native const fn all_valid<T>(input: endpoint<T>) -> bool
 
 # END-2: whether the endpoint published in the current cycle, or, for an

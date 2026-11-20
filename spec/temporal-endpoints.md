@@ -1,7 +1,7 @@
 # Scalar temporal endpoint observations
 
-Status: END-1 through END-10 are agreed, but for the sentences of END-7,
-END-9 and END-10 that begin "Proposed", which are proposed.
+Status: END-1 through END-10 are agreed, but for the sentence of END-9
+that begins "Proposed:", which is proposed.
 
 ## Scope and API
 
@@ -127,12 +127,12 @@ selectors follow the language contract rather than this one-endpoint table.
   optional child, whose type is `T?` or a field the language's TYPE-4 makes
   optional, which it does not ask: for a list of lists, each contained list
   is present and has a valid element or is a published empty list. It
-  returns true for a valid empty collection. It takes only these
+  returns true for a valid empty collection. `all_valid(x)` of a
+  collection that is not valid returns false. It takes only these
   collections and a window (END-9; the language's TIME-9).
   The [collection validity cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/collection_ticks.hgl)
   check a fixed list, a tuple and a struct, and a struct with an optional
-  field. Proposed: `all_valid(x)` of a collection that is not valid
-  returns false.
+  field.
 - **END-8.** A child of a collection is an endpoint whether or not it is
   valid: `valid`, `modified`, `delta_value` and `last_modified` take it,
   and `all_valid` where it is a collection, `valid(parts[1])`. Its value
@@ -197,15 +197,15 @@ selectors follow the language contract rather than this one-endpoint table.
   optional a nullable's delta is, a `delta<f64?>?`, null where absent;
   and a published window delta with no `added` adds no value, changes no
   validity, and by itself is no tick (the language's TIME-7).
-  Proposed: a window emptied by exits stays valid; and where a value
-  leaves and none arrives, `last_modified(x)` is the exit's time.
+  A window emptied by exits stays valid. Proposed: where a value leaves
+  and none arrives, `last_modified(x)` is the exit's time.
   The
   [window cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/window_ticks.hgl)
   check a window of ticks, its read where a `result` is taken, a lifted
   parameter with a default, and its delta once it is full; in a window of
   a duration, an exit with nothing arriving, `all_valid` falling back, a
   minimum of zero, the delta at an arrival, at an exit alone and at both,
-  and the proposed validity of a window emptied by exits; and a recording
+  and the validity of a window emptied by exits; and a recording
   of a window, its exits included, and the replay of a window's deltas.
 - **END-10.** A reference, a `ref` parameter or result (the language's
   FN-16), is a temporal value of a designation (the language's TIME-10).

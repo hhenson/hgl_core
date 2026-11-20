@@ -4,10 +4,10 @@ module conformance.rejections part references
 A `ref` parameter's value is not read.
 The body may give it to an endpoint operation, as `valid` or `modified`,
 or return it to a `ref` result, and reads nothing of it.
-The case relies on the proposed code `ref.read`.
+The read rejects with the code `ref.read`.
 
 :Rules: FN-16
-:Status: proposed
+:Status: agreed
 */
 fn doubled_reference(ref price: i64) -> i64 {
     when {
@@ -20,10 +20,10 @@ fn doubled_reference(ref price: i64) -> i64 {
 A `ref` parameter's `delta_value` is not read.
 It is the one endpoint operation that a `ref` parameter is not given; the
 header proves the parameter valid and modified, so nothing else rejects.
-The case relies on the proposed code `ref.read`.
+The read rejects with the code `ref.read`.
 
 :Rules: FN-16, TIME-9
-:Status: proposed
+:Status: agreed
 */
 fn reference_delta(ref price: i64) -> i64 {
     when modified(price) {
@@ -40,11 +40,11 @@ struct RoutedQuote {
 /**
 A part of `out` of a `ref` result is not assigned.
 A `ref` result designates one endpoint whole. The header admits every
-field of the quote, so nothing else rejects. The case relies on the
-proposed code `binding.immutable` for this assignment.
+field of the quote, so nothing else rejects. The assignment rejects with
+the code `binding.immutable`.
 
 :Rules: FN-16, TIME-7
-:Status: proposed
+:Status: agreed
 */
 fn designated_bid(quote: RoutedQuote) -> ref RoutedQuote {
     inject out
@@ -56,11 +56,11 @@ fn designated_bid(quote: RoutedQuote) -> ref RoutedQuote {
 
 /**
 A `signal` parameter is not marked `ref`.
-A signal has no payload to designate. The case relies on the proposed
-code `ref.position`.
+A signal has no payload to designate. The mark rejects with the code
+`ref.position`.
 
 :Rules: FN-16, TYPE-12
-:Status: proposed
+:Status: agreed
 */
 fn counted_ticks(
     # expect-error(function-kind, "ref.position")
