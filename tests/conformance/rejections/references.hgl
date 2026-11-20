@@ -72,3 +72,18 @@ fn counted_ticks(
         return count
     }
 }
+
+/**
+A window parameter is not marked `ref`.
+`ref` stands on no window, as a parameter or as a result. The code of the
+rejection, `ref.position`, is proposed.
+
+:Rules: FN-16, END-10
+:Status: proposed
+*/
+fn latest_price(
+    # expect-error(function-kind, "ref.position")
+    ref prices: rolling_window<f64, 5>,
+) -> f64 {
+    when modified(prices) { return 0.0 }
+}
