@@ -135,3 +135,27 @@ test equal_publications_are_modified {
                 value: [_, 7, _, 7],
                 probe: [true, true, true, true])) == [false, true, false, true]
 }
+
+# Every input wakes the node, and nothing is required valid.
+fn forward_when_modified(value: i64, probe: bool) -> i64 {
+    when valid([]) {
+        if modified(value) { return value }
+        return -1
+    }
+}
+
+/**
+A test of `modified` guards the read of the input it names, as one of `valid` does.
+An input is not modified without being valid, so the read of `value`
+under `modified(value)` is admitted. The probe wakes the node in the
+cycles where `value` is silent, before it is valid and after.
+
+:Rules: TIME-4, TIME-3, END-2
+:Status: agreed
+*/
+test a_modified_test_guards_the_read_of_its_input {
+    assert eval(forward_when_modified(
+        value: [   _,    7,    _],
+        probe: [true, true, true],
+    )) ==      [  -1,    7,   -1]
+}

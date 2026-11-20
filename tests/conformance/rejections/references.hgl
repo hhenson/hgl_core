@@ -31,3 +31,44 @@ fn reference_delta(ref price: i64) -> i64 {
         return delta_value(price)
     }
 }
+
+struct RoutedQuote {
+    bid: i64
+    ask: i64
+}
+
+/**
+A part of `out` of a `ref` result is not assigned.
+A `ref` result designates one endpoint whole. The header admits every
+field of the quote, so nothing else rejects. The case relies on the
+proposed code `binding.immutable` for this assignment.
+
+:Rules: FN-16, TIME-7
+:Status: proposed
+*/
+fn designated_bid(quote: RoutedQuote) -> ref RoutedQuote {
+    inject out
+    when all_valid(quote) {
+        # expect-error(name, "binding.immutable")
+        out.bid = quote.bid
+    }
+}
+
+/**
+A `signal` parameter is not marked `ref`.
+A signal has no payload to designate. The case relies on the proposed
+code `ref.position`.
+
+:Rules: FN-16, TYPE-12
+:Status: proposed
+*/
+fn counted_ticks(
+    # expect-error(function-kind, "ref.position")
+    ref tick: signal,
+) -> i64 {
+    state count: i64 = 0
+    when {
+        count += 1
+        return count
+    }
+}

@@ -1,7 +1,7 @@
 # Capabilities
 
-Status: CAP-1 to CAP-6 are agreed, but for CAP-4's sentence that begins
-"Proposed:". The meanings under "Proposed behaviour" are proposed.
+Status: CAP-1 to CAP-6 are agreed. The meanings under "Proposed behaviour"
+are proposed.
 
 ## Scope and API
 
@@ -56,8 +56,13 @@ dictionary's (the language's ERR-6).
   not admitted, a negative one in `start` included, fails the call (the
   language's TIME-8, which rejects one the compiler sees). One asked for at a
   `datetime` before the current evaluation time is dropped: there is no
-  wake, and no failure. Proposed: the failure's code is
-  `schedule.non_positive_duration`.
+  wake, and no failure. The failure's code is
+  `schedule.non_positive_duration`; the language rejects a duration the
+  compiler sees with `schedule.duration_bounds`. The
+  [scheduling cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/scheduled_wakes.hgl)
+  check the failure, and the
+  [rejection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/rejections/scheduled_wakes.hgl)
+  the rejection.
 - **CAP-5.** An alarm is a cheaper scheduler: best effort, with nothing
   tracked, moved, or cancelled. `schedule(alarm, at)` asks for a wake, with
   `at` a `duration` or a `datetime`; asking again keeps the earliest. It has

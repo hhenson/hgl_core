@@ -1,7 +1,7 @@
 # Scalar temporal endpoint observations
 
-Status: END-1 through END-10 are agreed, but for the sentences of END-3,
-END-7 and END-10 that begin "Proposed", which are proposed.
+Status: END-1 through END-10 are agreed, but for the sentences of END-7
+and END-10 that begin "Proposed", which are proposed.
 
 ## Scope and API
 
@@ -17,7 +17,7 @@ owns endpoint interpretation, handler selection, and phase admission.
 | --- | --- |
 | `valid(value)` | bool; may inspect an invalid endpoint; for a collection, see END-7 |
 | `all_valid(value)` | bool; a list, tuple, struct, dictionary or window only; see END-7 and END-9 |
-| `modified(value)` | bool; whether the endpoint published in the current cycle |
+| `modified(value)` | bool; whether the endpoint published in the current cycle, but for an input of a branch as it starts (END-2); a guard that admits a payload read as `valid` does |
 | Runtime parameter payload | T; requires readable valid input, subject to declared nullable/default argument binding |
 | A collection's child, `parts[1]`, `quote.bid` | An endpoint, valid or not; its payload requires its own admission; see END-8 |
 | A `ref` parameter, `ref low: i64`, and its children | Endpoints, not values: no payload or `delta_value` read (the language's FN-16); see END-10 |
@@ -40,7 +40,18 @@ selectors follow the language contract rather than this one-endpoint table.
 - **END-2.** A scalar publication marks its endpoint modified for the current
   cycle, including when the payload repeats. An idle cycle leaves the endpoint
   unmodified and preserves its retained payload. A fixed, directly bound input
-  observes its output's state.
+  observes its output's state. The one exception is an input of a node in a
+  branch started while the program runs (the language's CTRL-2): bound to
+  an endpoint that is already valid, it is modified in the cycle the branch
+  starts, published in that cycle or not, and wakes its node as a
+  publication does, so the branch's nodes run once with the values held.
+  Other inputs bound to that endpoint see it as it is. An input is not
+  modified without being valid: `modified(x)`, as a guard, admits a read
+  of `x` as `valid(x)` does (the language's TIME-4). The
+  [conditional cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/conditional_graphs.hgl)
+  check a branch's start, and the
+  [endpoint cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/scalar_endpoints.hgl)
+  a read under `modified`.
 - **END-3.** `delta_value(x)` returns what `x` published this cycle, a
   `delta<T>` for an endpoint of T (the language's TYPE-16). For a scalar it
   is the value published. For a nullable scalar it is the optional that
@@ -69,8 +80,8 @@ selectors follow the language contract rather than this one-endpoint table.
   `delta_value` returns that delta. Where the endpoint is valid it is no
   publication (END-5). Such a delta of a struct, a tuple or a
   `list<V, N>` sets no child and changes no validity (END-7): it is never
-  a tick. Proposed: a delta whose every entry is a removal ignored as
-  above names no change. The
+  a tick. A delta whose every entry is a removal ignored as above names no
+  change too, and ticks only where it makes the endpoint valid. The
   [collection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/collection_ticks.hgl)
   check a list and a set, and the
   [dictionary cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/dictionary_ticks.hgl)
@@ -144,14 +155,21 @@ selectors follow the language contract rather than this one-endpoint table.
   at it, oldest first. `valid(x)` of one returns true once it holds a
   value, and `all_valid(x)` where it holds at least its minimum: of a tick
   count, that many values; of a duration, values whose arrival times span
-  at least the minimum, from the oldest held to the newest. A read of its
-  value before it is all valid fails. In a window of a duration, a value
+  at least the minimum, from the oldest held to the newest. In a window of
+  a duration, a value
   is still held when its age is the maximum, and one older leaves when the
   next value arrives, and not before. An exit is no tick and notifies no
-  subscriber. A minimum of zero is read as the maximum. The
+  subscriber. A minimum of zero is read as the maximum. A read of its
+  value gives a `list<V>` of the values held, oldest first. Before the
+  window is all valid that read fails with `value.unset_read`, or gives an `err` of an `error`
+  with that code where its place expects a `result<list<V>, error>` (the
+  language's ERR-14). A lifted value function is given the window only
+  where it is all valid: one that is valid and not all valid does not
+  invoke it, though its parameter has a default (the language's FN-11).
+  The
   [window cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/window_ticks.hgl)
-  check a window of ticks. The read gives a `list<V>` of the values held,
-  oldest first, and fails with `value.unset_read`.
+  check a window of ticks, its read where a `result` is taken, and a
+  lifted parameter with a default.
 - **END-10.** A reference, a `ref` parameter or result (the language's
   FN-16), is modified where its designation changes (the language's
   TIME-10). A publication of the designation it holds is no tick: unlike a
@@ -160,7 +178,11 @@ selectors follow the language contract rather than this one-endpoint table.
   that connection's endpoint. A `ref` result designates the endpoint its
   `return` names, a child of an input among them, `items[idx]`, valid or
   not: its readers follow what that endpoint is bound to, and the node is
-  not woken by that endpoint's ticks. Proposed: on a `ref` parameter,
+  not woken by that endpoint's ticks. A `ref` result designates one
+  endpoint whole: an assignment to a part of its `out`, `out.bid = x` or
+  `out[0] = x`, is rejected. So is `ref` on a `signal` parameter, which
+  has no payload to designate (the language's FN-16, TYPE-12). Proposed:
+  on a `ref` parameter,
   `modified` is whether its designation changed, not whether its target
   published; `valid` whether it designates something; and `last_modified`
   when its designation last changed. The
@@ -168,7 +190,9 @@ selectors follow the language contract rather than this one-endpoint table.
   check a reference published twice and a `ref` result that designates a
   list's element, and the
   [rejection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/rejections/references.hgl)
-  a read of a `ref` parameter's value and of its `delta_value`.
+  a read of a `ref` parameter's value and of its `delta_value`, an
+  assignment to a part of a `ref` result's `out`, and a `signal`
+  parameter marked `ref`.
 
 ## Publication and silence
 

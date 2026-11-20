@@ -56,3 +56,47 @@ test reading_a_window_before_it_is_all_valid_fails {
         eval(early_total(reading: [1, 2]))
     }
 }
+
+fn checked_window_readings(readings: rolling_window<i64, 3, 2>) -> result<list<i64>, error> {
+    when { return readings }
+}
+
+const fn window_outcome_code(outcome: result<list<i64>, error>) -> str {
+    if is_ok(outcome) { return "ok" }
+    let code = outcome.error.code
+    if code == null { return "no code" }
+    return code
+}
+
+fn window_outcome(reading: i64) -> str =>
+    window_outcome_code(checked_window_readings(collect_readings(reading)))
+
+/**
+A `result` accepts the read of a window before it is all valid as an error.
+The first reading leaves the window below its minimum of two: reading it
+gives an error coded `value.unset_read`, and the node does not fail. The
+second reading makes it all valid.
+
+:Rules: TYPE-11, ERR-14, END-9
+:Status: agreed
+*/
+test a_result_accepts_the_read_of_a_window_before_it_is_all_valid {
+    assert eval(window_outcome(reading: [1, 2])) == ["value.unset_read", "ok"]
+}
+
+const fn total_or_zero(readings: list<i64> = []) -> i64 => sum_readings(readings)
+
+fn defaulted_total(reading: i64) -> i64 => total_or_zero(collect_readings(reading))
+
+/**
+A lifted parameter's default is not bound for a window below its minimum.
+The default binds for an input that is not valid. After the first reading
+the window is valid and not all valid: the helper is not invoked, and no 0
+is published. From the second reading the totals are 3 and 6.
+
+:Rules: FN-11, FN-12, TYPE-11, END-9
+:Status: agreed
+*/
+test a_default_does_not_stand_for_a_window_below_its_minimum {
+    assert eval(defaulted_total(reading: [1, 2, 3])) == [_, 3, 6]
+}
