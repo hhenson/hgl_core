@@ -31,7 +31,7 @@ marker and leave the probe out of its subscriptions.
 | Branch selection and failure propagation | [Conditional graphs](conditional_graphs.hgl) and [captured failures](captured_failures.hgl) |
 | Wakes and source suspension | [Scheduling](scheduled_wakes.hgl) and [source timing](source_timing.hgl) |
 | What a reader of a reference observes, and what wakes a node holding one | [References](reference_ticks.hgl) |
-| Source rejections | [Collection children](rejections/collection_children.hgl), [references](rejections/references.hgl), [generic instances](rejections/generic_instances.hgl), [scheduled wakes](rejections/scheduled_wakes.hgl) and [window reads](rejections/window_reads.hgl) |
+| Source rejections | [Collection children](rejections/collection_children.hgl), [references](rejections/references.hgl), [generic instances](rejections/generic_instances.hgl), [scheduled wakes](rejections/scheduled_wakes.hgl), [window reads](rejections/window_reads.hgl), [a test's value code](rejections/test_value_code.hgl) and [delta constructors](rejections/delta_constructors.hgl) |
 
 ## Writing a case
 
