@@ -99,7 +99,11 @@ selectors follow the language contract rather than this one-endpoint table.
 - **END-5.** A publication notifies active subscribers, including when its
   value repeats. A delta that names no change, written where the endpoint
   is valid, is no publication (END-3): it marks nothing modified, moves no
-  `last_modified` (END-6), and notifies no subscriber. Further writes to
+  `last_modified` (END-6), and notifies no subscriber. Nor is a collection
+  given whole that changes nothing (the language's TIME-7): a set given
+  the members it holds, or an empty list or dictionary given to a valid
+  empty one. A dictionary's entries and a list's positions given again
+  are publications, as an equal scalar is. Further writes to
   the already modified endpoint in the same evaluation update its
   publication without notifying again. A downstream
   node runs at most once per cycle and reads the completed value and delta.

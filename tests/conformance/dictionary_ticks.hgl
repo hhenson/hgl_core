@@ -87,6 +87,29 @@ test an_empty_dictionary_delta_ticks_only_where_it_makes_the_dictionary_valid {
     assert eval(price_of_a(step: [0, 0, 1])) == [null, _, 7]
 }
 
+# 0 publishes the empty dictionary whole, and any other step ["A": 7] whole.
+fn write_whole_book(step: i64) -> dict<str, i64> {
+    when {
+        if step == 0 { return [] }
+        return ["A": 7]
+    }
+}
+
+fn whole_book_wakes(step: i64) -> bool => book_valid(write_whole_book(step))
+
+/**
+An empty dictionary given whole to a valid empty dictionary is no tick.
+The first empty dictionary makes it valid, and ticks; the second changes
+nothing. ["A": 7] given twice ticks twice: each entry given is a
+publication, as an equal scalar is.
+
+:Rules: TIME-7, END-5
+:Status: agreed
+*/
+test an_empty_dictionary_given_to_an_empty_dictionary_is_no_tick {
+    assert eval(whole_book_wakes(step: [0, 0, 1, 1])) == [true, _, true, true]
+}
+
 /**
 A dictionary delta that only removes a key the dictionary does not hold is no tick.
 A is set to 7; removing B changes nothing and wakes no reader, and setting

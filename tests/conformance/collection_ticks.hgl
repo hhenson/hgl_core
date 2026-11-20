@@ -767,6 +767,45 @@ test removing_only_an_absent_member_is_no_tick {
     assert eval(member_wakes(step: [1, 3, 2])) == [true, _, true]
 }
 
+/**
+A set given, whole, the members it holds is no tick.
+The set [1] is published whole twice, then [1, 2] twice. The second of
+each pair changes nothing and wakes no reader.
+
+:Rules: TIME-7, END-5
+:Status: agreed
+*/
+test a_set_given_the_members_it_holds_is_no_tick {
+    assert eval(member_wakes(step: [1, 1, 2, 2])) == [true, _, true, _]
+}
+
+# 0 publishes the empty list whole, and any other step [1, 2] whole.
+fn write_whole_readings(step: i64) -> list<i64> {
+    when {
+        if step == 0 { return [] }
+        return [1, 2]
+    }
+}
+
+fn whole_reading_wakes(step: i64) -> bool =>
+    readings_valid(write_whole_readings(step))
+
+/**
+An empty list given whole to a valid empty list is no tick.
+The first empty list makes the list valid, and ticks; the second changes
+nothing. [1, 2] given twice ticks twice: each position given is a
+publication, as an equal scalar is. The empty list then drops both
+positions, and ticks; given again, it changes nothing.
+
+:Rules: TIME-7, END-5
+:Status: agreed
+*/
+test an_empty_list_given_to_an_empty_list_is_no_tick {
+    assert eval(whole_reading_wakes(
+        step: [   0, 0,    1,    1,    0, 0],
+    )) ==     [true, _, true, true, true, _]
+}
+
 # 0 writes a delta that names no change, 1 publishes [1, 2] whole, 2
 # updates position 3, so that position 2 holds no value, 3 removes
 # position 2, and any other step invalidates the list.
