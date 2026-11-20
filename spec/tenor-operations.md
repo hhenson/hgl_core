@@ -43,7 +43,9 @@ are native, in `hgl/native/tenors.hgl`.
   first: the same day of the month that many months on, or the last day of
   that month where it has no such day. Then it takes the days. A count
   below zero moves back. `day - tenor` is `day + (-tenor)`. A result outside
-  the `date` range is an HGL error with code `numeric.out_of_range`.
+  the `date` range is an HGL error with code `numeric.out_of_range`. Only
+  the result is held to the range: the date the months give may lie outside
+  it where the days bring the result back within it.
 - **TEN-5.** A calendar says which dates are business days. It is any value
   for which a value `business_day(calendar, date) -> bool` exists. `+` and
   `-` of a date and a tenor take one as the option `calendar`. Where none is
@@ -118,6 +120,8 @@ A date and a tenor of months and days (TEN-4):
 | `@2026-01-31 + 2 * 1M` | `@2026-03-31` |
 | `@2026-01-31 + 1M + 1M` | `@2026-03-28`: two moves, each from where the last one ended |
 | `@2026-01-31 - 2W` | `@2026-01-17` |
+| `@9999-12-15 + (1M - 30D)` | `@9999-12-16`: the months alone pass the last date, and the days bring the result back |
+| `@9999-12-15 + 1M` | HGL error with code `numeric.out_of_range` |
 
 A date and a count of business days, with no calendar (TEN-5, TEN-6).
 2026-01-02 is a Friday and 2026-01-03 a Saturday:
