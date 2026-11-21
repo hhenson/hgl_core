@@ -4,7 +4,7 @@ fn forward_or_raise_again(first: error, repeat: bool) -> error {
     when modified(first) && valid(first) { return first }
     when modified(repeat) && valid(first) {
         let failure: result<error, error> = err(first)
-        return failure?
+        return failure
     }
 }
 

@@ -182,7 +182,7 @@ const fn ratio(a: f64, b: f64) -> result<f64, error> =>
     a /{zero: .error} b
 
 const fn percentage(a: f64, b: f64) -> result<f64, error> {
-    let quotient = (a /{zero: .error} b)?
+    let quotient: f64 = a /{zero: .error} b
     return ok(quotient * 100.0)
 }
 ```

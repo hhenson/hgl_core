@@ -88,8 +88,11 @@ dictionary's (the language's ERR-6).
   current evaluation time is dropped.
 - **CAP-6.** The global store is a run-wide store of ordinary values under
   string keys, each fixed when the graph is built (the language's FN-1).
-  `get<V>(global_state, key)` is the value under `key`, of the type the call
-  writes or its place expects; an absent key fails the node.
+  `get<V>(global_state, key)` returns `result<V, error>`. The call may specify
+  V or infer it from its place. An absent key gives a failure. The place
+  takes the result, raises the failure when it needs the value, or takes
+  null in the nullable form (ERR-15). When V itself is nullable, a stored
+  null is a success.
   `has(global_state, key)` is whether the key holds a value.
   `put(global_state, key, value)` puts one there. A key keeps the type of
   its first value: a `put` of another type is rejected where the two are in

@@ -9,7 +9,7 @@ fn attempt_number(value: i64) -> i64 {
     state attempt: i64 = 0
     when {
         attempt += 1
-        return checked_attempt(value, attempt)?
+        return checked_attempt(value, attempt)
     }
 }
 
