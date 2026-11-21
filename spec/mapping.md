@@ -1,7 +1,8 @@
 # Mapping and reduction
 
-Status: proposed. MAP-1 through MAP-10, RED-1 through RED-7 and SET-1
-through SET-2 are proposed. Nothing here is declared in `hgl/` yet.
+Status: MAP-1 through MAP-10, RED-1 through RED-7 and SET-1 through SET-2
+are agreed. Nothing here is declared in `hgl/` yet: the declarations below
+wait for a compiler that reads their forms.
 
 ## Scope and API
 
@@ -44,6 +45,13 @@ native impl fn map<R, ...Ps, ...As, const key: str = "key">{
 }(f: fn(...{Ps}) -> R, args: ...{As for f without key}) -> list<R>
     requires any name in names(As) { As[name] == list<Ps[name]> }
           && each name in names(As) { As[name] in {Ps[name], list<Ps[name]>} }
+
+# By position, over lists of one fixed size.
+native impl fn map<R, N, ...Ps, ...As, const key: str = "key">{
+    const join: Join = .inner,
+}(f: fn(...{Ps}) -> R, args: ...{As for f without key}) -> list<R, N>
+    requires any name in names(As) { As[name] == list<Ps[name], N> }
+          && each name in names(As) { As[name] in {Ps[name], list<Ps[name], N>} }
 
 # The operator: a function of what is accumulated and a member.
 operator reduce<L, R, C,
@@ -95,15 +103,16 @@ Each candidate of `reduce` over a `list<V>` has its like over a
 
 ### Mapping
 
-- **MAP-1.** `map` has two forms, one candidate each. In the keyed form
-  every argument that is split is a dictionary, and the result is a
-  `dict<K, R>`. In the form by position every argument that is split is a
-  list, and the result is a `list<R>`. A call that splits a dictionary and
-  a list has no candidate. `keys` is the keyed form's alone.
+- **MAP-1.** `map` has three candidates. In the keyed form every argument
+  that is split is a dictionary, and the result is a `dict<K, R>`. In the
+  form by position every argument that is split is a list, and the result
+  is a `list<R>`; where the lists are of one fixed size, `list<P, N>`, the
+  result is a `list<R, N>`. A call that splits two of those kinds has no
+  candidate. `keys` is the keyed form's alone.
 - **MAP-2.** The arguments after `f` are those of `f`'s own call,
   positional or named (the language's FN-8). One whose type is its
   parameter's type is given whole to every child. One that is a
-  `dict<K, P>`, or a `list<P>`, for a parameter of type `P` is split: each
+  `dict<K, P>`, a `list<P>`, or a `list<P, N>`, for a parameter of type `P` is split: each
   child reads the entry of its own key, or position. A generic `f` is
   given with its generic arguments: the function type takes any signature
   and decides none of them (FN-17).
@@ -121,13 +130,15 @@ Each candidate of `reduce` over a `list<V>` has its like over a
   the first, in the order of `f`'s parameters. The default is `.inner`.
 - **MAP-6.** In the form by position the positions are `0` to `n - 1`,
   where `n` is the join of the split lists' lengths: `.inner`, the
-  shortest; `.outer`, the longest; `.left`, the first's.
+  shortest; `.outer`, the longest; `.left`, the first's. Lists of a fixed
+  size share one `N`, which is `n`: the join has nothing to choose.
 - **MAP-7.** There is one child of `f` for each key in the key set, or each
   position. A child starts in the cycle its key enters and stops in the
   cycle it leaves. A key that leaves and enters again in a later cycle has
   a new child, with fresh state. A key that leaves and enters again within
   one cycle keeps its child and its state. An update of an entry keeps the
-  child.
+  child. Over lists of a fixed size the `N` children are made where the
+  graph is built and live as long as it does.
 - **MAP-8.** A child whose key, or position, a split argument has no entry
   for sees that input as not valid, until the entry arrives. This arises
   under `.outer`, `.left` and `keys`, and never under `.inner`.
@@ -183,7 +194,7 @@ Each candidate of `reduce` over a `list<V>` has its like over a
 
 ## Examples
 
-Proposed illustration, complete module:
+Accepted illustration, complete module:
 
 ```hgl
 module examples.mapping
