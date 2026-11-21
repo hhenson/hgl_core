@@ -79,9 +79,8 @@ fn read_before_write(value: i64?) -> str {
 /**
 A key holding null is present in the store.
 Read the key before each write. It starts absent, then holds null, then 7.
-Only the `i64?` place says what `get` reads, so it reads an `i64?`.
 
-:Rules: CAP-6, CRUN-7, TYPE-14, GEN-2
+:Rules: CAP-6, CRUN-7, TYPE-14
 :Status: agreed
 */
 test a_stored_null_is_distinct_from_an_absent_key {
