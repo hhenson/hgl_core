@@ -13,6 +13,7 @@ portable implementations, required native support, and runtime conformance.
 - [Capabilities](spec/capabilities.md)
 - [List operations](spec/list-operations.md)
 - [Mapping and reduction](spec/mapping.md)
+- [Diagnostics](spec/diagnostics.md)
 - [Tenors and calendars](spec/tenor-operations.md)
 - [Execution](spec/execution.md)
 - [Testing and eval contract](spec/testing-and-eval.md)
