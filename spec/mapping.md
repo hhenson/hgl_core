@@ -1,8 +1,9 @@
 # Mapping and reduction
 
 Status: MAP-1 through MAP-10, RED-1 through RED-7 and SET-1 through SET-2
-are agreed. Nothing here is declared in `hgl/` yet: the declarations below
-wait for a compiler that reads their forms.
+are agreed, but the sentence of RED-3 that begins "Proposed:" and the body
+it describes. Nothing here is declared in `hgl/` yet: the declarations
+below wait for a compiler that reads their forms.
 
 ## Scope and API
 
@@ -11,8 +12,9 @@ of lists, as its own child graph. `reduce` combines a collection's members
 into one value. The
 [language specification](https://github.com/hhenson/hgl_spec/blob/main/spec/language/functions-and-phases.md)
 says how a parameter takes a function (FN-17), how a pack is declared for
-that function's call (FN-8), and how a declaration takes configuration in
-braces (FN-18). A loop makes no child for a member that comes and goes
+that function's call (FN-8), how a declaration takes configuration in
+braces (FN-18), and how a pack is read, made by a loop and given to a call
+(FN-19). A loop makes no child for a member that comes and goes
 while the program runs (CTRL-7): these operators do.
 
 | Core API | Contract |
@@ -26,7 +28,7 @@ while the program runs (CTRL-7): these operators do.
 export enum Join { inner, outer, left }
 
 # The operator: a function, then that function's own arguments.
-operator map<R, C, ...Ps, ...As, const key: str = "key">{
+export operator map<R, C, ...Ps, ...As, const key: str = "key">{
     const join: Join = .inner,
 }(f: fn(...{Ps}) -> R, args: ...{As for f without key}) -> C
 
@@ -36,25 +38,38 @@ native impl fn map<K, R, ...Ps, ...As, const key: str = "key">{
     const join: Join = .inner,
     keys: set<K>? = null,
 }(f: fn(...{Ps}) -> R, args: ...{As for f without key}) -> dict<K, R>
-    requires any name in names(As) { As[name] == dict<K, Ps[name]> }
-          && each name in names(As) { As[name] in {Ps[name], dict<K, Ps[name]>} }
+    requires any arg in arg_keys(As) { As[arg] == dict<K, Ps[arg]> }
+          && each arg in arg_keys(As) { As[arg] in {Ps[arg], dict<K, Ps[arg]>} }
 
 # By position: the same of a list.
 native impl fn map<R, ...Ps, ...As, const key: str = "key">{
     const join: Join = .inner,
 }(f: fn(...{Ps}) -> R, args: ...{As for f without key}) -> list<R>
-    requires any name in names(As) { As[name] == list<Ps[name]> }
-          && each name in names(As) { As[name] in {Ps[name], list<Ps[name]>} }
+    requires any arg in arg_keys(As) { As[arg] == list<Ps[arg]> }
+          && each arg in arg_keys(As) { As[arg] in {Ps[arg], list<Ps[arg]>} }
 
-# By position, over lists of one fixed size.
-native impl fn map<R, N, ...Ps, ...As, const key: str = "key">{
+# By position, over lists of one fixed size: written in HGL. One call of
+# `f` for each position, each given a pack made from `f`'s own parameters.
+impl fn map<R, N, ...Ps, ...As, const key: str = "key">{
     const join: Join = .inner,
 }(f: fn(...{Ps}) -> R, args: ...{As for f without key}) -> list<R, N>
-    requires any name in names(As) { As[name] == list<Ps[name], N> }
-          && each name in names(As) { As[name] in {Ps[name], list<Ps[name], N>} }
+    requires any arg in arg_keys(As) { As[arg] == list<Ps[arg], N> }
+          && each arg in arg_keys(As) { As[arg] in {Ps[arg], list<Ps[arg], N>} }
+{
+    return [for i in 0..<N:
+        f(...{for arg in arg_keys(Ps):
+            if arg == key { i }
+            else if arg in arg_keys(As) { part<Ps[arg]>(args[arg], i) }})]
+}
+
+# One argument at one position: its entry where it is split, itself where
+# it is whole. The candidates are selected by type. Not exported.
+operator part<P, A>(arg: A, const at: i64) -> P
+impl fn part<P, N>(arg: list<P, N>, const at: i64) -> P => arg[at]
+impl fn part<P>(arg: P, const at: i64) -> P => arg
 
 # The operator: a function of what is accumulated and a member.
-operator reduce<L, R, C,
+export operator reduce<L, R, C,
     const associative: bool = associative(f),
     const commutative: bool = commutative(f),
 >(f: fn(L, R) -> L, items: C, zero: L? = null) -> L
@@ -82,22 +97,43 @@ native impl fn reduce<L, R, const associative: bool = associative(f)>(
     f: fn(L, R) -> L, items: list<R>, zero: L) -> L
     requires !associative
 
+# Tree, over a list of a fixed size: written in HGL, from the first member.
+impl fn reduce<V, N, const associative: bool = associative(f)>(
+    f: fn(V, V) -> V, items: list<V, N>, zero: V? = null) -> V
+    requires associative
+{
+    var acc = items[0]
+    for i in 1..<N { acc = f(acc, items[i]) }
+    return acc
+}
+
+# Ordered, over a list of a fixed size: written in HGL, from the zero.
+impl fn reduce<L, R, N, const associative: bool = associative(f)>(
+    f: fn(L, R) -> L, items: list<R, N>, zero: L) -> L
+    requires !associative
+{
+    var acc = zero
+    for item in items { acc = f(acc, item) }
+    return acc
+}
+
 # The laws `reduce` reads (the language's GEN-9), added to the operators
 # core has.
-operator add_<L, R, O>(lhs: L, rhs: R) -> O
+export operator add_<L, R, O>(lhs: L, rhs: R) -> O
     properties<i64> { associative, commutative, identity = 0 }
     properties<f64> { associative, commutative, identity = 0.0 }
-operator mul_<L, R, O>(lhs: L, rhs: R) -> O
+export operator mul_<L, R, O>(lhs: L, rhs: R) -> O
     properties<i64> { associative, commutative, identity = 1 }
     properties<f64> { associative, commutative, identity = 1.0 }
 
-operator keys<K, V>(dictionary: dict<K, V>) -> set<K>
-operator union<T>(a: set<T>, b: set<T>) -> set<T>
-operator intersection<T>(a: set<T>, b: set<T>) -> set<T>
+export operator keys<K, V>(dictionary: dict<K, V>) -> set<K>
+export operator union<T>(a: set<T>, b: set<T>) -> set<T>
+export operator intersection<T>(a: set<T>, b: set<T>) -> set<T>
 ```
 
-Each candidate of `reduce` over a `list<V>` has its like over a
-`list<V, N>`.
+The candidates over lists of a fixed size are written in HGL, and the
+rest are native. `part` is core's own: an operator is private unless
+exported (the language's UNIT-3).
 
 ## Rules
 
@@ -108,7 +144,9 @@ Each candidate of `reduce` over a `list<V>` has its like over a
   form by position every argument that is split is a list, and the result
   is a `list<R>`; where the lists are of one fixed size, `list<P, N>`, the
   result is a `list<R, N>`. A call that splits two of those kinds has no
-  candidate. `keys` is the keyed form's alone.
+  candidate. `keys` is the keyed form's alone. The candidate over lists
+  of a fixed size is written in HGL: it calls `f` once for each position,
+  where the graph is built.
 - **MAP-2.** The arguments after `f` are those of `f`'s own call,
   positional or named (the language's FN-8). One whose type is its
   parameter's type is given whole to every child. One that is a
@@ -158,7 +196,10 @@ Each candidate of `reduce` over a `list<V>` has its like over a
   `dict<K, R>`, whose values are what is reduced. `f` combines what has
   been accumulated, an `L`, with a member, an `R`, and gives an `L`.
 - **RED-2.** Only members that are valid are reduced. With none, the result
-  is `zero`, where given, and is otherwise not valid.
+  is `zero`, where given, and is otherwise not valid. Over a list of a
+  fixed size every position is reduced, and the result is valid once
+  every position is: a function that takes and gives nullable values
+  reduces one whose positions come and go.
 - **RED-3.** The tree form combines the members in whatever grouping the
   implementation chooses. Its candidates take a function of one type,
   `fn(V, V) -> V`, and require `associative`. That option is
@@ -166,6 +207,9 @@ Each candidate of `reduce` over a `list<V>` has its like over a
   that declares `associative` for V, and false for any other function. A
   call says `{associative: true}` of a function that declares nothing, and
   `{associative: false}` to take the ordered form whatever `f` declares.
+  Proposed: over a list of a fixed size the tree form folds in position
+  order from the first member, and does not combine a `zero` (RED-6); a
+  list of no positions has no first member, and its call rejects.
 - **RED-4.** Over a `set` or a `dict`, which have no order, the
   candidates require `commutative` too, which is `commutative(f)` unless
   the call gives it. A call that meets neither has no candidate, and
