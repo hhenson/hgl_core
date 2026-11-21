@@ -78,11 +78,15 @@ selectors follow the language contract rather than this one-endpoint table.
   holds no value, never set or already removed, is ignored, and is no
   failure. A delta that names no change, `delta<set<i64>>()`,
   `delta<dict<str, i64>>()` or `delta<list<i64>>()`, ticks only where it
-  changes validity (the language's TIME-7). Where a `list<V>`, a
-  dictionary or a set is not valid, never published or invalidated
-  (END-4), it makes the endpoint valid, empty and modified, and
-  `delta_value` returns that delta. Where the endpoint is valid it is no
-  publication (END-5). Such a delta of a struct, a tuple or a
+  changes validity (the language's TIME-7). For a never-published or
+  wholly invalidated `list<V>`, dictionary or set (END-4), it makes the
+  endpoint valid, empty and modified, and `delta_value` returns that delta.
+  A growing list with positions but no valid child keeps its size and
+  stays invalid on a delta that names no change. It has no delta to read
+  and wakes no subscriber. Writing `size_modified: 0` or publishing `[]`
+  whole then publishes a valid empty list with the dropped positions in
+  `removed`. Where the endpoint is already valid a delta that names no
+  change is no publication (END-5). Such a delta of a struct, a tuple or a
   `list<V, N>` sets no child and changes no validity (END-7): it is never
   a tick. A delta whose every entry is a removal ignored as above names no
   change too, and ticks only where it makes the endpoint valid. The
