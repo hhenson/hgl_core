@@ -58,14 +58,14 @@ impl fn map<R, N, ...Ps, ...As, const key: str = "key">{
     return [for i in 0..<N:
         f(...{for arg in arg_keys(Ps):
             if arg == key { i }
-            else if arg in arg_keys(As) { part<Ps[arg]>(args[arg], i) }})]
+            else if arg in arg_keys(As) { at_position<Ps[arg]>(args[arg], i) }})]
 }
 
 # One argument at one position: its entry where it is split, itself where
 # it is whole. The candidates are selected by type. Not exported.
-operator part<P, A>(arg: A, const at: i64) -> P
-impl fn part<P, N>(arg: list<P, N>, const at: i64) -> P => arg[at]
-impl fn part<P>(arg: P, const at: i64) -> P => arg
+operator at_position<P, A>(arg: A, const at: i64) -> P
+impl fn at_position<P, N>(arg: list<P, N>, const at: i64) -> P => arg[at]
+impl fn at_position<P>(arg: P, const at: i64) -> P => arg
 
 # The operator: a function of what is accumulated and a member.
 export operator reduce<L, R, C,
@@ -131,7 +131,7 @@ export operator intersection<T>(a: set<T>, b: set<T>) -> set<T>
 ```
 
 The candidates over lists of a fixed size are written in HGL, and the
-rest are native. `part` is core's own: an operator is private unless
+rest are native. `at_position` is core's own: an operator is private unless
 exported (the language's UNIT-3).
 
 ## Rules
