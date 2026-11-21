@@ -1,0 +1,4 @@
+module core part diagnostics
+
+# A graph sink that prints each publication (DBG-1 to DBG-4).
+export native fn debug_print<T>(const label: str, value: T)

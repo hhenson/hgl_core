@@ -1,7 +1,6 @@
 # Diagnostics
 
-Status: DBG-1 is agreed. DBG-2 through DBG-4 are proposed. Nothing here is
-declared in `hgl/` yet.
+Status: DBG-1 is agreed. DBG-2 through DBG-4 are proposed.
 
 ## Scope and API
 
