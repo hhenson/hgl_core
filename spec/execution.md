@@ -13,27 +13,30 @@ ends, and what it gives back.
 | Core API | Contract |
 | --- | --- |
 | `smallest_step`, `never`, `earliest_start`, `forever`, `latest_end` | Constants: the least step between two cycles, a `duration`, and four instants, each a `datetime` (CRUN-3) |
-| `RunConfig` | An ordinary struct: `start: datetime? = null`, `end: datetime? = null`, `length: duration? = null`. Every field has a default |
+| `RunConfig` | The type of the capability `run_config` (CAP-7): `start: datetime?`, `end: datetime?`, `length: duration?`, each null where the configuration leaves it out. No call constructs one |
 | `replay<T>(const items: list<tuple<datetime, delta<T>>>) -> T` | A source of the publications `items` holds |
 | `record<T>(input: T, const key: str)` | A sink that retains each publication of `input` and puts them in the store under `key` at stop |
 
 ## Rules
 
 - **CRUN-1.** A run takes one entry, its `const` arguments, and one
-  `RunConfig`. It builds the entry's graph, starts it, evaluates zero or more
-  cycles, and stops it, once each. To run an entry again is another run, with
-  its own state, store and recording. A run is a simulation or in real
-  time, as the word it is written with says (the language's RUN-3): an
-  `eval` is a simulation and a `run` is in real time.
-- **CRUN-2.** A `RunConfig` is fixed for its run. `start` is inclusive and
-  `end` exclusive: no cycle runs before `start`, and none at or after `end`.
-  A null `start` is the earliest start in simulation and the host clock's
-  present time in real time. `length` gives the end counted from the start
-  the run has, given or not: a run with a `length` ends as one whose `end`
-  is that start and `length` later. A `RunConfig` with both an `end` and a
-  `length` is refused before the run's graph is built, an HGL error with
-  code `run.end_and_length`. With neither, a simulation ends when nothing
-  is scheduled, and a real-time run when its host stops it.
+  configuration, a `RunConfig`, which the run is given and the program
+  does not make (the language's RUN-6). It builds the entry's graph, starts
+  it, evaluates zero or more cycles, and stops it, once each. To run an
+  entry again is another run, with its own state, store and recording. A
+  run is a simulation or in real time, as the word it is written with says
+  (the language's RUN-3): an `eval` is a simulation and a `run` is in real
+  time.
+- **CRUN-2.** A run's configuration is fixed for the run. `start` is
+  inclusive and `end` exclusive: no cycle runs before `start`, and none at
+  or after `end`. A `start` left out is the earliest start in simulation
+  and the host clock's present time in real time. `length` gives the end
+  counted from the start the run has, given or not: a run with a `length`
+  ends as one whose `end` is that start and `length` later. A
+  configuration with both an `end` and a `length` is refused before the
+  run's graph is built, an HGL error with code `run.end_and_length`. With
+  neither, a simulation ends when nothing is scheduled, and a real-time
+  run when its host stops it.
 - **CRUN-3.** Evaluation time is constant within a cycle, and each cycle's is
   later than the one before by one microsecond or more: the smallest step,
   `smallest_step`. Core names four instants beside it. `never`,
@@ -108,7 +111,7 @@ fn positive(value: i64) -> i64 {
 }
 
 test silent_ticks {
-    assert eval(positive(value: [7, _, 0, 9, _])) == [7, _, _, 9]
+    assert eval positive(value: [7, _, 0, 9, _]) == [7, _, _, 9]
 }
 ```
 
@@ -130,9 +133,9 @@ flowchart LR
     S -->|once the run has stopped| O[The run's output]
 ```
 
-The eval writes no configuration, so the run of `wired_positive` is a
-simulation under `RunConfig()`. S is its start, the
-earliest start. The replay list is `[(S, 7), (S + 2us, 0), (S + 3us, 9)]`.
+The eval gives no configuration, so the run of `wired_positive` is a
+simulation with every field of its configuration left out. S is its start,
+the earliest start. The replay list is `[(S, 7), (S + 2us, 0), (S + 3us, 9)]`.
 
 | Time | `replay` publishes | `positive` publishes | Tuple recorded |
 | --- | --- | --- | --- |

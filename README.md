@@ -32,14 +32,15 @@ portable implementations, required native support, and runtime conformance.
 
 [The runtime suite](tests/conformance/README.md) documents observable behavior
 with HGL programs and tick traces. `hgl/core/core.hgl` is the mandatory
-module, `core`: the comparison outcome, the option enums, the run
-configuration and the symbol operators, with HGL wrappers for commutative
+module, `core`: the comparison outcome, the option enums, the run's
+named times and the symbol operators, with HGL wrappers for commutative
 pairs in reverse operand order.
 Generic temporal candidates handle same-type addition/subtraction with an
 explicit `invalid` input policy (OPS-9).
 `hgl/native/scalar_operators.hgl` holds the remaining native scalar candidates,
 each declaring the options it uses. `hgl/native/capabilities.hgl` holds the
-capability types, logging, scheduling, and the global store's candidates,
+capability types, the run's configuration among them, logging,
+scheduling, and the global store's candidates,
 `hgl/native/endpoints.hgl` the endpoint operations,
 `hgl/native/lists.hgl` the operations that give a list more entries, and
 `hgl/native/tenors.hgl` a tenor's arithmetic, order, and text.

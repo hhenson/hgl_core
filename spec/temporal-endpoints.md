@@ -301,9 +301,9 @@ fn observe_validity(command: i64, probe: bool) -> bool =>
     read_validity(probe, publish_nullable(command))
 
 test publication_establishes_validity {
-    assert eval(observe_validity(
+    assert eval observe_validity(
                 command: [_, 0, _, 7],
-                probe: [true, true, true, true])) == [false, true, true, true]
+                probe: [true, true, true, true]) == [false, true, true, true]
 }
 ```
 
@@ -334,9 +334,9 @@ fn observe_modified(value: i64, probe: bool) -> bool =>
     read_modified(publish_value(value), probe)
 
 test equal_publications_are_modified {
-    assert eval(observe_modified(
+    assert eval observe_modified(
                 value: [_, 7, _, 7],
-                probe: [true, true, true, true])) == [false, true, false, true]
+                probe: [true, true, true, true]) == [false, true, false, true]
 }
 ```
 
@@ -409,7 +409,7 @@ fn observe_set_updates(command: i64) -> set<i64> =>
     read_delta(change_members(command))
 
 test set_writes_coalesce {
-    assert eval(observe_set_updates(command: [1, 2])) == [
+    assert eval observe_set_updates(command: [1, 2]) == [
         delta<set<i64>>(added: [1]),
         delta<set<i64>>(added: [3], removed: [1])
     ]

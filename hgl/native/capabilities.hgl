@@ -29,6 +29,14 @@ export native type Scheduler {
 export native type Alarm
 export native type GlobalState
 
+# `inject run_config` (CAP-7): the configuration a run is given (CRUN-2),
+# as it is supplied. A field left out is null.
+export native type RunConfig {
+    start: datetime?
+    end: datetime?
+    length: duration?
+}
+
 # CAP-2: one record at `level`.
 export native const fn log(logger: Logger, level: LogLevel, message: str)
 
