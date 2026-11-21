@@ -15,7 +15,7 @@ the two replayed inputs.
 */
 test the_clock_reports_the_time_of_each_input {
     let start_time = @2026-01-05T09:30:00Z
-    assert eval(time_of_input(value: [10, _, 20]), RunConfig(start: start_time)) ==
+    assert eval{start: start_time} time_of_input(value: [10, _, 20]) ==
         [start_time, _, start_time + 2us]
 }
 
@@ -33,7 +33,7 @@ the scheduler property. This node requests no wakes.
 :Status: agreed
 */
 test an_input_tick_alone_is_not_a_scheduler_wake {
-    assert eval(scheduler_due_on_input(value: [7, _, 9])) == [false, _, false]
+    assert eval scheduler_due_on_input(value: [7, _, 9]) == [false, _, false]
 }
 
 fn cause_of_wake(value: i64) -> str {
@@ -58,7 +58,7 @@ the other after the final input.
 :Status: proposed
 */
 test a_scheduler_wake_can_coincide_with_an_input {
-    assert eval(cause_of_wake(value: [7, _, 9])) ==
+    assert eval cause_of_wake(value: [7, _, 9]) ==
         ["input", _, "input and scheduler", _, "scheduler"]
 }
 
@@ -78,7 +78,7 @@ tick is `[modified([]), modified(value)]`.
 :Status: proposed
 */
 test an_empty_selection_is_true_in_its_handler_when_an_input_ticks {
-    assert eval(empty_selection_at_wake(value: [7, _, 9])) == [_, _, [true, true]]
+    assert eval empty_selection_at_wake(value: [7, _, 9]) == [_, _, [true, true]]
 }
 
 enum PendingWakes { keep_both, cancel_later, reset_all }
@@ -102,8 +102,8 @@ pending wake. Run the same node with and without a reset.
 :Status: agreed
 */
 test a_reset_removes_all_wakes_from_an_inputless_node {
-    assert eval(wake_without_inputs(pending: .keep_both)) != []
-    assert eval(wake_without_inputs(pending: .reset_all)) == []
+    assert eval wake_without_inputs(pending: .keep_both) != []
+    assert eval wake_without_inputs(pending: .reset_all) == []
 }
 
 /**
@@ -115,8 +115,8 @@ deadlines from the start hook.
 :Status: proposed
 */
 test cancelling_the_later_tag_preserves_the_earlier_wake {
-    assert eval(wake_without_inputs(pending: .keep_both)) == [_, true, _, true]
-    assert eval(wake_without_inputs(pending: .cancel_later)) == [_, true]
+    assert eval wake_without_inputs(pending: .keep_both) == [_, true, _, true]
+    assert eval wake_without_inputs(pending: .cancel_later) == [_, true]
 }
 
 fn wall_clock_wakes() -> bool {
@@ -138,7 +138,7 @@ the datetime at 3us from it.
 :Status: agreed
 */
 test the_wall_clock_option_changes_nothing_in_simulation {
-    assert eval(wall_clock_wakes()) == [_, true, _, true]
+    assert eval wall_clock_wakes() == [_, true, _, true]
 }
 
 fn alarm_or_input(value: i64) -> str {
@@ -157,7 +157,7 @@ holds regardless of whether the best-effort alarm is delivered.
 :Status: agreed
 */
 test an_alarm_cannot_hide_an_input_tick {
-    assert eval(alarm_or_input(value: [1, 2, 3, 4]), RunConfig(length: 4us)) ==
+    assert eval{length: 4us} alarm_or_input(value: [1, 2, 3, 4]) ==
         ["input", "input", "input", "input"]
 }
 
@@ -184,7 +184,7 @@ and its capture's error stream ticks.
 :Status: agreed
 */
 test a_zero_duration_asked_of_the_scheduler_fails {
-    assert eval(wake_failures(delay: [1us, 0s])) == [_, true]
+    assert eval wake_failures(delay: [1us, 0s]) == [_, true]
 }
 
 fn wake_at_start(value: i64) -> str {
@@ -203,7 +203,7 @@ wake alone; the input's later tick is handled as an input.
 :Status: agreed
 */
 test a_zero_duration_in_start_wakes_the_first_evaluation {
-    assert eval(wake_at_start(value: [_, 7])) == ["scheduled", "input"]
+    assert eval wake_at_start(value: [_, 7]) == ["scheduled", "input"]
 }
 
 fn alarm_at_start(value: i64) -> str {
@@ -222,7 +222,7 @@ wake alone; the input's later tick is handled as an input.
 :Status: agreed
 */
 test a_zero_duration_in_start_wakes_the_alarm_at_the_first_evaluation {
-    assert eval(alarm_at_start(value: [_, 7])) == ["alarm", "input"]
+    assert eval alarm_at_start(value: [_, 7]) == ["alarm", "input"]
 }
 
 fn wake_in_the_past(value: i64) -> str {
@@ -252,8 +252,8 @@ or the alarm, for a wake then; none comes, and the run does not fail.
 :Status: agreed
 */
 test a_wake_before_now_is_dropped {
-    assert eval(wake_in_the_past(value: [7, _, 9])) == ["asked", _, "asked"]
-    assert eval(alarm_in_the_past(value: [7, _, 9])) == ["asked", _, "asked"]
+    assert eval wake_in_the_past(value: [7, _, 9]) == ["asked", _, "asked"]
+    assert eval alarm_in_the_past(value: [7, _, 9]) == ["asked", _, "asked"]
 }
 
 fn due_after_reset() -> bool {
@@ -285,5 +285,5 @@ true, wherever the wake lands.
 :Status: agreed
 */
 test a_wake_stays_due_after_a_reset_inside_it {
-    assert published(eval(due_after_reset())) == [true]
+    assert published(eval due_after_reset()) == [true]
 }

@@ -1,15 +1,16 @@
 # Capabilities
 
-Status: CAP-1 to CAP-6 are agreed. The meanings under "Proposed behaviour"
+Status: CAP-1 to CAP-7 are agreed. The meanings under "Proposed behaviour"
 are proposed.
 
 ## Scope and API
 
 The [language temporal model](https://github.com/hhenson/hgl_spec/blob/main/spec/language/temporal-model.md)
 says what a capability is: a node has one by `inject`, uses it in its hooks,
-may give it to a parameter of its type, and does not retain it (TIME-8). This
-contract says what each one is: its type, its read-only properties, and the
-operations on it.
+may give it to a parameter of its type, and does not retain it (TIME-8);
+`run_config` is an application's and an integration test's, and no node's
+(the language's RUN-6). This contract says what each one is: its type, its
+read-only properties, and the operations on it.
 
 | Capability | Type | Properties | Operations |
 | --- | --- | --- | --- |
@@ -18,6 +19,7 @@ operations on it.
 | `scheduler` | `Scheduler` | `next_scheduled_time: datetime?`, `is_scheduled: bool`, `is_scheduled_now: bool` | `schedule`, `un_schedule`, `reset` |
 | `alarm` | `Alarm` | None | `schedule` |
 | `global_state` | `GlobalState` | None | `get`, `has`, `put` |
+| `run_config` | `RunConfig` | `start: datetime?`, `end: datetime?`, `length: duration?` | None |
 
 The types and the native operations are declared in
 `hgl/native/capabilities.hgl`; `LogLevel`, the `log_*` helpers, and the
@@ -30,8 +32,8 @@ dictionary's (the language's ERR-6).
 
 - **CAP-1.** Each capability but `out` has a native type of core's module,
   named as the capability with a capital: `Logger`, `Clock`, `Scheduler`,
-  `Alarm`, `GlobalState`. Core constructs none in HGL. A property is read as
-  an ordinary value and is not assigned.
+  `Alarm`, `GlobalState`, `RunConfig`. Core constructs none in HGL. A
+  property is read as an ordinary value and is not assigned.
 - **CAP-2.** `log(logger, level, message)` writes one record of `message` at
   `level`, a `LogLevel`: `debug`, `info`, `warning`, or `error`.
   `log_debug`, `log_info`, `log_warning`, and `log_error` each call `log` at
@@ -91,12 +93,20 @@ dictionary's (the language's ERR-6).
   `has(global_state, key)` is whether the key holds a value.
   `put(global_state, key, value)` puts one there. A key keeps the type of
   its first value: a `put` of another type is rejected where the two are in
-  one program, and fails otherwise. Reading or writing the store wakes no
-  node and is no temporal input, so it orders no two nodes: a `put` is seen
-  by what is evaluated after it, and the language's TIME-2 leaves the order
-  of two nodes of one rank undefined. What one of them sees of the other's
-  `put` in the same cycle is undefined. The key `"run.output"` is the run's
-  (CRUN-8): a program that names it is rejected when its graph is built.
+  one program, with code `store.key_type` (the language's TIME-8), and fails
+  otherwise. Reading or writing the store wakes no node and is no temporal
+  input, so it orders no two nodes: a `put` is seen by what is evaluated
+  after it, and the language's TIME-2 leaves the order of two nodes of one
+  rank undefined. What one of them sees of the other's `put` in the same
+  cycle is undefined. The key `"run.output"` is the run's (CRUN-8): a
+  program that names it is rejected when its graph is built.
+- **CAP-7.** `run_config` is the configuration of the run (CRUN-2), as it
+  is supplied to the run (the language's RUN-6). It has three properties:
+  `start` and `end`, each a `datetime?`, and `length`, a `duration?`. A
+  field the configuration leaves out is null: `run_config.start` of a run
+  given no start is null, and not the start the run resolves (CRUN-2). It
+  has no operation. Who injects it, who supplies it, and where it is read
+  are the language's RUN-6.
 
 ## Proposed behaviour
 
