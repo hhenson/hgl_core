@@ -21,7 +21,7 @@ owns endpoint interpretation, handler selection, and phase admission.
 | Runtime parameter payload | T; requires readable valid input, subject to declared nullable/default argument binding |
 | A collection's child, `parts[1]`, `quote.bid` | An endpoint, valid or not; its payload requires its own admission; see END-8 |
 | A `ref` parameter, `ref low: i64`, and its children | Endpoints, not values: no payload or `delta_value` read (the language's FN-16); see END-10 |
-| `delta_value(value)` | The current cycle's `delta<T>` (TYPE-16), with the read form chosen by its place. A duration window takes only the result form. See END-3 and END-9. |
+| `delta_value(value)` | The current cycle's `delta<T>` (TYPE-16), with the read form chosen by its place. A duration window takes the result and nullable forms. See END-3 and END-9. |
 | `removed_value(window)` | `result<V, error>`: the value that left the window in the cycle, or an `err` where none left; see END-9 |
 | `is_active(input)` | bool; current activity of this direct input, including while invalid |
 | `last_modified(value)` | Agreed `datetime?`; see END-6 |
@@ -99,7 +99,7 @@ selectors follow the language contract rather than this one-endpoint table.
   A `delta<T>` place gives the delta or fails with `value.unset_read`.
   A `result<delta<T>, error>` place gives `ok` of the delta or an
   `err` with that code. A `delta<T>?` place gives the delta or null.
-  A window of a duration takes only the result form (TYPE-11, END-9).
+  A window of a duration takes the result and nullable forms (TYPE-11, END-9).
   It alone can tick without a delta, so a modified endpoint of any
   other type gives `ok` in the result form. Delta reads follow the
   admission rules for the endpoint (TIME-1, TIME-4).
@@ -195,10 +195,10 @@ selectors follow the language contract rather than this one-endpoint table.
   `delta_value(x)` of a window is the value that arrived in the cycle
   (the language's TYPE-16), read before the window is all valid as after.
   In a cycle in which a value only leaves a window of a duration, the
-  window ticks and has no delta: read where its place expects a
-  `result<delta<T>, error>`, `delta_value(x)` gives an `err` coded
-  `value.unset_read` there (END-3). A `delta<T>` or `delta<T>?` place
-  rejects a duration window's delta with `payload.unguarded` (TYPE-11).
+  window ticks and has no delta. In that cycle `delta_value(x)` gives an
+  `err` coded `value.unset_read` in a `result<delta<T>, error>` place
+  and null in a `delta<T>?` place (END-3). A place for `delta<T>`
+  alone rejects a duration window's delta with `payload.unguarded` (TYPE-11).
   A window of a tick count ticks only at an arrival and takes the
   three forms of END-3.
   `removed_value(x)` is the value that left the window in the cycle: in
@@ -225,8 +225,9 @@ selectors follow the language contract rather than this one-endpoint table.
   check a window of ticks, its read where a `result` is taken, a lifted
   parameter with a default, and its delta and `removed_value` once it is
   full; in a window of a duration, an exit with nothing arriving,
-  `all_valid` falling back, a minimum of zero, the delta and
-  `removed_value` at an exit alone and at an exit with an arrival, and the
+  `all_valid` falling back, a minimum of zero, the result and nullable
+  delta forms at an exit alone and at an exit with an arrival,
+  `removed_value` at those ticks, and the
   validity of a window emptied by exits; and a recording of a window of a
   duration, which holds its arrivals, and its replay. The
   [window rejection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/rejections/window_reads.hgl)
