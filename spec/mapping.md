@@ -1,9 +1,8 @@
 # Mapping and reduction
 
 Status: MAP-1 through MAP-10, RED-1 through RED-7 and SET-1 through SET-2
-are agreed, but the sentence of RED-3 that begins "Proposed:" and the body
-it describes. Nothing here is declared in `hgl/` yet: the declarations
-below wait for a compiler that reads their forms.
+are agreed. Nothing here is declared in `hgl/` yet: the declarations below
+wait for a compiler that reads their forms.
 
 ## Scope and API
 
@@ -207,9 +206,9 @@ exported (the language's UNIT-3).
   that declares `associative` for V, and false for any other function. A
   call says `{associative: true}` of a function that declares nothing, and
   `{associative: false}` to take the ordered form whatever `f` declares.
-  Proposed: over a list of a fixed size the tree form folds in position
-  order from the first member, and does not combine a `zero` (RED-6); a
-  list of no positions has no first member, and its call rejects.
+  Over a list of a fixed size the tree form folds in position order from
+  the first member, and does not combine a `zero` (RED-6); a list of no
+  positions has no first member, and its call rejects.
 - **RED-4.** Over a `set` or a `dict`, which have no order, the
   candidates require `commutative` too, which is `commutative(f)` unless
   the call gives it. A call that meets neither has no candidate, and
