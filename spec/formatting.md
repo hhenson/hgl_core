@@ -1,8 +1,8 @@
 # Formatting
 
-Status: FMT-1, FMT-3 and FMT-4 are agreed. FMT-2, FMT-5 and FMT-6 are
-proposed, and so are the diagnostic codes FMT-3 names. Nothing here is
-declared in `hgl/` yet.
+Status: FMT-1 through FMT-4 are agreed. FMT-5 and FMT-6 are proposed, and
+so are the diagnostic codes FMT-3 names. Nothing here is declared in
+`hgl/` yet.
 
 ## Scope and API
 
