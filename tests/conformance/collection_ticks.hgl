@@ -877,7 +877,7 @@ An explicit size of zero or a whole empty list publishes a valid empty list.
 :Status: agreed
 */
 test a_growing_list_keeps_its_vacant_positions {
-    assert eval(reading_wakes(step: [1, 5, 0, 3, 6, 5, 7, 0])) == [true, false, _, _, true, false, true, _]
-    assert eval(sample_readings(step: [1, 5, 0, 3, 6, 5, 7, 0])) == [true, false, false, false, false, false, true, true]
-    assert eval(reading_wakes(step: [1, 5, 8, 0])) == [true, false, true, _]
+    assert eval reading_wakes(step: [1, 5, 0, 3, 6, 5, 7, 0]) == [true, false, _, _, true, false, true, _]
+    assert eval sample_readings(step: [1, 5, 0, 3, 6, 5, 7, 0]) == [true, false, false, false, false, false, true, true]
+    assert eval reading_wakes(step: [1, 5, 8, 0]) == [true, false, true, _]
 }
