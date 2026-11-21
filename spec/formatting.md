@@ -1,8 +1,9 @@
 # Formatting
 
-Status: FMT-1 through FMT-4 are agreed. FMT-5 and FMT-6 are proposed, and
-so are the diagnostic codes FMT-3 names. Nothing here is declared in
-`hgl/` yet.
+Status: FMT-1 through FMT-4 and FMT-7 are agreed; the names FMT-7 gives
+`Marked` and the two options are proposed. FMT-5, FMT-6 and FMT-8 are
+proposed, and so are the diagnostic codes FMT-3 names. Nothing here is
+declared in `hgl/` yet.
 
 ## Scope and API
 
@@ -15,11 +16,36 @@ FN-8).
 
 | Core API | Contract |
 | --- | --- |
-| `format(fmt_str, args..., kwargs...)` | The text of `fmt_str` with its places filled |
+| `format{options}(fmt_str, args..., kwargs...)` | The text of `fmt_str` with its places filled |
+| `Marked<T>` | A value of T or none, and whether it ticked, for a place to show |
 
 ```hgl
-export native const fn format<...As, ...Ks>(
+export operator format<...As, ...Ks>(
     const fmt_str: str, args: ...As, kwargs: ...{Ks}) -> str
+
+# In a node's handler or a value function: the one native.
+native impl const fn format<...As, ...Ks>{
+    const not_valid: str = "<not valid>",
+    const ticked: str = "*",
+}(const fmt_str: str, args: ...As, kwargs: ...{Ks}) -> str
+
+# In a graph: its text ticks. Written in HGL on the native.
+impl fn format<...As, ...Ks>{
+    const not_valid: str = "<not valid>",
+    const ticked: str = "*",
+    const sample: i64 = 1,
+    const print_delta: bool = true,
+    const engine_time: bool = false,
+    const wall_time: bool = false,
+    const require_valid: bool = true,
+    const mark_ticked: bool = false,
+    trigger: signal?,
+}(const fmt_str: str, args: ...As, kwargs: ...{Ks}) -> str
+
+export struct Marked<T> {
+    value: T?
+    ticked: bool
+}
 ```
 
 ## Rules
@@ -49,10 +75,34 @@ export native const fn format<...As, ...Ks>(
   its characters, with no quotes; an `i64`, an `f64` and a `bool` as
   `str` of each gives; any other value in a form that shows its parts, the
   strings among them in quotes, for a person to read.
-- **FMT-6.** `format` is a value function. Called where a graph is built
-  with connections among its arguments it is lifted as any value function
-  is (the language's FN-6): its result ticks when an argument ticks, once
-  every argument is valid.
+- **FMT-6.** `format` is an operator with a candidate for value code and
+  one for a graph. Called where a graph is built its result is a text
+  that ticks: in each cycle in which an argument ticks, once every
+  argument is valid. With no arguments it ticks once, when the graph
+  starts.
+- **FMT-7.** An argument may be a `Marked<T>`: a value of T or none, and
+  whether it ticked. Its place admits the specifiers T admits (FMT-4).
+  Where it holds a value the place is written as that value is, with the
+  text of the `ticked` option before it where `ticked` is true. Where it
+  holds none the place is written as the text of the `not_valid` option,
+  and its specifier is not applied. The two options are `format`'s own
+  and are given in its braces; left out, they are `*` and `<not valid>`.
+- **FMT-8.** In a graph a call takes the options a line of
+  `debug_print` is made with, since that is made by this
+  ([diagnostics](diagnostics.md)). `require_valid`, which is true unless
+  given, holds the text until every argument is valid; with
+  `{require_valid: false}` it ticks before that, and an argument with no
+  value is written as FMT-7 writes none. `mark_ticked` writes each
+  argument that ticked in the cycle as FMT-7 writes one that ticked.
+  `print_delta` says whether a collection that ticked is written as what
+  changed in the cycle, which is the default, or whole. `engine_time`
+  puts the cycle's evaluation time before the text, and `wall_time` the
+  time of day of the machine. `sample` gives one text in every that many;
+  it is 1 or more. With a `trigger`, a connection taken as a signal, the
+  text ticks in each cycle in which the trigger ticks and in no other,
+  with the arguments as they stand, and with no arguments at each tick of
+  the trigger and not when the graph starts. The candidate for a graph is
+  written in HGL: it gives the native each argument as a `Marked`.
 
 ## Examples
 
@@ -67,9 +117,15 @@ const fn filled(qty: i64, price: f64) -> str =>
 const fn padded(level: i64) -> str =>
     format("level {level:>3} of {{book}}", level: level)
 
+const fn shown(price: f64?, ticked: bool) -> str =>
+    format("mid {:.1f}", Marked<f64>(value: price, ticked: ticked))
+
 test texts {
     assert filled(10, 101.5) == "fill 10 at 101.50"
     assert padded(7) == "level   7 of {book}"
+    assert shown(101.5, true) == "mid *101.5"
+    assert shown(101.5, false) == "mid 101.5"
+    assert shown(null, false) == "mid <not valid>"
 }
 ```
 
