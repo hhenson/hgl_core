@@ -1,8 +1,8 @@
 # Diagnostics
 
-Status: DBG-1 through DBG-6, DBG-8 and DBG-9 are agreed, but for the
-sentence of DBG-9 that begins "Proposed:". DBG-7 is proposed. Nothing
-here is declared in `hgl/` yet.
+Status: DBG-1 through DBG-9 are agreed. What DBG-4 and DBG-6 quote of a
+format string, `{engine_time}`, `{wall_time}` and `{*}`, is spelled as
+FMT-9 proposes. Nothing here is declared in `hgl/` yet.
 
 ## Scope and API
 
@@ -27,10 +27,7 @@ export operator debug_print<...As, ...Ks>(
 impl fn debug_print<...As, ...Ks>{
     const sample: i64 = 1,
     const print_delta: bool = true,
-    const engine_time: bool = false,
-    const wall_time: bool = false,
     const require_valid: bool = false,
-    const mark_ticked: bool = false,
     trigger: signal?,
 }(const fmt_str: str, args: ...As, kwargs: ...{Ks})
 
@@ -45,7 +42,7 @@ impl const fn debug_print<...As, ...Ks>(
 ## Rules
 
 - **DBG-1.** `debug_print` writes one line to the process's standard
-  output, the format string with its places filled (FMT-1 to FMT-5), and
+  output, the format string with its places filled (FMT-1 to FMT-9), and
   gives no result. The line is written when the call is evaluated, to the
   stream itself: it is not held to the end of the cycle or of the run, and
   it is no part of a run's record.
@@ -55,18 +52,19 @@ impl const fn debug_print<...As, ...Ks>(
 - **DBG-3.** Called in a node's handler or in a value function, it writes
   its line where it is executed, as a print does in any language, with the
   values its arguments have there.
-- **DBG-4.** In a graph a call takes options. `engine_time` puts the
-  cycle's evaluation time before the text, and `wall_time` the time of day
-  of the machine; both are off unless asked for. `sample` writes one line
-  in every that many: `{sample: 10}` the tenth, the twentieth, and so on;
-  it is 1 or more. `print_delta` says whether a collection that ticked is
+- **DBG-4.** In a graph a call takes options. `sample` writes one line in
+  every that many: `{sample: 10}` the tenth, the twentieth, and so on; it
+  is 1 or more. `print_delta` says whether a collection that ticked is
   written as what changed in the cycle, which is the default, or whole.
+  The cycle's evaluation time and the time of day of the machine are no
+  options: the format string asks for them, `{engine_time}` and
+  `{wall_time}` (FMT-9).
 - **DBG-5.** In a graph an argument may have no value when another ticks.
   It is written as `<not valid>` (FMT-7). With `{require_valid: true}` no
   line is written until every argument is valid.
-- **DBG-6.** With `{mark_ticked: true}` each value that ticked in the cycle
-  is written with `*` before it (FMT-7), so that what set the line off is
-  seen.
+- **DBG-6.** A place the format string marks, `{*}`, is written with `*`
+  before its value where its argument ticked in the cycle (FMT-9), so
+  that what set the line off is seen.
 - **DBG-7.** It changes nothing else a program can observe. Where several
   calls write in one cycle, their lines stand in the order their nodes are
   evaluated, which the language orders by what depends on what and not
@@ -79,10 +77,10 @@ impl const fn debug_print<...As, ...Ks>(
   the graph starts.
 - **DBG-9.** `debug_print` is no native. Both its candidates are written
   in HGL, in core, on `format`, which gives the line, and `write`, which
-  puts it on the stream and flushes it. Proposed: its options in a graph
-  are `format`'s there (FMT-8), given on to it, and the line is that
-  text, written as it ticks; what differs is that `require_valid` is
-  false unless given, so that a line shows what has no value yet.
+  puts it on the stream and flushes it. Its options in a graph are
+  `format`'s there (FMT-8), given on to it, and the line is that text,
+  written as it ticks; what differs is that `require_valid` is false
+  unless given, so that a line shows what has no value yet.
 
 ## Examples
 
@@ -94,7 +92,7 @@ module examples.diagnostics
 fn mid(bid: f64, ask: f64) -> f64 {
     debug_print("quote {:.2f} / {:.2f}", bid, ask)
     let value = (bid + ask) / 2.0
-    debug_print{engine_time: true, mark_ticked: true}("mid {value:.3f}", value: value)
+    debug_print("{engine_time} mid {*value:.3f}", value: value)
     return value
 }
 

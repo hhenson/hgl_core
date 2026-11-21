@@ -1,9 +1,7 @@
 # Formatting
 
-Status: FMT-1 through FMT-4 and FMT-7 are agreed; the names FMT-7 gives
-`Marked` and the two options are proposed. FMT-5, FMT-6 and FMT-8 are
-proposed, and so are the diagnostic codes FMT-3 names. Nothing here is
-declared in `hgl/` yet.
+Status: FMT-1 through FMT-9 are agreed, but for each sentence that begins
+"Proposed:". Nothing here is declared in `hgl/` yet.
 
 ## Scope and API
 
@@ -35,10 +33,7 @@ impl fn format<...As, ...Ks>{
     const ticked: str = "*",
     const sample: i64 = 1,
     const print_delta: bool = true,
-    const engine_time: bool = false,
-    const wall_time: bool = false,
     const require_valid: bool = true,
-    const mark_ticked: bool = false,
     trigger: signal?,
 }(const fmt_str: str, args: ...As, kwargs: ...{Ks}) -> str
 
@@ -68,12 +63,22 @@ export struct Marked<T> {
   wrong while the program runs.
 - **FMT-4.** A specifier is of the format language of the fmt library,
   which is Python's: fill and alignment, sign, width, precision, and type.
-  The scalar types admit one: `i64`, `f64`, `str` and `bool`, each with the
-  specifiers that library admits for an integer, a floating-point number, a
-  string and a boolean. A value of any other type takes `{}` alone.
-- **FMT-5.** With no specifier a value is written as its text: a `str` as
-  its characters, with no quotes; an `i64`, an `f64` and a `bool` as
-  `str` of each gives; any other value in a form that shows its parts, the
+  The types that library formats admit one, each given to it as its own
+  type with the specifier as written: `i64`, `f64`, `str` and `bool`, with
+  the specifiers it admits for an integer, a floating-point number, a
+  string and a boolean, and `date`, `time`, `datetime` and `duration`,
+  with those it admits for a date and a time, `{:%Y-%m-%d}`. A value of
+  any other type takes `{}` alone.
+- **FMT-5.** With no specifier a `str` is written as its characters, with
+  no quotes, and an `i64`, an `f64` and a `bool` as `convert<str>` of each
+  gives ([scalar operators](scalar-operators.md), OPS-6). A value of a type
+  FMT-4 does not name is written as `convert<str>` of it gives: the type
+  has that conversion, core's or a candidate the program declares for a
+  type of its own, and one that has none rejects where the call is
+  compiled. Proposed: a `date`, a `time` and a `datetime` with no
+  specifier are written in their ISO 8601 form, and a `duration` as its
+  literal is. Proposed: core gives `convert<str>` for a list, a set, a
+  dictionary, a tuple and a struct, in a form that shows its parts, the
   strings among them in quotes, for a person to read.
 - **FMT-6.** `format` is an operator with a candidate for value code and
   one for a graph. Called where a graph is built its result is a text
@@ -82,27 +87,36 @@ export struct Marked<T> {
   starts.
 - **FMT-7.** An argument may be a `Marked<T>`: a value of T or none, and
   whether it ticked. Its place admits the specifiers T admits (FMT-4).
-  Where it holds a value the place is written as that value is, with the
-  text of the `ticked` option before it where `ticked` is true. Where it
+  Where it holds a value the place is written as that value is. Where it
   holds none the place is written as the text of the `not_valid` option,
-  and its specifier is not applied. The two options are `format`'s own
-  and are given in its braces; left out, they are `*` and `<not valid>`.
+  `<not valid>` unless the call gives another, and its specifier is not
+  applied.
 - **FMT-8.** In a graph a call takes the options a line of
   `debug_print` is made with, since that is made by this
   ([diagnostics](diagnostics.md)). `require_valid`, which is true unless
   given, holds the text until every argument is valid; with
   `{require_valid: false}` it ticks before that, and an argument with no
-  value is written as FMT-7 writes none. `mark_ticked` writes each
-  argument that ticked in the cycle as FMT-7 writes one that ticked.
-  `print_delta` says whether a collection that ticked is written as what
-  changed in the cycle, which is the default, or whole. `engine_time`
-  puts the cycle's evaluation time before the text, and `wall_time` the
-  time of day of the machine. `sample` gives one text in every that many;
+  value is written as FMT-7 writes none. `print_delta` says whether a
+  collection that ticked is written as what changed in the cycle, which
+  is the default, or whole. `sample` gives one text in every that many;
   it is 1 or more. With a `trigger`, a connection taken as a signal, the
   text ticks in each cycle in which the trigger ticks and in no other,
   with the arguments as they stand, and with no arguments at each tick of
   the trigger and not when the graph starts. The candidate for a graph is
   written in HGL: it gives the native each argument as a `Marked`.
+- **FMT-9.** The evaluation time, the time of day, and a mark on what
+  ticked are asked for in the format string itself. Where the call is
+  compiled they are taken out of it, and the rest is given to the fmt
+  library with what they add. Proposed, as to how each is spelled:
+  `{engine_time}` is the evaluation time of the cycle the text is made
+  in, written where a graph is built, and `{wall_time}` the time of day
+  of the machine, written anywhere; each is a `datetime`, takes a
+  specifier as one does, and is no name a call gives an argument under.
+  A `*` after a place's opening brace marks the place, `{*}`, `{*:.2f}`,
+  `{*mid}`: it is written with the text of the `ticked` option, `*`
+  unless the call gives another, before its value, where its argument
+  ticked in the cycle. In value code that is an argument that is a
+  `Marked` whose `ticked` is true.
 
 ## Examples
 
@@ -118,7 +132,10 @@ const fn padded(level: i64) -> str =>
     format("level {level:>3} of {{book}}", level: level)
 
 const fn shown(price: f64?, ticked: bool) -> str =>
-    format("mid {:.1f}", Marked<f64>(value: price, ticked: ticked))
+    format("mid {*:.1f}", Marked<f64>(value: price, ticked: ticked))
+
+fn quoted(bid: f64, ask: f64) -> str =>
+    format{require_valid: false}("{engine_time:%H:%M:%S} {*:.2f} / {*:.2f}", bid, ask)
 
 test texts {
     assert filled(10, 101.5) == "fill 10 at 101.50"
@@ -129,6 +146,9 @@ test texts {
 }
 ```
 
+`quoted` is a text that ticks whenever `bid` or `ask` does: with `bid`
+ticking at 100.0 and `ask` not yet valid, at half past nine,
+`09:30:00 *100.00 / <not valid>` (FMT-8, FMT-9).
 Deliberate rejections, each where its call is compiled:
 `format("fill {} at {}", qty)`, a place with no argument left
 (`format.argument`); `format("fill {qty}", quantity: qty)`, a name no
