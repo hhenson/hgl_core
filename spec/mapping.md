@@ -24,29 +24,55 @@ while the program runs (CTRL-7): these operators do.
 ```hgl
 export enum Join { inner, outer, left }
 
+# The operator: a function, then that function's own arguments.
 operator map<R, C, ...Ps, ...As, const key: str = "key">{
     const join: Join = .inner,
 }(f: fn(...{Ps}) -> R, args: ...{As for f without key}) -> C
 
-# Keyed: every split argument is a dictionary.
+# Keyed: at least one argument is a dictionary of its parameter's type,
+# and every argument is that or its parameter's own type.
 native impl fn map<K, R, ...Ps, ...As, const key: str = "key">{
     const join: Join = .inner,
     keys: set<K>? = null,
 }(f: fn(...{Ps}) -> R, args: ...{As for f without key}) -> dict<K, R>
-    requires each name in names(As) { As[name] in {Ps[name], dict<K, Ps[name]>} }
-          && !each name in names(As) { As[name] == Ps[name] }
+    requires any name in names(As) { As[name] == dict<K, Ps[name]> }
+          && each name in names(As) { As[name] in {Ps[name], dict<K, Ps[name]>} }
 
-# By position: every split argument is a list.
+# By position: the same of a list.
 native impl fn map<R, ...Ps, ...As, const key: str = "key">{
     const join: Join = .inner,
 }(f: fn(...{Ps}) -> R, args: ...{As for f without key}) -> list<R>
-    requires each name in names(As) { As[name] in {Ps[name], list<Ps[name]>} }
-          && !each name in names(As) { As[name] == Ps[name] }
+    requires any name in names(As) { As[name] == list<Ps[name]> }
+          && each name in names(As) { As[name] in {Ps[name], list<Ps[name]>} }
 
-operator reduce<L, R, C>{
-    const associative: bool? = null,
-    const commutative: bool? = null,
-}(f: fn(L, R) -> L, items: C, zero: L? = null) -> L
+# The operator: a function of what is accumulated and a member.
+operator reduce<L, R, C,
+    const associative: bool = associative(f),
+    const commutative: bool = commutative(f),
+>(f: fn(L, R) -> L, items: C, zero: L? = null) -> L
+
+# Tree, over a list: the members in order, in any grouping.
+native impl fn reduce<V, const associative: bool = associative(f)>(
+    f: fn(V, V) -> V, items: list<V>, zero: V? = null) -> V
+    requires associative
+
+# Tree, over a set or a dictionary's values: in any order and grouping.
+native impl fn reduce<V,
+    const associative: bool = associative(f),
+    const commutative: bool = commutative(f),
+>(f: fn(V, V) -> V, items: set<V>, zero: V? = null) -> V
+    requires associative && commutative
+
+native impl fn reduce<K, V,
+    const associative: bool = associative(f),
+    const commutative: bool = commutative(f),
+>(f: fn(V, V) -> V, items: dict<K, V>, zero: V? = null) -> V
+    requires associative && commutative
+
+# Ordered, over a list: a fold from the zero, which it requires.
+native impl fn reduce<L, R, const associative: bool = associative(f)>(
+    f: fn(L, R) -> L, items: list<R>, zero: L) -> L
+    requires !associative
 
 # The laws `reduce` reads (the language's GEN-9), added to the operators
 # core has.
@@ -61,6 +87,9 @@ operator keys<K, V>(dictionary: dict<K, V>) -> set<K>
 operator union<T>(a: set<T>, b: set<T>) -> set<T>
 operator intersection<T>(a: set<T>, b: set<T>) -> set<T>
 ```
+
+Each candidate of `reduce` over a `list<V>` has its like over a
+`list<V, N>`.
 
 ## Rules
 
@@ -78,12 +107,14 @@ operator intersection<T>(a: set<T>, b: set<T>) -> set<T>
   child reads the entry of its own key, or position. A generic `f` is
   given with its generic arguments: the function type takes any signature
   and decides none of them (FN-17).
-- **MAP-3.** At least one argument is split. A call in which every
-  argument is whole rejects, with `keys` given or not.
+- **MAP-3.** At least one argument is split, which each candidate's `any`
+  requires. A call in which every argument is whole has no candidate,
+  with `keys` given or not.
 - **MAP-4.** The key type K is the member type of `keys`, where `keys` is
   given. Otherwise it is the key type of the first split dictionary, in the
-  order of `f`'s parameters. Every split dictionary has that key type, and
-  one that has another rejects.
+  order of `f`'s parameters: the first argument the candidate's `any`
+  holds for. Every split dictionary has that key type, and one that has
+  another has no candidate.
 - **MAP-5.** In the keyed form the key set is `keys`, where given.
   Otherwise it is the join of the split dictionaries' key sets: `.inner`,
   the keys every one has; `.outer`, the keys any has; `.left`, the keys of
@@ -118,19 +149,21 @@ operator intersection<T>(a: set<T>, b: set<T>) -> set<T>
 - **RED-2.** Only members that are valid are reduced. With none, the result
   is `zero`, where given, and is otherwise not valid.
 - **RED-3.** The tree form combines the members in whatever grouping the
-  implementation chooses. It is taken where `L` and `R` are one type and
-  `f` is known to be associative: an operator that declares `associative`
-  for that type, or a call that says `{associative: true}`. A call that
-  says `{associative: false}` takes the ordered form whatever `f`
-  declares.
-- **RED-4.** Over a `set` or a `dict`, which have no order, `f` is also
-  known to be commutative: an operator that declares it, or a call that
-  says `{commutative: true}`. A call that is not rejects. So does one whose
-  `L` and `R` differ over a `set` or a `dict`.
-- **RED-5.** The ordered form is taken otherwise, over a list. It folds the
-  valid positions in order, from `zero`:
-  `f(f(f(zero, x0), x1), x2)`. It requires `zero`: a call that leaves it
-  out rejects.
+  implementation chooses. Its candidates take a function of one type,
+  `fn(V, V) -> V`, and require `associative`. That option is
+  `associative(f)` unless the call gives it: true where `f` is an operator
+  that declares `associative` for V, and false for any other function. A
+  call says `{associative: true}` of a function that declares nothing, and
+  `{associative: false}` to take the ordered form whatever `f` declares.
+- **RED-4.** Over a `set` or a `dict`, which have no order, the
+  candidates require `commutative` too, which is `commutative(f)` unless
+  the call gives it. A call that meets neither has no candidate, and
+  neither has one whose `L` and `R` differ: only the tree form reduces a
+  `set` or a `dict`.
+- **RED-5.** The ordered form is the candidate that requires
+  `!associative`, over a list. It folds the valid positions in order, from
+  `zero`: `f(f(f(zero, x0), x1), x2)`. Its `zero` has no default: a call
+  that leaves it out rejects.
 - **RED-6.** A `zero` given to the tree form is an identity of `f`:
   `f(zero, x)` and `f(x, zero)` are `x`. Whether the implementation
   combines it with the members is therefore not observable.
