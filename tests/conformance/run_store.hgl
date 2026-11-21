@@ -67,7 +67,7 @@ fn read_before_write(value: i64?) -> str {
     when {
         var previous: str = "absent"
         if has(global_state, "previous") {
-            let saved: i64? = get(global_state, "previous")
+            let saved: i64? = get<i64?>(global_state, "previous")
             if saved == null { previous = "null" }
             else { previous = "number" }
         }

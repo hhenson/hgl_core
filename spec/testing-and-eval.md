@@ -306,7 +306,7 @@ Eval wires replay to `checked_ratio` and records its output.
 module examples.eval_failure
 
 fn checked_ratio(divisor: f64) -> f64 {
-    when { return (6.0 /{zero: .error} divisor)? }
+    when { return 6.0 /{zero: .error} divisor }
 }
 
 test eval_preserves_failure {

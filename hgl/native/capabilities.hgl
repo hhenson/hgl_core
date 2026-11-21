@@ -72,7 +72,7 @@ native impl const fn schedule(capability: Alarm, at: datetime)
 # can fail and says so. A key the dictionary has not is a failure coded
 # `value.missing_key`; the place the call is given to takes the result, the
 # value, or a null for it (ERR-15).
-native impl const fn get<K, V>(store: dict<K, V>, key: K) -> result<V, error>
+native impl const fn get<K, T>(store: dict<K, T>, key: K) -> result<T, error>
 
 # CAP-6: the global store's candidates. The key is fixed when the graph is
 # built (the language's FN-1). `get` can fail, as a dictionary's does: an
