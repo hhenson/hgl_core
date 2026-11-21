@@ -141,3 +141,41 @@ test a_null_read_fails_with_value_null {
     assert eval read_nullable_connection(value: [8, 9]) == [8, 9]
     assert raises("value.null") { eval read_nullable_connection(value: [8, null]) }
 }
+
+const fn checked_optional(value: i64) -> result<i64?, error> {
+    if value < 0 { return err(error(message: "negative index", code: "value.index_out_of_range")) }
+    if value == 0 { return ok(null) }
+    return ok(value)
+}
+
+const fn read_checked_optional(value: i64) -> i64 => checked_optional(value)
+
+fn read_checked_optional_connection(value: i64) -> i64 => checked_optional(value)
+
+/**
+A value place that asks for an i64 reads a fallible nullable success.
+A positive value is present, zero gives a successful null, and a negative
+input raises the original error.
+
+:Rules: ERR-5, ERR-12, ERR-15
+:Status: agreed
+*/
+test a_value_place_reads_a_fallible_nullable_success {
+    assert read_checked_optional(8) == 8
+    assert raises("value.null") { read_checked_optional(0) }
+    assert raises("value.index_out_of_range") { read_checked_optional(-1) }
+}
+
+/**
+A non-nullable connection publishes the present successes of a fallible
+nullable connection. A successful null raises value.null, and a failed
+result raises its original error.
+
+:Rules: ERR-5, ERR-12, ERR-15, FN-6
+:Status: agreed
+*/
+test a_connection_reads_a_fallible_nullable_success {
+    assert eval read_checked_optional_connection(value: [8, 9]) == [8, 9]
+    assert raises("value.null") { eval read_checked_optional_connection(value: [8, 0]) }
+    assert raises("value.index_out_of_range") { eval read_checked_optional_connection(value: [8, -1]) }
+}
