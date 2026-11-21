@@ -20,6 +20,8 @@ logger, scheduler, alarm, and global store, declared in
 operations.
 The [list operations](list-operations.md) `append` and `extend` are declared
 in `hgl/native/lists.hgl`.
+The [mapping and reduction contract](mapping.md) proposes `map`, `reduce`,
+and the key-set operations; none is declared yet.
 The [tenor contract](tenor-operations.md) defines a tenor's operators, the
 calendar and the rolling rule a date is moved with, declared in
 `hgl/native/tenors.hgl` and `hgl/core/calendar.hgl`.
