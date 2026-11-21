@@ -220,6 +220,9 @@ fn wanted_spreads(bids: dict<str, f64>, asks: dict<str, f64>, wanted: set<str>) 
 fn by_position(prices: list<f64>, factor: f64) -> list<f64> =>
     map(scaled, prices, factor)
 
+fn three_scaled(prices: list<f64, 3>, factor: f64) -> list<f64, 3> =>
+    map(scaled, prices, factor)
+
 fn total(prices: dict<str, f64>) -> f64 => reduce(add_, prices, 0.0)
 
 struct Event { size: i64 }
@@ -236,7 +239,8 @@ an `f64`, so it is split, and `factor` is given whole: there is a child of
 has a child for each key both dictionaries have (MAP-5), and
 `wanted_spreads` one for each member of `wanted`, where a child whose key
 `asks` has not sees `ask` as not valid (MAP-8). `by_position` is the form
-by position, and gives a `list<f64>` (MAP-1). `total` is the tree form:
+by position, and gives a `list<f64>` (MAP-1); `three_scaled` has its
+three children from the start, and gives a `list<f64, 3>` (MAP-7). `total` is the tree form:
 `add_` declares `associative` and `commutative` for `f64`, and `0.0` is its
 identity (RED-3, RED-4, RED-6, RED-7). `position_after` is the ordered form:
 `applied` takes an `i64` and an `Event`, so it folds the events in order
