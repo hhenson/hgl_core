@@ -1,6 +1,7 @@
 # Capabilities
 
-Status: CAP-1 to CAP-8 are agreed.
+Status: CAP-1 to CAP-8 are agreed, but for the sentence of CAP-4 that
+begins "Proposed:".
 
 ## Scope and API
 
@@ -60,10 +61,11 @@ form, `get(dictionary, key, fallback)` (ERR-6), which is not declared in
   for a wake at the start, the node's first evaluation. A duration that is
   not admitted, a negative one in `start` included, fails the call (the
   language's TIME-8, which rejects one the compiler sees). One asked for at a
-  `datetime` before the current evaluation time, or at it outside `start`,
-  is dropped: there is no wake, and no failure. In `start` one at the
-  current evaluation time asks for a wake at the start, the node's first
-  evaluation, as `0s` does. `on_wall_clock: true` times a wake on the wall
+  `datetime` before the current evaluation time is dropped: there is no
+  wake, and no failure. One at the current evaluation time is asked for in
+  `start` alone, where it asks for a wake at the start, the node's first
+  evaluation, as `0s` does. Proposed: outside `start` it is dropped, as an
+  earlier one is. `on_wall_clock: true` times a wake on the wall
   clock, `clock.now`, in a run in real time. The time the request is
   measured from is then the later of the evaluation time and `clock.now`: a
   `duration` asks for a wake that long after it, and a `datetime` is a time
@@ -93,7 +95,7 @@ form, `get(dictionary, key, fallback)` (ERR-6), which is not declared in
   may be asked of it is what CAP-4 says may be asked of the scheduler,
   alike: a `duration` more than zero, or zero in `start`, which asks for a
   wake at the start, the node's first evaluation; a `datetime` before the
-  current evaluation time, or at it outside `start`, is dropped.
+  current evaluation time is dropped, and one at it is as CAP-4 has it.
 - **CAP-6.** The global store is a run-wide store of ordinary values under
   string keys, each fixed when the graph is built (the language's FN-1).
   `get<V>(global_state, key)` returns `result<V, error>`. The call may specify
