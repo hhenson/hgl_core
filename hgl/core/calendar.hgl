@@ -4,19 +4,171 @@ module core part calendar
 # to TEN-8). Contract: spec/tenor-operations.md. The native parts are in
 # hgl/native/tenors.hgl.
 
-# TEN-5: whether `day` is a business day of `calendar`. A calendar is any
-# value this has a candidate for.
+/**
+Whether `day` is a business day of `calendar`.
+
+A calendar is any value this operator has a candidate for: core's is
+`Weekdays`, and a library gives its own calendar a candidate. `+` and
+`-` of a `date` and a `tenor` take a calendar as the option `calendar`,
+and `Weekdays()` where none is given. A count of business days, `2B`,
+counts the business days of that calendar, and a rolling rule rolls a
+date onto one of them (`roll`).
+
+Type Args:
+    C: The calendar's type. It is inferred.
+
+Args:
+    calendar: The calendar asked.
+    day: The date asked about.
+
+Returns:
+    True where `day` is a business day of `calendar`.
+
+Examples:
+    2026-01-02 is a Friday and 2026-01-03 a Saturday.
+
+    ~~~hgl
+    assert business_day(Weekdays(), @2026-01-02)
+    assert !business_day(Weekdays(), @2026-01-03)
+    ~~~
+
+    A calendar of a library's own, with two closed days beside the
+    weekend, which it asks `Weekdays()` for. This cannot run as an
+    example: an example is a named test, which declares no struct and no
+    candidate of its own.
+
+    ~~~hgl no-run
+    struct Holidays {
+        first: date
+        second: date
+    }
+
+    impl const fn business_day(calendar: Holidays, day: date) -> bool =>
+        day != calendar.first && day != calendar.second && business_day(Weekdays(), day)
+
+    test closed_days {
+        let closed = Holidays(first: @2026-01-05, second: @2026-04-30)
+        assert !business_day(closed, @2026-01-05)
+        assert @2026-01-02 +{calendar: closed} 2B == @2026-01-07
+    }
+    ~~~
+
+Rules:
+    TEN-5, TEN-6, TEN-7
+*/
 export operator business_day<C>(calendar: C, day: date) -> bool
 
-# TEN-8: the business day a rolling rule gives for `day` on `calendar`. A
-# rolling rule is any value this has a candidate for.
+/**
+The date a rolling rule makes of `day` on `calendar`.
+
+A rolling rule says which business day a date becomes. It is any value
+this operator has a candidate for: core's are the members of `Rolling`,
+on any calendar, and a library gives its own rule a candidate. `+` and
+`-` of a `date` and a `tenor` take one as the option `rolling_rule`:
+the result is `roll(rolling_rule, calendar, moved)`, where `moved` is
+the date the tenor gives and `calendar` the one the operation has,
+`Weekdays()` where none is given. With no rolling rule the result is
+`moved`.
+
+| `rolling_rule` | The business day `day` becomes |
+| --- | --- |
+| `Rolling.following` | The one on or after it |
+| `Rolling.preceding` | The one on or before it |
+| `Rolling.modified_following` | The one on or after it, or where that is in another month the one on or before |
+| `Rolling.modified_preceding` | The one on or before it, or where that is in another month the one on or after |
+
+Type Args:
+    R: The rolling rule's type. It is inferred.
+    C: The calendar's type. It is inferred.
+
+Args:
+    rolling_rule: The rule that says which business day `day` becomes.
+    calendar: The calendar whose business days the rule rolls onto.
+    day: The date rolled.
+
+Returns:
+    The date the rule gives for `day`.
+
+Examples:
+    2026-01-03 is a Saturday, and 2026-01-31 the last Saturday of
+    January.
+
+    ~~~hgl
+    assert roll(Rolling.following, Weekdays(), @2026-01-03) == @2026-01-05
+    assert roll(Rolling.preceding, Weekdays(), @2026-01-03) == @2026-01-02
+    assert roll(Rolling.modified_following, Weekdays(), @2026-01-31) == @2026-01-30
+    ~~~
+
+    As the option of `+`, on the date the tenor gives.
+
+    ~~~hgl
+    assert @2026-01-31 +{rolling_rule: Rolling.modified_following} 0D == @2026-01-30
+    assert @2026-01-31 + 0D == @2026-01-31
+    ~~~
+
+Rules:
+    TEN-5, TEN-7, TEN-8
+*/
 export operator roll<R, C>(rolling_rule: R, calendar: C, day: date) -> date
 
-# TEN-8: the four common rolling rules, for any calendar.
-export enum Rolling { following, modified_following, preceding, modified_preceding }
+/**
+Core's four rolling rules, each of which `roll` takes on any calendar.
 
-# TEN-5: the calendar a date is moved on where none is given. Every day
-# but a Saturday and a Sunday is a business day of it.
+Each makes a date a business day of the calendar; a date that is one
+already is left as it is.
+
+| Member | The business day a date becomes |
+| --- | --- |
+| `following` | The one on or after it |
+| `preceding` | The one on or before it |
+| `modified_following` | The one on or after it, or where that is in another month the one on or before |
+| `modified_preceding` | The one on or before it, or where that is in another month the one on or after |
+
+Examples:
+    2026-01-31 is a Saturday, and 2026-02-01 a Sunday.
+
+    ~~~hgl
+    assert @2026-01-31 +{rolling_rule: Rolling.following} 0D == @2026-02-02
+    assert @2026-01-31 +{rolling_rule: Rolling.modified_following} 0D == @2026-01-30
+    assert @2026-02-01 +{rolling_rule: Rolling.preceding} 0D == @2026-01-30
+    assert @2026-02-01 +{rolling_rule: Rolling.modified_preceding} 0D == @2026-02-02
+    ~~~
+
+Rules:
+    TEN-7, TEN-8
+*/
+export enum Rolling {
+    /** The business day on or after the date. */
+    following,
+    /** The business day on or after the date, or where that is in another month the one on or before. */
+    modified_following,
+    /** The business day on or before the date. */
+    preceding,
+    /** The business day on or before the date, or where that is in another month the one on or after. */
+    modified_preceding,
+}
+
+/**
+The calendar on which every day but a Saturday and a Sunday is a business day.
+
+It is the calendar a date is moved on where `+` or `-` of a `date` and a
+`tenor` is given none, and the one a rolling rule rolls onto then. It
+has no field, and is written `Weekdays()`. A calendar of a library's own
+may ask it for the weekend, `business_day(Weekdays(), day)`.
+
+Examples:
+    2026-01-02 is a Friday and 2026-01-05 the Monday after it.
+
+    ~~~hgl
+    assert business_day(Weekdays(), @2026-01-05)
+    assert !business_day(Weekdays(), @2026-01-04)
+    assert @2026-01-02 + 1B == @2026-01-05
+    assert @2026-01-02 +{calendar: Weekdays()} 1B == @2026-01-05
+    ~~~
+
+Rules:
+    TEN-5, TEN-6, TEN-7
+*/
 export struct Weekdays {}
 
 impl const fn business_day(calendar: Weekdays, day: date) -> bool => !weekend(day)
