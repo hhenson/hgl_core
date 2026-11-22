@@ -36,7 +36,10 @@ Returns:
 
 Validity:
     Nothing is required valid: an invalid endpoint is asked about as a
-    valid one is. As a guard, `valid(x)` admits a read of `x`.
+    valid one is. As a guard, `valid(x)` admits a read of a scalar `x`,
+    and a whole read of a dictionary or a list with no fixed size. It
+    admits no read of a child, and none of a struct, a tuple or a fixed
+    list whole: that read needs `all_valid(x)`.
 
 Examples:
     `value` is silent, then 7, then silent, while `probe` ticks in each
@@ -477,9 +480,9 @@ export native const fn removed_value<V, Max, Min>(input: endpoint<rolling_window
 /**
 When an endpoint last ticked: the evaluation time, in UTC, of the value it holds.
 
-While the endpoint is valid the time is that of its last tick. A cycle
-in which it does not tick keeps the time, and a tick of an equal value,
-or of a null, gives its own. While the endpoint is not valid, before its
+While the endpoint is valid the time is that of the tick that gave the
+value it holds. A cycle in which it does not tick keeps the time, and a
+tick of an equal value, or of a null, gives its own. While the endpoint is not valid, before its
 first tick and after an invalidation, the time is null.
 
 Type Args:
@@ -489,8 +492,8 @@ Args:
     input: The endpoint asked about: an input, or a child of one.
 
 Returns:
-    The evaluation time of the endpoint's last tick, or null where the
-    endpoint is not valid.
+    The evaluation time of the tick that gave the value the endpoint
+    holds, or null where the endpoint is not valid.
 
 Validity:
     Nothing is required valid: an endpoint that is not valid gives null.
