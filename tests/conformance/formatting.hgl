@@ -81,14 +81,13 @@ test format_temporal_values {
     assert format("{:%Y-%m-%d %H:%M} {:%d/%m/%Y %H:%M}",
         @2026-11-21T09:30:00Z, @2026-11-21T09:30:00Z) ==
         "2026-11-21 09:30 21/11/2026 09:30"
-    assert format("{:%H:%M} {:%M:%H}", 90m, 90m) == "01:30 30:01"
 }
 
 /**
 Time-of-day directives write the hour, minute, second and meridiem.
 
 :Rules: FMT-4
-:Status: proposed
+:Status: agreed
 */
 test format_time_directives {
     assert format("{:%H:%M:%S} {:%I:%M %p}", @09:30:00, @21:05:06) ==
@@ -113,6 +112,8 @@ test format_reference_chrono_specifiers {
     assert format("{:%H %I %p %M %S %S.3 %S.6 %S.9 %R %T %T.3 %%}", clock) ==
         "09 09 AM 30 00 00.250 00.250000 00.250000000 09:30 09:30:00 09:30:00.250 %"
     assert format("{:%H:%M:%S.3}", 9h30m250ms) == "09:30:00.250"
+    assert format("{:%H:%M} {:%M:%H}", 90m, 90m) == "01:30 30:01"
+    assert format("{:%j %T}", 1d1h) == "1 01:00:00"
 }
 
 /**

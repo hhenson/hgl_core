@@ -8,7 +8,7 @@ A brace that opens no place and closes none rejects at that brace.
 */
 const fn format_unmatched_brace() -> str {
     # expect-error(type, "format.syntax")
-    return format("at {")
+    return format("at {", 1.0)
 }
 
 /**
@@ -19,7 +19,7 @@ A positional place with no argument left rejects at that place.
 */
 const fn format_missing_argument() -> str {
     # expect-error(type, "format.argument")
-    return format("{} {}", 1)
+    return format("{} at {}", 1)
 }
 
 /**
@@ -30,7 +30,7 @@ An argument that no place takes rejects at that argument.
 */
 const fn format_unused_argument() -> str {
     # expect-error(type, "format.unused")
-    return format("at", 1)
+    return format("fill", 1)
 }
 
 /**
