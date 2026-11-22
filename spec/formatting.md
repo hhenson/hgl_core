@@ -68,10 +68,18 @@ export struct Marked<T> {
   the specifiers it admits for an integer, a floating-point number, a
   string and a boolean, and `date`, `time`, `datetime` and `duration`,
   with those it admits for a date and a time, `{:%Y-%m-%d}`. A value of
-  any other type takes `{}` alone. Proposed: a `time` admits the
-  directives that read the hour, the minute and the second, `%H`, `%M`,
-  `%S`, `%I`, `%p`, `%R` and `%T`, and a `date` those that read a date;
-  one of the other's rejects (`format.specifier`).
+  any other type takes `{}` alone. The seconds are written with their
+  fraction, to the millisecond, the microsecond or the nanosecond, as
+  that library writes them: with `%S`, and `%T`, which ends in it.
+  Proposed: a precision before the directives gives the digits of that
+  fraction, `{:.3%H:%M:%S}` for milliseconds, `09:30:00.250`, `.6` for
+  microseconds, `.9` for nanoseconds and `.0` for none; with no
+  precision there are six, the resolution of a `time`, a `datetime` and
+  a `duration`. It is taken out where the call is compiled, and the
+  library is given the value at that precision. Proposed: a `time`
+  admits the directives that read the hour, the minute and the second,
+  `%H`, `%M`, `%S`, `%I`, `%p`, `%R` and `%T`, and a `date` those that
+  read a date; one of the other's rejects (`format.specifier`).
 - **FMT-5.** With no specifier a `str` is written as its characters, with
   no quotes, and an `i64`, an `f64` and a `bool` as `convert<str>` of each
   gives ([scalar operators](scalar-operators.md), OPS-6). A value of a type
