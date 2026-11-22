@@ -97,11 +97,11 @@ test format_time_directives {
 }
 
 /**
-The reference's date directives use the proposed date-directive set.
-The date, clock and duration show the same directive outputs where admitted.
+The reference's date, time, datetime and duration directives write
+the corresponding calendar, clock or elapsed-time fields.
 
 :Rules: FMT-4
-:Status: proposed
+:Status: agreed
 */
 test format_reference_chrono_specifiers {
     let day = @2026-11-22

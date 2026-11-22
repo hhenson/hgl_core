@@ -12,7 +12,7 @@ Returns:
     The text with each place filled.
 
 Notes:
-    See the Reference in core's formatting specification.
+    See the [formatting reference](https://github.com/hhenson/hgl_core/blob/main/spec/formatting.md#reference).
 */
 export operator format<...As, ...Ks>(
     const fmt_str: str, args: ...As, kwargs: ...{Ks}) -> str
@@ -31,7 +31,7 @@ Returns:
     The formatted text.
 
 Notes:
-    See the Reference in core's formatting specification.
+    See the [formatting reference](https://github.com/hhenson/hgl_core/blob/main/spec/formatting.md#reference).
 */
 native impl const fn format<...As, ...Ks>{
     const not_valid: str = "<not valid>",
@@ -45,7 +45,7 @@ Type Args:
     T: The type formatted when the value is present.
 
 Notes:
-    See the Reference in core's formatting specification.
+    See the [formatting reference](https://github.com/hhenson/hgl_core/blob/main/spec/formatting.md#reference).
 */
 export struct Marked<T> {
     /** The value, or null to use the not_valid option. */

@@ -4,7 +4,7 @@ module core part output
 Select a process output stream (OUT-1).
 
 Notes:
-    See the Reference in core's formatting specification.
+    See the [formatting reference](https://github.com/hhenson/hgl_core/blob/main/spec/formatting.md#reference).
 */
 export enum Stream {
     /** Standard output. */
@@ -22,6 +22,6 @@ Args:
     flush: Flush the stream before returning. The default is false.
 
 Notes:
-    See the Reference in core's formatting specification.
+    See the [formatting reference](https://github.com/hhenson/hgl_core/blob/main/spec/formatting.md#reference).
 */
 export native const fn write(text: str, stream: Stream = .out, flush: bool = false)
