@@ -1,8 +1,7 @@
 # Formatting
 
-Status: FMT-1 through FMT-9 are agreed, but for the sentence of FMT-4
-that begins "Proposed:". The [reference](#reference) lists every form in
-one place. Nothing here is declared in `hgl/` yet.
+Status: FMT-1 through FMT-9 are agreed. The [reference](#reference)
+lists every form in one place. Nothing here is declared in `hgl/` yet.
 
 ## Scope and API
 
@@ -92,8 +91,8 @@ export struct Marked<T> {
   `25:00:00`. It is taken out where the call is compiled, as a
   precision is. The directives of a date are those the reference
   lists. That library's locale flag, `L`, is not admitted, so that a
-  text does not depend on where the program runs. Proposed: `%j` writes
-  a `duration`'s whole days.
+  text does not depend on where the program runs. `%j` writes a
+  `duration`'s whole days.
 - **FMT-5.** With no specifier a `str` is written as its characters, with
   no quotes, and an `i64`, an `f64` and a `bool` as `convert<str>` of each
   gives ([scalar operators](scalar-operators.md), OPS-6). A value of a type
@@ -241,8 +240,6 @@ The names of a month and of a day of the week are the English ones.
 Of a `duration`, `%H` is the hours left after its whole days, and
 `%[H]` the whole of it in hours: of `1d1h`, `{:%H:%M:%S}` is `01:00:00`,
 `{:%[H]:%M:%S}` is `25:00:00`, and `{:%j %T}` is `1 01:00:00`.
-
-Proposed, as FMT-4 says: `%j` of a `duration`.
 
 ### With no specifier
 
