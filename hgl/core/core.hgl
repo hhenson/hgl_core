@@ -105,6 +105,8 @@ Examples:
     assert 1.0 / 0.0 > 1e308
     assert 1.0 / -0.0 < -1e308
     assert (1.0 /{zero: .nan} 0.0 <=> 0.0) == CmpResult.unordered
+    assert 7.0 // 0.0 > 1e308
+    assert (7.0 % 0.0 <=> 0.0) == CmpResult.unordered
     ~~~
 
     Under `.error` a zero divisor is a failure of the result, and any
@@ -129,7 +131,7 @@ Rules:
 */
 export enum ZeroPolicy {
     /**
-    A zero divisor gives what IEEE arithmetic does: for `/`, an infinity for a finite nonzero numerator, its sign the combined signs of the operands, and a NaN for a zero one.
+    A zero divisor gives what IEEE arithmetic does: for `/`, an infinity for a finite nonzero numerator, its sign the combined signs of the operands, and a NaN for a zero one; for `//` and `%` with an `f64` operand, what IEEE floor division and remainder give, an infinity for `7.0 // 0.0` and a NaN for `7.0 % 0.0`.
 
     Rules:
         NUM-3, NUM-12
@@ -231,7 +233,8 @@ export enum Rounding {
 What a conversion that can fail does with a failure: the `invalid` option of `convert`.
 
 A conversion fails where its value has no `T`: an `f64` that is a NaN,
-an infinity, or outside `i64` once rounded; text that writes no value of
+unless the `nan` option gives it an `i64`, an infinity, or outside `i64`
+once rounded; text that writes no value of
 the type asked for; bytes that are not well-formed UTF-8. The option is
 given as a named argument, `convert<i64>(text, invalid: .fail)`. It is a
 constant, fixed where the call is checked, since it decides the result's
@@ -274,7 +277,9 @@ only member. Without it a sum or a difference is lifted as any value
 operation is, and needs both operands valid. It takes two operands and a
 result of one type `T`, which has a value `add_(T, T) -> T`, or for `-` a
 value `sub_(T, T) -> T` and `neg_(T) -> T`; it converts nothing and
-invents no identity value.
+invents no identity value. A call with the option whose operands and
+result are not all of one type is admitted by no candidate, and is
+rejected with `operator.no_candidate`.
 
 | Valid operands | `+` | `-` |
 | --- | --- | --- |
@@ -414,7 +419,9 @@ export const smallest_step: duration = 1us
 An instant before every evaluation time, at which no cycle runs: 1970-01-01T00:00:00Z.
 
 `earliest_start` is `smallest_step` after it. A wake asked of a scheduler
-at `never` is dropped, as one at any time before the evaluation time is.
+at `never` is dropped, as one at any time before the evaluation time is,
+but for one asked with `on_wall_clock: true` in a run in real time,
+which is already due and comes in the next cycle.
 
 Examples:
     ~~~hgl
@@ -437,9 +444,10 @@ Rules:
 export const never: datetime = @1970-01-01T00:00:00Z
 
 /**
-The earliest instant a run starts at: one `smallest_step` after `never`.
+The earliest instant a run may start at: one `smallest_step` after `never`.
 
-A run's start is no earlier. A simulation given no start starts at it;
+A run's start is no earlier: a start before it is a failure with code
+`run.bounds`. A simulation given no start starts at it;
 a run in real time given none starts at the host clock's present time.
 
 Examples:
@@ -475,9 +483,10 @@ Rules:
 export const forever: datetime = @2262-04-11T00:00:00Z
 
 /**
-The latest instant a run ends at: one `smallest_step` before `forever`.
+The latest instant a run may end at: one `smallest_step` before `forever`.
 
-A run's end is no later. An end is exclusive, so no cycle runs at
+A run's end is no later: an end after it is a failure with code
+`run.bounds`. An end is exclusive, so no cycle runs at
 `latest_end` or after it.
 
 Examples:
@@ -503,8 +512,9 @@ Write a record of `message` at the debug level.
 
 It is `log(logger, .debug, message)`. The record is dropped where
 `.debug` is below the logger's `level`. A node calls it in its hooks,
-with the logger it injects, and so does a `const fn` the node gives its
-logger to; a graph and a value function inject no logger.
+and a source in its body, with the logger it injects, and so does a
+`const fn` given that logger; a graph and a value function inject no
+logger.
 
 Args:
     logger: The logger the record is written to.
@@ -533,9 +543,9 @@ export const fn log_debug(logger: Logger, message: str) {
 Write a record of `message` at the info level.
 
 It is `log(logger, .info, message)`. The record is dropped where `.info`
-is below the logger's `level`. A node calls it in its hooks, with the
-logger it injects, and so does a `const fn` the node gives its logger
-to; a graph and a value function inject no logger.
+is below the logger's `level`. A node calls it in its hooks, and a
+source in its body, with the logger it injects, and so does a `const fn`
+given that logger; a graph and a value function inject no logger.
 
 Args:
     logger: The logger the record is written to.
@@ -565,8 +575,9 @@ Write a record of `message` at the warning level.
 
 It is `log(logger, .warning, message)`. The record is dropped where
 `.warning` is below the logger's `level`. A node calls it in its hooks,
-with the logger it injects, and so does a `const fn` the node gives its
-logger to; a graph and a value function inject no logger.
+and a source in its body, with the logger it injects, and so does a
+`const fn` given that logger; a graph and a value function inject no
+logger.
 
 Args:
     logger: The logger the record is written to.
@@ -603,8 +614,9 @@ Write a record of `message` at the error level.
 
 It is `log(logger, .error, message)`. The record is dropped where
 `.error` is below the logger's `level`. A node calls it in its hooks,
-with the logger it injects, and so does a `const fn` the node gives its
-logger to; a graph and a value function inject no logger.
+and a source in its body, with the logger it injects, and so does a
+`const fn` given that logger; a graph and a value function inject no
+logger.
 
 Args:
     logger: The logger the record is written to.
@@ -659,21 +671,21 @@ fn record<T>(input: T, const key: str) {
 }
 
 /**
-Ask for a wake of the node, of its scheduler or of its alarm, after a time or at one.
+Ask the node's scheduler or alarm for a wake, after a duration or at a datetime.
 
 When the wake comes the node is evaluated, and `scheduled()` holds there:
 with a scheduler whether or not an input ticks then, and with an alarm
-only where no input does. A node calls it in its hooks, with the
-capability it injects, and so does a `const fn` the node gives it to; a
-graph and a value function inject neither.
+only where no input does. A node calls it in its hooks, and a source in
+its body, with the capability it injects, and so does a `const fn` given
+that capability; a graph and a value function inject neither.
 
 | `at` | What results |
 | --- | --- |
 | A `duration` more than zero | A wake that long after the current evaluation time |
 | `0s`, in `start` | A wake at the start, the node's first evaluation |
 | Another `duration`: zero outside `start`, or one below zero | Rejected with `schedule.duration_bounds` where the compiler sees its value, a literal or a constant; otherwise the call fails with `schedule.non_positive_duration` |
-| A `datetime` not before the current evaluation time | A wake then |
-| A `datetime` before the current evaluation time | Nothing: the wake is dropped, and nothing fails |
+| A `datetime` after the current evaluation time | A wake then |
+| A `datetime` before the current evaluation time | Nothing: the wake is dropped, and nothing fails; but asked with `on_wall_clock: true` in a run in real time it is already due, and comes in the next cycle |
 
 A scheduler keeps its wakes: `next_scheduled_time` and `is_scheduled`
 read them, and `un_schedule` and `reset` cancel them. An alarm is
@@ -696,11 +708,11 @@ Options:
       it, and an alarm does not. Written
       `schedule(scheduler, 5s, tag: "poll")`.
     - `on_wall_clock`: a `bool`, false when none is given. In a run in
-      real time `true` times the wake on the wall clock, `clock.now`:
-      the request is measured from the later of the evaluation time and
-      `clock.now`: a `duration` asks for a wake that long after it, and a
-      `datetime` is a time on the wall clock. A wake that is then already due is not
-      dropped: it comes in the next cycle, at the later of that time and
+      real time `true` times the wake on the wall clock, `clock.now`. The
+      request is then measured from the later of the evaluation time and
+      `clock.now`. A `duration` asks for a wake that long after it, and a
+      `datetime` is a time on the wall clock. A wake that is then already
+      due, at or before that time, is not dropped: it comes in the next cycle, at the later of that time and
       the evaluation time plus `smallest_step`, and in `start` at that
       time. In simulation it changes nothing. A scheduler takes it, and
       an alarm does not. Written
@@ -775,6 +787,19 @@ Examples:
     assert eval in_the_past(value: [7, _, 9]) == ["asked", _, "asked"]
     ~~~
 
+    In simulation `on_wall_clock` changes nothing: the wake comes as it
+    does without it.
+
+    ~~~hgl
+    fn woken_after(const wall: bool) -> bool {
+        inject scheduler
+        start { schedule(scheduler, 2us, on_wall_clock: wall) }
+        when scheduled() { return true }
+    }
+    assert eval woken_after(wall: true) == [_, _, true]
+    assert eval woken_after(wall: false) == [_, _, true]
+    ~~~
+
     A second wake under the same tag replaces the first.
 
     ~~~hgl
@@ -814,23 +839,30 @@ Read the value under a key, of the run's store or of a dictionary, as a read tha
 | `store` | `key` | Result |
 | --- | --- | --- |
 | `GlobalState`, the run's store | A `str` fixed when the graph is built | `result<V, error>`, a failure where the key holds no value |
-| `dict<K, T>` | A `K` | `result<T, error>`, a failure with code `value.missing_key` where the dictionary has no such key |
+| `dict<K, V>` | A `K` | `result<V, error>`, a failure with code `value.missing_key` where the dictionary has no such key |
 
 The `result` takes its form from its place. Where a `result<V, error>`
 is expected it is given itself; where a `V`, the value, and a failure is
 raised; where a `V?`, the value, or null for a failure. A `let` that
 writes no type holds the result. Where `V` is itself nullable, a stored
-null is a success, told apart from an absent key.
+null is a success, told apart from an absent key. The strict read of a
+dictionary is `dictionary[key]`, which gives the value and fails with
+`value.missing_key` where the key is absent.
 
-The store is read where `inject global_state` is: in a node's hooks, and
-in a graph where it is built, evaluated once then, in the order written,
+A key of the store keeps the type of its first use: a `get` of another
+type than an earlier use of the key is rejected with `store.key_type`
+where the two are in one program, and fails with that code otherwise.
+
+The store is read where `inject global_state` is: in a node's hooks and
+a source's body, and in a graph where it is built, evaluated once then, in the order written,
 before any node of that graph starts. The key is fixed when the graph is
-built: in a hook it is written of literals, constants and the node's own
-`const` parameters. Reading the store wakes no node and is no temporal input: a node reads
+built: in a hook or a value function it is a constant expression, of
+literals, enum members, constants, generic value parameters and the
+enclosing function's own `const` parameters. Reading the store wakes no node and is no temporal input: a node reads
 what was put before it is evaluated, and what it reads of a `put` by
 another node of the same rank in the same cycle is undefined. The key
 `"run.output"` is the run's: a program that names it is rejected when
-its graph is built.
+its graph is built, with `store.reserved_key`.
 
 Type Args:
     V: The value's type. A call of the store's may write it,
@@ -850,13 +882,16 @@ Returns:
 Raises:
     - `value.missing_key`: where a `V` is taken of a dictionary's read and
       the dictionary has no such key.
+    - `store.key_type`: a `get` of the store of another type than an
+      earlier use of the key, where the two are not in one program.
 
 Ticks:
     A dictionary's read, given connections in a graph, is lifted: its
     result ticks each time the dictionary or the key ticks with both
-    valid, the same value again included. The store's read ticks
-    nothing: in a graph it is evaluated once, where the graph is built,
-    and is given no connection (`connection.as_constant`).
+    valid, the same value again included. The store's read in a graph
+    is made once, where the graph is built, and is given no connection
+    (`connection.as_constant`): the value it reads is a constant, which
+    ticks once, when the graph starts, and the read is not made again.
 
 Validity:
     A lifted dictionary's read needs the dictionary and the key valid.
@@ -876,6 +911,19 @@ Examples:
         return limited(value)
     }
     assert eval with_limit(value: [3, 7]) == [true, false]
+    ~~~
+
+    Read in a graph, the value is a constant: it ticks once, when the
+    graph starts, however often the input ticks.
+
+    ~~~hgl
+    fn seeded(value: i64) -> i64 {
+        inject global_state
+        put(global_state, "seed", 5)
+        let seed: i64 = get(global_state, "seed")
+        return seed
+    }
+    assert eval seeded(value: [1, 2, 3]) == [5]
     ~~~
 
     A key that holds nothing is a failure: null where an `i64?` is taken,
@@ -921,12 +969,14 @@ export operator get<V, S, K>(store: S, key: K) -> result<V, error>
 Whether a key of the run's store holds a value.
 
 A stored null is a value: `has` is true of a key that holds one. The
-store is asked where `inject global_state` is: in a node's hooks, and in
-a graph where it is built, evaluated once then, in the order written,
+store is asked where `inject global_state` is: in a node's hooks and a
+source's body, and in a graph where it is built, evaluated once then, in the order written,
 before any node of that graph starts. The key is fixed when the graph is
-built: in a hook it is written of literals, constants and the node's own
-`const` parameters. Asking wakes no node and is no temporal input. The key `"run.output"` is
-the run's: a program that names it is rejected when its graph is built.
+built: in a hook or a value function it is a constant expression, of
+literals, enum members, constants, generic value parameters and the
+enclosing function's own `const` parameters. Asking wakes no node and is no temporal input. The key `"run.output"` is
+the run's: a program that names it is rejected when its graph is built,
+with `store.reserved_key`.
 
 Type Args:
     S: The type of `store`. It is inferred.
@@ -940,8 +990,10 @@ Returns:
     True where the key holds a value, a null included.
 
 Ticks:
-    Nothing ticks: in a graph a call is evaluated once, where the graph
-    is built, and is given no connection (`connection.as_constant`).
+    In a graph a call is made once, where the graph is built, and is
+    given no connection (`connection.as_constant`): the answer is a
+    constant, which ticks once, when the graph starts, and the store is
+    not asked again.
 
 Validity:
     It reads no connection.
@@ -969,17 +1021,20 @@ export operator has<S, K>(store: S, key: K) -> bool
 /**
 Put a value under a key of the run's store, for what is evaluated after it to read.
 
-A key keeps the type of its first value: a `put` of another type is
-rejected with `store.key_type` where the two are in one program, and
-fails otherwise. A node puts in its hooks; a graph as it is built, each
-call evaluated once then, in the order written, before any node of that
-graph starts; and an application before its run statement, which is the
-only use it has of the store. The key is fixed when the graph is built:
-in a hook it is written of literals, constants and the node's own `const`
-parameters. A `put` wakes
-no node and is no temporal input: what another node of the same rank
+A key keeps the type of its first use: a `put` of another type than an
+earlier use of the key is rejected with `store.key_type` where the two
+are in one program, and fails with that code otherwise. A node puts in
+its hooks, and a source in its body; a graph as it is built, each call
+evaluated once then, in the order written, before any node of that graph
+starts; and an application before its run statement, which is the only
+use it has of the store. The key is fixed when the graph is built: in a
+hook or a value function it is a constant expression, of literals, enum
+members, constants, generic value parameters and the enclosing
+function's own `const` parameters. A `put` wakes no node and is no
+temporal input: what another node of the same rank
 reads of it in the same cycle is undefined. The key `"run.output"` is the
-run's: a program that names it is rejected when its graph is built.
+run's: a program that names it is rejected when its graph is built, with
+`store.reserved_key`.
 
 Type Args:
     S: The type of `store`. It is inferred.
@@ -990,6 +1045,10 @@ Args:
     store: The run's store, `global_state`.
     key: The key the value is put under.
     value: The value put there.
+
+Raises:
+    - `store.key_type`: a `put` of another type than an earlier use of
+      the key, where the two are not in one program.
 
 Ticks:
     Nothing ticks: in a graph a call is evaluated once, where the graph
