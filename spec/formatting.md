@@ -1,7 +1,7 @@
 # Formatting
 
-Status: FMT-1 through FMT-9 are agreed. Nothing here is declared in `hgl/`
-yet.
+Status: FMT-1 through FMT-9 are agreed, but for the sentences of FMT-4 and
+FMT-5 that begin "Proposed:". Nothing here is declared in `hgl/` yet.
 
 ## Scope and API
 
@@ -68,7 +68,10 @@ export struct Marked<T> {
   the specifiers it admits for an integer, a floating-point number, a
   string and a boolean, and `date`, `time`, `datetime` and `duration`,
   with those it admits for a date and a time, `{:%Y-%m-%d}`. A value of
-  any other type takes `{}` alone.
+  any other type takes `{}` alone. Proposed: a `time` admits the
+  directives that read the hour, the minute and the second, `%H`, `%M`,
+  `%S`, `%I`, `%p`, `%R` and `%T`, and a `date` those that read a date;
+  one of the other's rejects (`format.specifier`).
 - **FMT-5.** With no specifier a `str` is written as its characters, with
   no quotes, and an `i64`, an `f64` and a `bool` as `convert<str>` of each
   gives ([scalar operators](scalar-operators.md), OPS-6). A value of a type
@@ -76,10 +79,21 @@ export struct Marked<T> {
   has that conversion, core's or a candidate the program declares for a
   type of its own, and one that has none rejects where the call is
   compiled. A `date`, a `time` and a `datetime` with no specifier are
-  written in their ISO 8601 form, and a `duration` as its literal is.
+  written in their ISO 8601 form: `2026-11-22`; `09:30:00`, and where
+  the fraction of a second is not zero with its six digits,
+  `09:30:00.250000`; and `2026-11-22T09:30:00Z`, a `datetime` being an
+  instant in UTC, with its fraction as a `time` has it. A `duration` is
+  written as its literal is, in its largest units, a whole number of
+  each unit that is not zero: `1h30m`, `1s500ms`, and `0s` for none.
   Core gives `convert<str>` for a list, a set, a dictionary, a tuple and
-  a struct, in a form that shows its parts, the strings among them in
-  quotes, for a person to read (OPS-4).
+  a struct (OPS-4), which writes the value as a program writes it, each
+  part by this rule and a `str` among them in quotes: `[1, 2]` for a
+  list and for a set, `["a": 1]`, `(1, "a")`, and
+  `Point(x: 1.0, y: 2.0)` with every field in the order declared.
+  Proposed: a `duration` below zero is written after a `-`; a set and a
+  dictionary are written in the order a `for` over them visits; a part
+  that is null is written `null`; and a `str` among the parts is written
+  with the escapes its literal has.
 - **FMT-6.** `format` is an operator with a candidate for value code and
   one for a graph. Called where a graph is built its result is a text
   that ticks: in each cycle in which an argument ticks, once every
