@@ -12,7 +12,9 @@ Logging that stays is the logger's ([capabilities](capabilities.md)).
 
 It takes a format string and the values to fill it with
 ([formatting](formatting.md)), and writes with `write`
-([output](output.md)).
+([output](output.md)). The formatting page's
+[reference](formatting.md#reference) lists everything a format string
+may hold and every option, with what each writes.
 
 | Core API | Contract |
 | --- | --- |
