@@ -190,7 +190,7 @@ part may be left out, and those written stand in that order.
 | `b` | `i64` | Binary | `{:b}` of `5` is `"101"` |
 | `f` | `f64` | The digits after the point that the precision gives, six with none | `{:.2f}` of `3.14159` is `"3.14"` |
 | `e`, `E` | `f64` | One digit, the point, and an exponent | `{:.2e}` of `1234.5` is `"1.23e+03"` |
-| `g`, `G` | `f64` | Whichever of `f` and `e` is shorter, to the significant digits the precision gives, six with none | `{:g}` of `1234.5` is `"1234.5"` |
+| `g`, `G` | `f64` | The significant digits the precision gives, six with none, and no zeros after them: with an exponent where that exponent is below -4 or not below the number of digits, and without one otherwise | `{:g}` of `1234.5` is `"1234.5"`; of `100000.0`, `"100000"`; of `1000000.0`, `"1e+06"` |
 | `s` | `str`, `bool` | The text, which each has with none | `{:s}` of `true` is `"true"` |
 
 These are the forms in common use. FMT-4 admits the rest of the
