@@ -137,6 +137,7 @@ tolerance does not configure it.
 | Two dictionaries | They have the same keys and each value is equal |
 | Two sets | They have the same members |
 | Two `result<T, error>` | Their tags are equal, and then their payloads; neither is raised |
+| Two values of any other one type: an enum's, a `timezone`, a `zoned_time`, a `T?` and null | They compare as `==` compares two values of one type |
 
 With a tolerance, two finite numbers are equal where
 
@@ -230,6 +231,9 @@ Examples:
     let reordered: set<i64> = [2, 1]
     assert members == reordered
     assert convert<i64>("4") == convert<i64>("4")
+    assert (1 <=> 2) == CmpResult.less && (1 <=> 2) != .greater
+    let missing: i64? = null
+    assert missing == null
 
     assert eval same(left: [1, _, 5], right: [1, 3, _]) == [true, false, false]
     ~~~
@@ -243,7 +247,9 @@ export operator eq_<L, R>(lhs: L, rhs: R) -> bool
 /**
 Whether two values differ: `a != b` is `ne_(a, b)`.
 
-The complement of `eq_`, for the same operands and with the same
+It compares two values of one type, or an `i64` and an `f64` in either
+order; any other pair is rejected where it is written
+(`operator.no_candidate`). It is the complement of `eq_`, with the same
 options, `abs`, `rel` and `utc`: true exactly where `eq_` is false. So a
 NaN is unequal to everything, itself included.
 
@@ -298,17 +304,16 @@ Whether the left operand is below the right: `a < b` is `lt_(a, b)`.
 Two values of one ordered type compare, and an `i64` with an `f64` in
 either order. Any other pair is rejected where it is written
 (`operator.no_candidate`): the zoned types, a collection and a struct
-have no order. `<`, `<=`, `>` and `>=` each give `true` for the outcomes
-of `compare_` that its table shows, so a NaN, or two tenors that are not
-ordered, make all four false. `a < b < c` is no range test: it compares
-the `bool` of `a < b` with `c`.
+have no order. Of numbers and of tenors, `<`, `<=`, `>` and `>=` each
+give `true` for the outcomes of `compare_` that its table shows, so a
+NaN, or two tenors that are not ordered, make all four false.
+`a < b < c` is no range test: it compares the `bool` of `a < b` with
+`c`.
 
 | Operands | Order |
 | --- | --- |
 | Two `i64`, two `f64`, or an `i64` and an `f64` | By number. The `i64` is not rounded to an `f64` first. `0.0` and `-0.0` are neither below the other; a NaN is unordered with everything |
-| Two `date`, `time`, `datetime` or `civil_datetime` of one type | The earlier is below |
-| Two `duration` | The shorter is below |
-| Two `str`, or two `bool` | Their type's order |
+| Two of one type among `date`, `time`, `datetime`, `civil_datetime` and `duration`, two `str`, or two `bool` | Their type's order |
 | Two `tenor` | Count by count: one is below another of its form where no count of it is greater and one is less. Two of different forms, or where one count is less and another greater, are unordered |
 
 Type Args:
@@ -320,7 +325,8 @@ Args:
     rhs: The right operand.
 
 Returns:
-    True where `compare_(lhs, rhs)` is `CmpResult.less`.
+    True where `lhs` is below `rhs`: of numbers and of tenors, where
+    `compare_(lhs, rhs)` is `CmpResult.less`.
 
 Ticks:
     - With values, the call is evaluated directly, with no timing of its
@@ -346,11 +352,6 @@ Examples:
     let nan: f64 = 0.0 /{zero: .nan} 0.0
     assert !(nan < 1.0) && !(1.0 < nan)
 
-    assert @2026-09-03 < @2026-09-04
-    assert @09:30 < @10:00
-    assert @2026-09-03T09:30Z < @2026-09-03T09:31Z
-    assert @2026-09-03T09:30 < @2026-09-03T09:31
-    assert 30s < 5m
     assert 1M < 2M1D && !(1M < 1B) && !(1M3D < 2M)
 
     assert eval below(left: [1, _, 5], right: [2, _, _]) == [true, _, false]
@@ -365,10 +366,14 @@ export operator lt_<L, R>(lhs: L, rhs: R) -> bool
 Whether the left operand is below or equal to the right: `a <= b` is
 `le_(a, b)`.
 
-It takes the operands of `lt_`, ordered as `lt_`'s table says. It is
-true for the outcomes `less` and `equivalent` of `compare_`, so a NaN
-makes it false, and `a <= b` is not `!(a > b)` where the two are
-unordered.
+It compares two values of one ordered type, `i64`, `f64`, `str`,
+`bool`, `date`, `time`, `datetime`, `civil_datetime`, `duration` or
+`tenor`, or an `i64` and an `f64` in either order, ordered as `lt_`'s
+table says; tenors are only partly ordered. Any other
+pair is rejected where it is written (`operator.no_candidate`). Of
+numbers and of tenors it is true for the outcomes `less` and
+`equivalent` of `compare_`, so a NaN makes it false, and `a <= b` is not
+`!(a > b)` where the two are unordered.
 
 Type Args:
     L: The left operand's type.
@@ -379,7 +384,8 @@ Args:
     rhs: The right operand.
 
 Returns:
-    True where `compare_(lhs, rhs)` is `CmpResult.less` or
+    True where `lhs` is below or equal to `rhs`: of numbers and of
+    tenors, where `compare_(lhs, rhs)` is `CmpResult.less` or
     `CmpResult.equivalent`.
 
 Ticks:
@@ -396,24 +402,31 @@ Examples:
     fn at_most(left: i64, right: i64) -> bool => left <= right
 
     assert 2 <= 2 && 1 <= 2
+    let count: i64 = 2
+    let price: f64 = 2.0
+    assert count <= price && price <= count
     assert -0.0 <= 0.0
     let nan: f64 = 0.0 /{zero: .nan} 0.0
     assert !(nan <= nan) && !(nan > nan)
-    assert 1M <= 1M && !(1M <= 1B)
+    assert 1M <= 1M1D && !(1M <= 1B)
     assert eval at_most(left: [2, 3], right: [2, _]) == [true, false]
     ~~~
 
 Rules:
-    OPS-2, NUM-5, NUM-6, TEN-3, FN-6, FN-11
+    OPS-1, OPS-2, NUM-2, NUM-5, NUM-6, TEN-3, FN-6, FN-11
 */
 export operator le_<L, R>(lhs: L, rhs: R) -> bool
 
 /**
 Whether the left operand is above the right: `a > b` is `gt_(a, b)`.
 
-It takes the operands of `lt_`, ordered as `lt_`'s table says: `a > b`
-is `b < a`. It is true for the outcome `greater` of `compare_`, so a NaN
-makes it false.
+It compares two values of one ordered type, `i64`, `f64`, `str`,
+`bool`, `date`, `time`, `datetime`, `civil_datetime`, `duration` or
+`tenor`, or an `i64` and an `f64` in either order, ordered as `lt_`'s
+table says; tenors are only partly ordered. Any other
+pair is rejected where it is written (`operator.no_candidate`). Of
+numbers and of tenors it is true for the outcome `greater` of
+`compare_`, so a NaN makes it false.
 
 Type Args:
     L: The left operand's type.
@@ -424,7 +437,8 @@ Args:
     rhs: The right operand.
 
 Returns:
-    True where `compare_(lhs, rhs)` is `CmpResult.greater`.
+    True where `lhs` is above `rhs`: of numbers and of tenors, where
+    `compare_(lhs, rhs)` is `CmpResult.greater`.
 
 Ticks:
     As for `lt_`: lifted where a graph gives it a connection, the result
@@ -439,14 +453,18 @@ Examples:
     ~~~hgl
     fn above(left: f64, right: f64) -> bool => left > right
 
-    assert 3 > 2 && 5m > 30s
+    assert 3 > 2
+    let count: i64 = 3
+    let price: f64 = 2.5
+    assert count > price && !(price > count)
     let nan: f64 = 0.0 /{zero: .nan} 0.0
     assert !(nan > 1.0) && !(1.0 > nan)
+    assert 2M > 1M && !(1M > 1B)
     assert eval above(left: [3.0, 1.0], right: [2.0, _]) == [true, false]
     ~~~
 
 Rules:
-    OPS-2, NUM-5, NUM-6, TEN-3, FN-6, FN-11
+    OPS-1, OPS-2, NUM-2, NUM-5, NUM-6, TEN-3, FN-6, FN-11
 */
 export operator gt_<L, R>(lhs: L, rhs: R) -> bool
 
@@ -454,10 +472,14 @@ export operator gt_<L, R>(lhs: L, rhs: R) -> bool
 Whether the left operand is above or equal to the right: `a >= b` is
 `ge_(a, b)`.
 
-It takes the operands of `lt_`, ordered as `lt_`'s table says. It is
-true for the outcomes `greater` and `equivalent` of `compare_`, so a NaN
-makes it false, and `a >= b` is not `!(a < b)` where the two are
-unordered.
+It compares two values of one ordered type, `i64`, `f64`, `str`,
+`bool`, `date`, `time`, `datetime`, `civil_datetime`, `duration` or
+`tenor`, or an `i64` and an `f64` in either order, ordered as `lt_`'s
+table says; tenors are only partly ordered. Any other
+pair is rejected where it is written (`operator.no_candidate`). Of
+numbers and of tenors it is true for the outcomes `greater` and
+`equivalent` of `compare_`, so a NaN makes it false, and `a >= b` is not
+`!(a < b)` where the two are unordered.
 
 Type Args:
     L: The left operand's type.
@@ -468,7 +490,8 @@ Args:
     rhs: The right operand.
 
 Returns:
-    True where `compare_(lhs, rhs)` is `CmpResult.greater` or
+    True where `lhs` is above or equal to `rhs`: of numbers and of
+    tenors, where `compare_(lhs, rhs)` is `CmpResult.greater` or
     `CmpResult.equivalent`.
 
 Ticks:
@@ -485,14 +508,17 @@ Examples:
     fn at_least(left: i64, right: i64) -> bool => left >= right
 
     assert 2 >= 2 && 3 >= 2
-    assert @2026-09-04 >= @2026-09-03
+    let count: i64 = 2
+    let price: f64 = 2.5
+    assert price >= count && !(count >= price)
     let nan: f64 = 0.0 /{zero: .nan} 0.0
     assert !(nan >= 1.0) && !(nan < 1.0)
+    assert 2M1D >= 1M && !(1M3D >= 2M)
     assert eval at_least(left: [2, 1], right: [2, _]) == [true, false]
     ~~~
 
 Rules:
-    OPS-2, NUM-5, NUM-6, TEN-3, FN-6, FN-11
+    OPS-1, OPS-2, NUM-2, NUM-5, NUM-6, TEN-3, FN-6, FN-11
 */
 export operator ge_<L, R>(lhs: L, rhs: R) -> bool
 
@@ -500,14 +526,19 @@ export operator ge_<L, R>(lhs: L, rhs: R) -> bool
 The full outcome of comparing two values, a `CmpResult`: `a <=> b` is
 `compare_(a, b)`.
 
-It takes the operands of `lt_`, ordered as `lt_`'s table says. A NaN on
+It compares two values of one ordered type, `i64`, `f64`, `str`,
+`bool`, `date`, `time`, `datetime`, `civil_datetime`, `duration` or
+`tenor`, or an `i64` and an `f64` in either order, ordered as `lt_`'s
+table says; tenors are only partly ordered. Any other
+pair is rejected where it is written (`operator.no_candidate`). A NaN on
 either side gives `unordered`, and so do two tenors that are not
 ordered; nothing else does. `0.0` and `-0.0` are `equivalent`. The
 outcome is an enum, not a `bool` or a number: it is compared with a
 member, `(a <=> b) == .less`, and is no condition of an `if`. A tolerance
 does not configure it.
 
-Each Boolean comparison is true for the outcomes this table shows:
+Of numbers and of tenors, each Boolean comparison is true for the
+outcomes this table shows:
 
 | Expression | True for |
 | --- | --- |
@@ -545,7 +576,6 @@ Examples:
     fn order(left: f64, right: f64) -> CmpResult => left <=> right
 
     assert (1 <=> 2) == .less
-    assert (5m <=> 30s) == .greater
     let count: i64 = 2
     let price: f64 = 2.0
     assert (count <=> price) == .equivalent
@@ -558,7 +588,7 @@ Examples:
     ~~~
 
 Rules:
-    OPS-2, OPS-3, NUM-5, NUM-6, NUM-7, TEN-3, EXPR-11, FN-6, FN-11
+    OPS-1, OPS-2, OPS-3, NUM-5, NUM-6, NUM-7, TEN-3, EXPR-11, FN-6, FN-11
 */
 export operator compare_<L, R>(lhs: L, rhs: R) -> CmpResult
 
@@ -567,11 +597,13 @@ Convert a value to another type: `convert<f64>(count)`.
 
 Nothing changes a value's type without it, but an integer literal
 written where an `f64` is expected. A conversion that cannot fail gives
-the new value. One that can, a text that writes no number among them,
-gives a `result<T, error>`, or with `invalid: .fail` the value itself and
-an error that escapes where it fails. A `result` takes its form from its
-place: where an `i64` is expected, `convert<i64>(text)` gives the value
-or raises its error, and where an `i64?` is, null for a failure.
+the new value. One that can fail, as reading a number or a `bool` from
+a `str` can, gives a `result<T, error>`, or with `invalid: .fail` the
+value itself and an error that escapes where it fails. A `result` takes
+its form from its place: where an `i64` is expected, `convert<i64>(text)`
+gives the value or raises its error, and where an `i64?` is, null for a
+failure. Any conversion this table does not show is rejected where it
+is written.
 
 | From | To |
 | --- | --- |
@@ -583,6 +615,7 @@ or raises its error, and where an `i64?` is, null for a failure.
 | `date` | `datetime` |
 | `datetime` | `date` |
 | `tenor` | `str` |
+| A list, a set, a dictionary, a tuple, a struct | `str` |
 | `list<A>`, of a struct `A` that inherits from the abstract struct `B` | `list<B>` |
 
 A conversion can fail where its value has no `T`: an `f64` that is a
@@ -635,7 +668,8 @@ Returns:
     | `str` to `bytes`, `bytes` to `str` | UTF-8 |
     | `date` to `datetime` | The start of that date, in UTC |
     | `datetime` to `date` | The date of the instant, in UTC |
-    | `tenor` to `str` | Its text, in its largest units: `1Y6M`, `2W`, `0D` |
+    | `tenor` to `str` | Its text, in its largest units, a unit whose count is zero not written, and `-` before the units of a count below zero: `1Y6M`, `2W`, `0D`, `1M-1D` |
+    | A list, a set, a dictionary, a tuple or a struct to `str` | The value as a program writes it, a `str` among its parts in quotes: `[1, 2]`, `["a": 1]`, `(1, "a")`, `Point(x: 1.0, y: 2.0)` |
     | `list<A>` to `list<B>` | The same elements |
 
     A number's text is all of the text: nothing stands before or after
@@ -704,6 +738,7 @@ Examples:
     assert convert<datetime>(@2026-03-01) == @2026-03-01T00:00:00Z
     assert convert<date>(@2026-03-01T23:59:59Z) == @2026-03-01
     assert convert<str>(18M) == "1Y6M"
+    assert convert<str>(1M - 1D) == "1M-1D"
 
     let circles: list<Circle> = [Circle(radius: 1.0)]
     let shapes: list<Shape> = convert<list<Shape>>(circles)
@@ -713,32 +748,36 @@ Examples:
     ~~~
 
 Rules:
-    OPS-4, OPS-6, OPS-7, OPS-8, NUM-10, TEN-9, EXPR-5, EXPR-12, ERR-11,
+    OPS-4, OPS-6, OPS-7, OPS-8, NUM-10, TEN-9, FMT-5, EXPR-5, EXPR-12, ERR-11,
     ERR-15, TYPE-3, FN-6, FN-11
 */
 export operator convert<T, V, O>(value: V) -> O
     requires O in {T, result<T, error>}
 
 /**
-Whether both of two bools are true: `a && b` is `and_(a, b)`.
+Whether both of two bools are true: the operator that `a && b` selects.
 
 The operands are bools: a number or a text has no truth value, and
-`1 && true` is rejected where it is written. In value code and in a
-node's runtime code, a `when` condition among it, the left operand is evaluated first and the right
+`1 && true` is rejected where it is written. Written `a && b`, in value
+and runtime contexts the left operand is evaluated first and the right
 only where the left is true, so `items != [] && items[0] > 0` reads no
-element of an empty list. Where a graph gives it connections, both are
-inputs and nothing is short-circuited: both must be valid. A chain of
-three or more joined by `&&` alone is `all_`.
+element of an empty list. Called by name, `and_(a, b)` evaluates both
+arguments, once each, in written order, as any call does: it
+short-circuits nothing. Where a graph gives it connections, both are
+inputs and both must be valid. A chain of three or more joined by `&&`
+alone is `all_`.
 
 Args:
-    lhs: The left operand, evaluated first.
-    rhs: The right operand, evaluated only where `lhs` is true.
+    lhs: The left operand.
+    rhs: The right operand: under `&&`, evaluated only where `lhs` is
+        true.
 
 Returns:
     True where both are true.
 
 Ticks:
-    - In value code, the result is a value, with no timing of its own.
+    - In value and runtime contexts, the result is a value, with no
+      timing of its own.
     - Where a graph gives it a connection, the call is lifted: each
       connection is an input. The result ticks in each cycle in which an
       input ticks and the call is admitted, an equal result included.
@@ -752,36 +791,40 @@ Examples:
     fn both(left: bool, right: bool) -> bool => and_(left, right)
 
     assert true && true
-    assert !(true && false)
+    assert !(true && false) && !and_(true, false)
     let items: list<i64> = []
     assert !(items != [] && items[0] > 0)
     assert eval both(left: [true, _, false], right: [_, true, _]) == [_, true, false]
     ~~~
 
 Rules:
-    OPS-5, EXPR-6, FN-6, FN-11
+    OPS-5, EXPR-2, EXPR-6, EXPR-13, FN-6, FN-11
 */
 export operator and_(lhs: bool, rhs: bool) -> bool
 
 /**
-Whether either of two bools is true: `a || b` is `or_(a, b)`.
+Whether either of two bools is true: the operator that `a || b` selects.
 
-The operands are bools, as for `and_`. In value code the left operand is
-evaluated first and the right only where the left is false, so
-`items == [] || items[0] > 0` reads no element of an empty list. Where a
-graph gives it connections, both are inputs and nothing is
-short-circuited: both must be valid. A chain of three or more joined by
-`||` alone is `any_`.
+The operands are bools, as for `and_`. Written `a || b`, in value and
+runtime contexts the left operand is evaluated first and the right only
+where the left is false, so `items == [] || items[0] > 0` reads no
+element of an empty list. Called by name, `or_(a, b)` evaluates both
+arguments, once each, in written order, as any call does: it
+short-circuits nothing. Where a graph gives it connections, both are
+inputs and both must be valid. A chain of three or more joined by `||`
+alone is `any_`.
 
 Args:
-    lhs: The left operand, evaluated first.
-    rhs: The right operand, evaluated only where `lhs` is false.
+    lhs: The left operand.
+    rhs: The right operand: under `||`, evaluated only where `lhs` is
+        false.
 
 Returns:
     True where either is true.
 
 Ticks:
-    - In value code, the result is a value, with no timing of its own.
+    - In value and runtime contexts, the result is a value, with no
+      timing of its own.
     - Where a graph gives it a connection, the call is lifted: each
       connection is an input. The result ticks in each cycle in which an
       input ticks and the call is admitted, an equal result included.
@@ -795,14 +838,14 @@ Examples:
     fn either(left: bool, right: bool) -> bool => or_(left, right)
 
     assert false || true
-    assert !(false || false)
+    assert !(false || false) && or_(false, true)
     let items: list<i64> = []
     assert items == [] || items[0] > 0
     assert eval either(left: [false, _, true], right: [_, false, _]) == [_, false, true]
     ~~~
 
 Rules:
-    OPS-5, EXPR-6, FN-6, FN-11
+    OPS-5, EXPR-2, EXPR-6, EXPR-13, FN-6, FN-11
 */
 export operator or_(lhs: bool, rhs: bool) -> bool
 
@@ -818,7 +861,8 @@ Returns:
     True where `value` is false.
 
 Ticks:
-    - In value code, the result is a value, with no timing of its own.
+    - In value and runtime contexts, the result is a value, with no
+      timing of its own.
     - Where a graph gives it a connection, the call is lifted: the result
       ticks in each cycle in which `value` ticks, an equal result
       included.
@@ -841,23 +885,25 @@ Rules:
 export operator not_(value: bool) -> bool
 
 /**
-Whether every one of three or more bools is true: `a && b && c` is
-`all_(a, b, c)`.
+Whether every one of a number of bools is true: a chain of three or
+more joined by `&&` alone, `a && b && c`, is `all_(a, b, c)`.
 
-A chain joined by `&&` alone is this call; one that mixes `&&` and `||`
-is not. Core's candidate for bools is the chain itself, `and_` applied
-left to right, and short-circuits as its links do: in value code an
-operand after a false one is not evaluated.
+A chain that mixes `&&` and `||` is not. Core's candidate for bools is
+`and_` applied left to right. Written as the chain, in value and runtime
+contexts it short-circuits as its links do: an operand after a false one
+is not evaluated. Called by name, `all_(a, b, c)` evaluates every
+argument, once each, in written order, as any call does.
 
 Args:
-    values: The bools, in the order they are evaluated.
+    values: The bools, in written order.
 
 Returns:
     True where each of `values` is true.
 
 Ticks:
-    - In value code, the result is a value, with no timing of its own.
-    - Where a graph gives it connections, the call is lifted: each
+    - In value and runtime contexts, the result is a value, with no
+      timing of its own.
+    - Where a graph gives it a connection, the call is lifted: each
       connection is an input. The result ticks in each cycle in which an
       input ticks and the call is admitted, an equal result included.
 
@@ -877,28 +923,30 @@ Examples:
     ~~~
 
 Rules:
-    OPS-5, EXPR-6, FN-6, FN-11
+    OPS-5, EXPR-2, EXPR-6, FN-6, FN-11
 */
 export operator all_(values: ...bool) -> bool
 
 /**
-Whether any one of three or more bools is true: `a || b || c` is
-`any_(a, b, c)`.
+Whether any one of a number of bools is true: a chain of three or more
+joined by `||` alone, `a || b || c`, is `any_(a, b, c)`.
 
-A chain joined by `||` alone is this call; one that mixes `||` and `&&`
-is not. Core's candidate for bools is the chain itself, `or_` applied
-left to right, and short-circuits as its links do: in value code an
-operand after a true one is not evaluated.
+A chain that mixes `||` and `&&` is not. Core's candidate for bools is
+`or_` applied left to right. Written as the chain, in value and runtime
+contexts it short-circuits as its links do: an operand after a true one
+is not evaluated. Called by name, `any_(a, b, c)` evaluates every
+argument, once each, in written order, as any call does.
 
 Args:
-    values: The bools, in the order they are evaluated.
+    values: The bools, in written order.
 
 Returns:
     True where one or more of `values` is true.
 
 Ticks:
-    - In value code, the result is a value, with no timing of its own.
-    - Where a graph gives it connections, the call is lifted: each
+    - In value and runtime contexts, the result is a value, with no
+      timing of its own.
+    - Where a graph gives it a connection, the call is lifted: each
       connection is an input. The result ticks in each cycle in which an
       input ticks and the call is admitted, an equal result included.
 
@@ -918,7 +966,7 @@ Examples:
     ~~~
 
 Rules:
-    OPS-5, EXPR-6, FN-6, FN-11
+    OPS-5, EXPR-2, EXPR-6, FN-6, FN-11
 */
 export operator any_(values: ...bool) -> bool
 
