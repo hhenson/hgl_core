@@ -104,15 +104,348 @@ export operator put<S, K, V>(store: S, key: K, value: V)
 # chapter): `a + b` is `add_(a, b)`. An operator is neither value nor
 # temporal; the candidate a call selects is.
 
-# `+`, binary `-`, `*`, `/`, `//`, `%`.
+/**
+Add two operands with `+`.
+
+For numbers, two `i64` operands give an `i64`. An `f64` operand gives an
+`f64`, rounded to binary64 with IEEE special values. Addition also joins
+two strings, sums durations or tenors of the same form, moves an instant
+by a duration, combines a date and a time, or moves a date by a tenor.
+A date combined with a time or a duration gives a `civil_datetime`.
+
+Type Args:
+    L: The type of the left operand.
+    R: The type of the right operand.
+    O: The type the selected candidate gives for the sum.
+
+Args:
+    lhs: The first operand.
+    rhs: The operand to add.
+
+    A date plus a tenor takes `calendar`, which defaults to `Weekdays()`,
+    and `rolling_rule`, which defaults to leaving the moved date as is.
+    The calendar answers `business_day`. The rolling rule applies `roll`.
+
+    In a graph, the `invalid: .identity` option adds two valid inputs of one
+    type, passes through the sole valid input, or invalidates the output
+    when neither is valid. This requires a value addition that returns
+    the same type as both operands. Omission uses ordinary lifting and
+    validity. Under `.identity`, invalidation can activate the node.
+    Silence adds no work.
+
+Returns:
+    The sum in the selected result type. For a difference, use `sub_`.
+
+Raises:
+    `numeric.out_of_range` if an integer, duration, instant or tenor count
+    result is outside its range. `tenor.mixed_units` for a business-day
+    tenor added to a months-and-days tenor.
+
+Examples:
+    ~~~hgl
+    assert 8 + 3 == 11
+    let count: i64 = 2
+    assert count + 0.5 == 2.5
+
+    let largest: i64 = 9223372036854775807
+    assert raises("numeric.out_of_range") { largest + 1 }
+    ~~~
+
+Rules:
+    NUM-1, NUM-2, NUM-8, OPS-1, OPS-9, OPS-10, TEN-1, TEN-2, TEN-4,
+    TEN-5, TEN-6, TEN-7, GEN-4, GEN-6
+*/
 export operator add_<L, R, O>(lhs: L, rhs: R) -> O
+
+/**
+Subtract the right operand from the left with binary `-`.
+
+For numbers, two `i64` operands give an `i64`. An `f64` operand gives an
+`f64`, rounded to binary64 with IEEE special values. Subtraction also
+takes a duration away from an instant or another duration. A date less
+a duration gives a `civil_datetime`. Two dates, two civil datetimes or
+two UTC datetimes give a duration. A tenor can be taken from a date or
+from a tenor of the same form.
+
+Type Args:
+    L: The type of the left operand.
+    R: The type of the right operand.
+    O: The type the selected candidate gives for the difference.
+
+Args:
+    lhs: The starting value.
+    rhs: The amount to take away or the value to subtract.
+
+    A date less a tenor takes `calendar`, which defaults to `Weekdays()`,
+    and `rolling_rule`, which defaults to leaving the moved date as is.
+    The calendar answers `business_day`. The rolling rule applies `roll`.
+
+    In a graph, the `invalid: .identity` option subtracts two valid inputs
+    of one type, passes through a sole valid left input, negates a sole
+    valid right input, or invalidates the output when neither is valid.
+    This requires value subtraction and negation that return the same
+    type as the operands. Omission uses ordinary lifting and validity.
+    Under `.identity`, invalidation can activate the node. Silence adds
+    no work.
+
+Returns:
+    The difference in the selected result type. To negate one operand,
+    use `neg_`.
+
+Raises:
+    `numeric.out_of_range` if an integer, duration, instant or tenor count
+    result is outside its range. `tenor.mixed_units` for subtraction
+    between a business-day tenor and a months-and-days tenor.
+
+Examples:
+    ~~~hgl
+    assert 8 - 3 == 5
+    let count: i64 = 2
+    assert 0.5 - count == -1.5
+
+    let smallest: i64 = -9223372036854775808
+    assert raises("numeric.out_of_range") { 0 - smallest }
+    ~~~
+
+Rules:
+    NUM-1, NUM-2, NUM-8, OPS-1, OPS-9, OPS-10, TEN-1, TEN-2, TEN-4,
+    TEN-5, TEN-6, TEN-7, GEN-4, GEN-6
+*/
 export operator sub_<L, R, O>(lhs: L, rhs: R) -> O
+
+/**
+Multiply two operands with `*`.
+
+Two `i64` operands give an `i64`. An `f64` among two numeric operands
+gives an `f64`, rounded to binary64 with IEEE special values. A number
+scales a duration, rounded to the nearest microsecond with ties to even.
+An `i64` scales each count of a tenor or repeats a string, with a count
+of zero giving the empty string. Each of these accepts either order.
+
+Type Args:
+    L: The type of the left operand.
+    R: The type of the right operand.
+    O: The type the selected candidate gives for the product.
+
+Args:
+    lhs: The first factor.
+    rhs: The second factor.
+
+Returns:
+    The numeric product, scaled duration or tenor, or repeated text.
+    For a quotient, use `div_`.
+
+Raises:
+    `numeric.out_of_range` for an out-of-range integer, duration or tenor
+    count, a NaN or infinity scaling a duration, or a negative text count.
+
+Examples:
+    ~~~hgl
+    assert 4 * 3 == 12
+    let count: i64 = 3
+    assert count * 0.5 == 1.5
+
+    assert 1us * 0.5 == 0us
+    assert 3us * 0.5 == 2us
+    ~~~
+
+Rules:
+    NUM-1, NUM-2, NUM-8, OPS-1, OPS-10, TEN-1, TEN-2, GEN-4
+*/
 export operator mul_<L, R, O>(lhs: L, rhs: R) -> O
+
+/**
+Divide with `/` to get the quotient, including its fractional part.
+
+Two numbers or two durations give an `f64`. A duration divided by a
+number stays a duration, rounded to the nearest microsecond with ties
+to even. For a quotient rounded down, use `floordiv_`.
+
+Type Args:
+    L: The type of the numerator.
+    R: The type of the divisor.
+    O: The selected quotient type, or its `result` form under `.error`.
+
+Args:
+    lhs: The number or duration to divide.
+    rhs: The divisor.
+
+    `zero` is a compile-time `ZeroPolicy`, written as in
+    `lhs /{zero: .error} rhs`. An `f64` quotient defaults to `.ieee`
+    and also admits `.nan`, `.error` and `.fail`. Under `.ieee`, a
+    finite nonzero numerator divided by signed zero gives an infinity
+    with the combined signs, and zero divided by zero gives NaN.
+    `.nan` gives NaN for every zero divisor. A duration quotient
+    defaults to `.fail` and also admits `.error`. An unsupported policy
+    rejects during source checking (`operator.no_candidate`).
+
+Returns:
+    The quotient if the policy returns a plain value. Under `.error`,
+    a successful division gives `ok(quotient)`, and either signed zero
+    divisor gives an Err with `numeric.division_by_zero`. The Err is
+    result data. Use `?` to propagate it. The zero policy checks only
+    the divisor.
+
+Raises:
+    `numeric.division_by_zero` on zero under `.fail`.
+    `numeric.out_of_range` for a duration quotient outside its range
+    or a duration divided by NaN or infinity.
+
+Examples:
+    ~~~hgl
+    assert 7 / 2 == 3.5
+    assert convert<str>(1.0 / -0.0) == "-inf"
+
+    let divided: result<f64, error> = 1.0 /{zero: .error} 0.0
+    assert is_err(divided)
+    if is_err(divided) {
+        assert divided.error.code == "numeric.division_by_zero"
+    }
+    ~~~
+
+Rules:
+    NUM-1, NUM-2, NUM-3, NUM-8, NUM-9, NUM-10, NUM-12, OPS-1, OPS-6,
+    OPS-10, EXPR-12, GEN-4, GEN-6
+*/
 export operator div_<L, R, O>(lhs: L, rhs: R) -> O
+
+/**
+Divide with `//` to round the quotient toward negative infinity.
+
+Two `i64` operands give an `i64`, and two durations give an `i64`.
+An `f64` among numeric operands gives an `f64`. With an infinity or
+NaN and a nonzero divisor, that result is the floor of the IEEE
+quotient. Use `div_` to keep the fractional part or `mod_` for the
+remainder of numeric operands.
+
+Type Args:
+    L: The type of the numerator.
+    R: The type of the divisor.
+    O: The selected quotient type, or its `result` form under `.error`.
+
+Args:
+    lhs: The number or duration to divide.
+    rhs: The divisor.
+
+    `zero` is a compile-time `ZeroPolicy`, written as in
+    `lhs //{zero: .error} rhs`. An `i64` quotient defaults to `.fail`
+    and also admits `.error`. An `f64` quotient defaults to `.ieee`
+    and also admits `.nan`, `.error` and `.fail`. For a zero divisor,
+    `.ieee` uses the floored IEEE quotient and `.nan` gives NaN.
+    An unsupported policy rejects during source checking
+    (`operator.no_candidate`).
+
+Returns:
+    The floored quotient. Under `.error`, a successful division gives
+    `ok(quotient)`, and either signed zero divisor gives an Err with
+    `numeric.division_by_zero`. The Err is result data. Use `?`
+    to propagate it. The zero policy checks only the divisor.
+
+Raises:
+    `numeric.division_by_zero` on zero under `.fail`.
+    `numeric.out_of_range` if an integer quotient is outside `i64`.
+
+Examples:
+    ~~~hgl
+    assert 7 // 3 == 2
+    assert -7 // 3 == -3
+
+    let divided: result<i64, error> = 7 //{zero: .error} 0
+    assert is_err(divided)
+    if is_err(divided) {
+        assert divided.error.code == "numeric.division_by_zero"
+    }
+    ~~~
+
+Rules:
+    NUM-1, NUM-2, NUM-3, NUM-8, NUM-9, NUM-10, NUM-12, OPS-1,
+    EXPR-12, GEN-4, GEN-6
+*/
 export operator floordiv_<L, R, O>(lhs: L, rhs: R) -> O
+
+/**
+Take the remainder of numeric division with `%`.
+
+A nonzero remainder has the divisor's sign for integers and for finite
+floating operands. With an infinity or NaN and a nonzero divisor,
+floating modulo follows IEEE `fmod`. In particular, a remainder by
+an infinity is the numerator as is, whatever its sign. For the floored
+quotient of finite operands, use `floordiv_`.
+
+Type Args:
+    L: The type of the numerator.
+    R: The type of the divisor.
+    O: The selected remainder type, or its `result` form under `.error`.
+
+Args:
+    lhs: The dividend.
+    rhs: The divisor.
+
+    `zero` is a compile-time `ZeroPolicy`, written as in
+    `lhs %{zero: .error} rhs`. An `i64` remainder defaults to `.fail`
+    and also admits `.error`. An `f64` remainder defaults to `.ieee`
+    and also admits `.nan`, `.error` and `.fail`. Both `.ieee` and
+    `.nan` give NaN on zero. An unsupported policy rejects during
+    source checking (`operator.no_candidate`).
+
+Returns:
+    An `i64` remainder for two `i64` operands, or an `f64` when either
+    operand is `f64`. Under `.error`, a successful division gives
+    `ok(remainder)`, and either signed zero divisor gives an Err with
+    `numeric.division_by_zero`. The Err is result data. Use `?`
+    to propagate it. The zero policy checks only the divisor.
+
+Raises:
+    `numeric.division_by_zero` on zero under `.fail`.
+
+Examples:
+    ~~~hgl
+    assert 7 % 3 == 1
+    assert -7 % 3 == 2
+
+    let infinity: f64 = 1.0 / 0.0
+    assert -3.0 % infinity == -3.0
+    ~~~
+
+Rules:
+    NUM-1, NUM-2, NUM-3, NUM-8, NUM-9, NUM-10, NUM-12, EXPR-12,
+    GEN-4, GEN-6
+*/
 export operator mod_<L, R, O>(lhs: L, rhs: R) -> O
 
-# Unary `-`.
+/**
+Reverse the sign of one operand with unary `-`.
+
+Negation preserves the type of a number or duration, and negates
+each count of a tenor. Floating negation preserves IEEE special values
+and reverses the sign of zero. For a difference, use `sub_`.
+
+Type Args:
+    T: The type of the operand.
+    O: The type the selected candidate gives for its negation.
+
+Args:
+    value: The value to negate.
+
+Returns:
+    The negated value in the operand's type for core's numeric, duration
+    and tenor candidates.
+
+Raises:
+    `numeric.out_of_range` if the negated integer, duration or tenor
+    count is outside its range. This includes the least `i64`.
+
+Examples:
+    ~~~hgl
+    let change: i64 = 3
+    assert -change == -3
+    let smallest: i64 = -9223372036854775808
+    assert raises("numeric.out_of_range") { -smallest }
+    ~~~
+
+Rules:
+    NUM-1, NUM-2, NUM-8, OPS-1, OPS-10, TEN-1, TEN-2, GEN-4
+*/
 export operator neg_<T, O>(value: T) -> O
 
 # `==`, `!=`, `<`, `<=`, `>`, `>=`.
