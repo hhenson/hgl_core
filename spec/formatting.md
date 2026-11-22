@@ -1,7 +1,7 @@
 # Formatting
 
-Status: FMT-1 through FMT-9 are agreed, but for the sentence of FMT-9 that
-begins "Proposed:". Nothing here is declared in `hgl/` yet.
+Status: FMT-1 through FMT-9 are agreed. Nothing here is declared in `hgl/`
+yet.
 
 ## Scope and API
 
@@ -116,12 +116,12 @@ export struct Marked<T> {
   gives another, before its value, where its argument ticked in the
   cycle. The evaluation time and a mark are of a graph, where there is a
   cycle and an argument ticks: a call where a graph is built asks for
-  them. `{wall_time}` is asked for anywhere. Proposed: in value code a
-  call that asks for `{engine_time}` rejects (`format.argument`), and so
-  does one that marks a place whose argument is no `Marked`
-  (`format.specifier`); a mark on a `Marked` is written there where its
-  `ticked` is true, which is how the candidate for a graph gives the
-  native what ticked (FMT-8).
+  them. `{wall_time}` is asked for anywhere. In value code a call that
+  asks for `{engine_time}` rejects (`format.argument`), and so does one
+  that marks a place whose argument is no `Marked` (`format.specifier`);
+  a mark on a `Marked` is written there where its `ticked` is true,
+  which is how the candidate for a graph gives the native what ticked
+  (FMT-8).
 
 ## Examples
 
