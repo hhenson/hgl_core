@@ -7,12 +7,12 @@ module core part calendar
 /**
 Whether `day` is a business day of `calendar`.
 
-A calendar is any value this operator has a candidate for: core's is
-`Weekdays`, and a library gives its own calendar a candidate. `+` and
-`-` of a `date` and a `tenor` take a calendar as the option `calendar`,
-and `Weekdays()` where none is given. A count of business days, `2B`,
-counts the business days of that calendar, and a rolling rule rolls a
-date onto one of them (`roll`).
+A calendar is any value this operator has a value candidate for, an
+`impl const fn`: core's is `Weekdays`, and a library gives its own
+calendar one. `+` and `-` of a `date` and a `tenor` take a calendar as
+the option `calendar`, and `Weekdays()` where none is given. A count of
+business days, `2B`, counts the business days of that calendar, and a
+rolling rule rolls a date onto one of them (`roll`).
 
 Type Args:
     C: The calendar's type. It is inferred.
@@ -24,12 +24,34 @@ Args:
 Returns:
     True where `day` is a business day of `calendar`.
 
+Ticks:
+    - With constant arguments, `business_day(Weekdays(), @2026-01-02)`,
+      the call is evaluated directly, with no timing of its own.
+    - Where a graph gives it a connection, the call is lifted: each
+      connection is an input, and an argument that is no connection binds
+      as configuration. The result ticks in each cycle in which an input
+      ticks and the call is admitted, an equal result included.
+
+Validity:
+    - Each connection given to it is valid before the call is admitted.
+    - A calendar that is a struct, `Weekdays` among them, is all valid
+      as well.
+
 Examples:
     2026-01-02 is a Friday and 2026-01-03 a Saturday.
 
     ~~~hgl
     assert business_day(Weekdays(), @2026-01-02)
     assert !business_day(Weekdays(), @2026-01-03)
+    ~~~
+
+    In a graph, of a connection of dates: the result ticks with each
+    date, the same result again included.
+
+    ~~~hgl
+    fn open_on(day: date) -> bool => business_day(Weekdays(), day)
+    assert eval open_on(day: [@2026-01-02, @2026-01-02, _, @2026-01-03]) ==
+        [true, true, _, false]
     ~~~
 
     A calendar of a library's own, with two closed days beside the
@@ -54,7 +76,7 @@ Examples:
     ~~~
 
 Rules:
-    TEN-5, TEN-6, TEN-7
+    TEN-5, TEN-6, TEN-7, FN-6, FN-11, FN-12
 */
 export operator business_day<C>(calendar: C, day: date) -> bool
 
@@ -62,20 +84,14 @@ export operator business_day<C>(calendar: C, day: date) -> bool
 The date a rolling rule makes of `day` on `calendar`.
 
 A rolling rule says which business day a date becomes. It is any value
-this operator has a candidate for: core's are the members of `Rolling`,
-on any calendar, and a library gives its own rule a candidate. `+` and
-`-` of a `date` and a `tenor` take one as the option `rolling_rule`:
-the result is `roll(rolling_rule, calendar, moved)`, where `moved` is
-the date the tenor gives and `calendar` the one the operation has,
-`Weekdays()` where none is given. With no rolling rule the result is
-`moved`.
-
-| `rolling_rule` | The business day `day` becomes |
-| --- | --- |
-| `Rolling.following` | The one on or after it |
-| `Rolling.preceding` | The one on or before it |
-| `Rolling.modified_following` | The one on or after it, or where that is in another month the one on or before |
-| `Rolling.modified_preceding` | The one on or before it, or where that is in another month the one on or after |
+this operator has a value candidate for, an `impl const fn`: core's are
+the members of `Rolling`, on any calendar, and a library gives its own
+rule one. `+` and `-` of a `date` and a `tenor` take one as the option
+`rolling_rule`: the result is `roll(rolling_rule, calendar, moved)`,
+where `moved` is the date the tenor gives and `calendar` the one the
+operation has, `Weekdays()` where none is given. With no rolling rule
+the result is `moved`. `Rolling` says which business day each of core's
+rules gives.
 
 Type Args:
     R: The rolling rule's type. It is inferred.
@@ -88,6 +104,19 @@ Args:
 
 Returns:
     The date the rule gives for `day`.
+
+Ticks:
+    - With constant arguments, `roll(Rolling.following, Weekdays(), day)` of a constant `day`,
+      the call is evaluated directly, with no timing of its own.
+    - Where a graph gives it a connection, the call is lifted: each
+      connection is an input, and an argument that is no connection binds
+      as configuration. The result ticks in each cycle in which an input
+      ticks and the call is admitted, an equal result included.
+
+Validity:
+    - Each connection given to it is valid before the call is admitted.
+    - A calendar that is a struct, `Weekdays` among them, is all valid
+      as well.
 
 Examples:
     2026-01-03 is a Saturday, and 2026-01-31 the last Saturday of
@@ -106,8 +135,17 @@ Examples:
     assert @2026-01-31 + 0D == @2026-01-31
     ~~~
 
+    In a graph, of a connection of dates: the result ticks with each
+    date, the same result again included.
+
+    ~~~hgl
+    fn rolled_on(day: date) -> date => roll(Rolling.following, Weekdays(), day)
+    assert eval rolled_on(day: [@2026-01-03, @2026-01-04, _, @2026-01-05]) ==
+        [@2026-01-05, @2026-01-05, _, @2026-01-05]
+    ~~~
+
 Rules:
-    TEN-5, TEN-7, TEN-8
+    TEN-5, TEN-7, TEN-8, FN-6, FN-11, FN-12
 */
 export operator roll<R, C>(rolling_rule: R, calendar: C, day: date) -> date
 
@@ -187,7 +225,9 @@ export enum Rolling {
     The business day on or before the date, or where that is in another month the one on or after.
 
     Examples:
-        2026-02-01 is a Sunday, and the business day before it is in January.
+        2026-01-04 is a Sunday, and the business day before it, 2026-01-02,
+        is in its month. 2026-02-01 is a Sunday too, and the business day
+        before it is in January.
 
         ~~~hgl
         assert roll(Rolling.modified_preceding, Weekdays(), @2026-01-04) == @2026-01-02

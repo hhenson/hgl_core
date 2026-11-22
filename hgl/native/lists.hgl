@@ -14,6 +14,11 @@ list that is no place, a literal or what a call gives, is rejected
 (`argument.place`), and so is one that is read-only, such as a `let`
 (`binding.immutable`). `extend` puts each entry of another list.
 
+It is not lifted: a call stands in a value function, in a hook of a
+node, or in composition where the place holds an ordinary value. No
+argument of it is a connection (`connection.as_constant`), and it is no
+target of an `eval` (`eval.target`).
+
 Type Args:
     V: The type of the list's entries. It is inferred.
 
@@ -23,6 +28,10 @@ Args:
 
 Returns:
     Nothing: the call assigns `values`.
+
+Raises:
+    - `value.missing_key`: `values` is an entry of a dictionary,
+      `counts[key]`, for a key the dictionary has not.
 
 Examples:
     ~~~hgl
@@ -47,7 +56,7 @@ Examples:
     ~~~
 
 Rules:
-    LIST-1, LIST-3, FN-15
+    LIST-1, LIST-3, FN-6, FN-15
 */
 export native const fn append<V>(var values: list<V>, item: V)
 
@@ -61,6 +70,11 @@ leaves it as it was. A value taken from the place before the call is as
 it was. A list that is no place is rejected (`argument.place`), and so
 is one that is read-only (`binding.immutable`). `append` puts one entry.
 
+It is not lifted: a call stands in a value function, in a hook of a
+node, or in composition where the place holds an ordinary value. No
+argument of it is a connection (`connection.as_constant`), and it is no
+target of an `eval` (`eval.target`).
+
 Type Args:
     V: The type of the lists' entries. It is inferred.
 
@@ -70,6 +84,10 @@ Args:
 
 Returns:
     Nothing: the call assigns `values`.
+
+Raises:
+    - `value.missing_key`: `values` is an entry of a dictionary,
+      `counts[key]`, for a key the dictionary has not.
 
 Examples:
     ~~~hgl
@@ -89,6 +107,6 @@ Examples:
     ~~~
 
 Rules:
-    LIST-2, LIST-3, FN-15
+    LIST-2, LIST-3, FN-6, FN-15
 */
 export native const fn extend<V>(var values: list<V>, items: list<V>)
