@@ -1,7 +1,7 @@
 # Formatting
 
-Status: FMT-1 through FMT-9 are agreed, but for the sentences of FMT-4 and
-FMT-5 that begin "Proposed:". Nothing here is declared in `hgl/` yet.
+Status: FMT-1 through FMT-9 are agreed, but for the sentence of FMT-4
+that begins "Proposed:". Nothing here is declared in `hgl/` yet.
 
 ## Scope and API
 
@@ -68,15 +68,15 @@ export struct Marked<T> {
   the specifiers it admits for an integer, a floating-point number, a
   string and a boolean, and `date`, `time`, `datetime` and `duration`,
   with those it admits for a date and a time, `{:%Y-%m-%d}`. A value of
-  any other type takes `{}` alone. The seconds are written with their
-  fraction, to the millisecond, the microsecond or the nanosecond, as
-  that library writes them: with `%S`, and `%T`, which ends in it.
-  Proposed: a precision before the directives gives the digits of that
-  fraction, `{:.3%H:%M:%S}` for milliseconds, `09:30:00.250`, `.6` for
-  microseconds, `.9` for nanoseconds and `.0` for none; with no
-  precision there are six, the resolution of a `time`, a `datetime` and
-  a `duration`. It is taken out where the call is compiled, and the
-  library is given the value at that precision. Proposed: a `time`
+  any other type takes `{}` alone. `%S` writes whole seconds, and so
+  does `%T`, which ends in them. A precision after either writes the
+  fraction of the second too, to the millisecond, the microsecond or
+  the nanosecond, the digits after it dropped. It is taken out where
+  the call is compiled, and the library is given the rest and the value
+  at that precision. The precision is a `.` and one digit
+  directly after the directive, `{:%H:%M:%S.3}` for milliseconds,
+  `09:30:00.250`, `.6` for microseconds, `.9` for nanoseconds, and `.0`
+  for none, as with no precision. Proposed: a `time`
   admits the directives that read the hour, the minute and the second,
   `%H`, `%M`, `%S`, `%I`, `%p`, `%R` and `%T`, and a `date` those that
   read a date; one of the other's rejects (`format.specifier`).
@@ -98,7 +98,7 @@ export struct Marked<T> {
   part by this rule and a `str` among them in quotes: `[1, 2]` for a
   list and for a set, `["a": 1]`, `(1, "a")`, and
   `Point(x: 1.0, y: 2.0)` with every field in the order declared.
-  Proposed: a `duration` below zero is written after a `-`; a set and a
+  A `duration` below zero is written after a `-`; a set and a
   dictionary are written in the order a `for` over them visits; a part
   that is null is written `null`; and a `str` among the parts is written
   with the escapes its literal has.
