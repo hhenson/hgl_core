@@ -24,6 +24,7 @@ test format_places {
     assert padded(7) == "level   7 of {book}"
     assert format("fill {} at {price:.2f}", 10, price: 101.5) == "fill 10 at 101.50"
     assert format("{{no places}}") == "{no places}"
+    assert format("value " + "{}", 3) == "value 3"
 }
 
 /**
@@ -114,6 +115,21 @@ test format_reference_chrono_specifiers {
     assert format("{:%H:%M:%S.3}", 9h30m250ms) == "09:30:00.250"
     assert format("{:%H:%M} {:%M:%H}", 90m, 90m) == "01:30 30:01"
     assert format("{:%j %T}", 1d1h) == "1 01:00:00"
+}
+
+/**
+Bracketed duration directives write the whole duration in their unit.
+The ordinary hours directive still gives the hours left after whole days.
+
+:Rules: FMT-4
+:Status: agreed
+*/
+test format_reference_whole_duration {
+    assert format("{:%[H] %[M] %[S]}", 1d1h30m) == "25 1530 91800"
+    assert format("{:%H:%M:%S} {:%[H]:%M:%S}", 1d1h, 1d1h) ==
+        "01:00:00 25:00:00"
+    assert format("{:%[S].3}", 1s250987us) == "01.250"
+    assert format("{:%[S].9}", 1s250987us) == "01.250987000"
 }
 
 /**

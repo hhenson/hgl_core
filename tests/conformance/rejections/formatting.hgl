@@ -87,3 +87,36 @@ const fn format_marks_unmarked_value() -> str {
     # expect-error(type, "format.specifier")
     return format("{*}", 1)
 }
+
+/**
+A whole-duration directive is not admitted for a time of day.
+
+:Rules: FMT-4
+:Status: proposed
+*/
+const fn format_time_with_duration_total() -> str {
+    # expect-error(type, "format.specifier")
+    return format("{:%[H]}", @09:30:00)
+}
+
+/**
+A whole-duration directive is not admitted for a datetime.
+
+:Rules: FMT-4
+:Status: proposed
+*/
+const fn format_datetime_with_duration_total() -> str {
+    # expect-error(type, "format.specifier")
+    return format("{:%[S]}", @2026-11-22T09:30:00Z)
+}
+
+/**
+The locale flag is not admitted.
+
+:Rules: FMT-4
+:Status: proposed
+*/
+const fn format_with_locale_flag() -> str {
+    # expect-error(type, "format.specifier")
+    return format("{:Ld}", 42)
+}
