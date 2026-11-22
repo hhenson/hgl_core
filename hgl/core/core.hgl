@@ -11,49 +11,620 @@ module core
 # and a tenor's in hgl/native/tenors.hgl. The calendar, the rolling rule
 # and the candidates that move a date are in hgl/core/calendar.hgl.
 
-# The outcome of a full comparison, `<=>` (OPS-3, NUM-6).
-export enum CmpResult { less, equivalent, greater, unordered }
+/**
+The outcome of a full comparison, `a <=> b`: less, equivalent, greater or unordered.
 
-# What a division does with a zero divisor (NUM-3, NUM-9, NUM-12).
-export enum ZeroPolicy { ieee, nan, error, fail }
+`compare_`, which `<=>` stands for, returns one; `<`, `<=`, `>`, `>=`,
+`==` and `!=` return a bool. Only a numeric comparison and a tenor's give
+`unordered`. An outcome converts to no bool and no number: it is compared
+with a member, `(a <=> b) == CmpResult.less`.
 
-# How an `f64` is rounded to an `i64` (OPS-8).
-export enum Rounding { truncate, floor, ceiling, half_even, half_up, half_down }
+Of two numbers, each comparison that gives a bool is true for these
+outcomes:
 
-# What a conversion does when it fails (OPS-8).
-export enum InvalidPolicy { error, fail }
+| Expression | True for |
+| --- | --- |
+| `a == b` | `equivalent` |
+| `a != b` | `less`, `greater`, `unordered` |
+| `a < b` | `less` |
+| `a <= b` | `less`, `equivalent` |
+| `a > b` | `greater` |
+| `a >= b` | `greater`, `equivalent` |
 
-# Admission for same-type temporal addition/subtraction (OPS-9).
-export enum InvalidInputPolicy { identity }
+Examples:
+    ~~~hgl
+    assert (1.0 <=> 2.0) == CmpResult.less
+    assert ("b" <=> "a") == CmpResult.greater
+    assert (0.0 <=> -0.0) == CmpResult.equivalent
+    ~~~
 
-# The level of a log record (CAP-2).
-export enum LogLevel { debug, info, warning, error }
+    A NaN has no order, and nor have two tenors of different forms.
 
-# The named times of a run (CRUN-3). `smallest_step` is the least by which
-# one cycle's evaluation time follows another's. `never` is before every
-# evaluation time and `forever` after every one: no cycle runs at either.
-# `earliest_start` is the first instant a run may start at, and
-# `latest_end` the last it may end at.
+    ~~~hgl
+    assert (0.0 / 0.0 <=> 1.0) == CmpResult.unordered
+    assert (1D <=> 1M) == CmpResult.unordered
+    ~~~
+
+Rules:
+    OPS-2, OPS-3, NUM-6, TEN-3
+*/
+export enum CmpResult {
+    /**
+    The left operand orders before the right.
+
+    Rules:
+        OPS-3, NUM-6
+    */
+    less,
+    /**
+    The operands are equivalent: of two numbers, equal values, two zeros of opposite sign among them.
+
+    Rules:
+        OPS-3, NUM-6
+    */
+    equivalent,
+    /**
+    The left operand orders after the right.
+
+    Rules:
+        OPS-3, NUM-6
+    */
+    greater,
+    /**
+    The operands have no order: a number compared with a NaN, or two tenors of which neither is less than or equal to the other.
+
+    Rules:
+        OPS-3, NUM-6, TEN-3
+    */
+    unordered,
+}
+
+/**
+What a division does with a zero divisor: the `zero` option of `/`, `//` and `%`.
+
+The option is written in braces after the symbol, `a /{zero: .error} b`.
+It is a constant, fixed where the call is checked, since it decides the
+result's type. It applies to a zero divisor of either sign, and to
+nothing else: an error in evaluating an operand is not caught.
+
+Which policies a division admits, and its default, follow from what its
+result can hold:
+
+| A division whose result is | Namely | Admits | Default |
+| --- | --- | --- | --- |
+| An `f64` | `/` of numbers; `//` and `%` with an `f64` operand; a `duration` by a `duration` | `.ieee`, `.nan`, `.error`, `.fail` | `.ieee` |
+| An `i64` or a `duration` | `//` and `%` of two `i64`; a `duration` by a number; `//` of two durations | `.error`, `.fail` | `.fail` |
+
+A policy a division does not admit is rejected with
+`operator.no_candidate`. Under `.error` the quotient is a `result`, which
+takes its form from its place: where a nullable number is expected, a
+failure is null.
+
+Examples:
+    ~~~hgl
+    assert 1.0 / 0.0 > 1e308
+    assert 1.0 / -0.0 < -1e308
+    assert (1.0 /{zero: .nan} 0.0 <=> 0.0) == CmpResult.unordered
+    ~~~
+
+    Under `.error` a zero divisor is a failure of the result, and any
+    other a success.
+
+    ~~~hgl
+    let quotient: result<f64, error> = 6.0 /{zero: .error} 2.0
+    assert is_ok(quotient) && quotient.value == 3.0
+    let whole: i64? = 7 //{zero: .error} 0
+    assert whole == null
+    ~~~
+
+    An integer division fails by default.
+
+    ~~~hgl
+    assert raises("numeric.division_by_zero") { 7 // 0 }
+    assert raises("numeric.division_by_zero") { 1.0 /{zero: .fail} 0.0 }
+    ~~~
+
+Rules:
+    NUM-3, NUM-9, NUM-10, NUM-12, OPS-1, ERR-15
+*/
+export enum ZeroPolicy {
+    /**
+    A zero divisor gives what IEEE arithmetic does: for `/`, an infinity for a finite nonzero numerator, its sign the combined signs of the operands, and a NaN for a zero one.
+
+    Rules:
+        NUM-3, NUM-12
+    */
+    ieee,
+    /**
+    Every zero divisor gives a NaN.
+
+    Rules:
+        NUM-3
+    */
+    nan,
+    /**
+    The division returns a `result`: a failure with code `numeric.division_by_zero` for a zero divisor, and the quotient as a success for any other.
+
+    Rules:
+        NUM-9, NUM-10
+    */
+    error,
+    /**
+    A zero divisor is an HGL error with code `numeric.division_by_zero`, which escapes.
+
+    Rules:
+        NUM-3, NUM-12
+    */
+    fail,
+}
+
+/**
+How `convert` rounds an `f64` to an `i64`: its `rounding` option.
+
+It is given as a named argument,
+`convert<i64>(price, rounding: .half_even)`, and applies to that
+conversion alone. With none given it is `.truncate`. An `f64` that is a
+NaN, an infinity, or outside `i64` once rounded, has no `i64`: the
+conversion's `nan` and `invalid` options say what it becomes.
+
+Examples:
+    ~~~hgl
+    assert convert<i64>(-2.5) == -2
+    assert convert<i64>(-2.5, rounding: .floor) == -3
+    assert convert<i64>(-2.5, rounding: .ceiling) == -2
+    assert convert<i64>(2.5, rounding: .half_even) == 2
+    assert convert<i64>(3.5, rounding: .half_even) == 4
+    assert convert<i64>(2.5, rounding: .half_up) == 3
+    assert convert<i64>(-2.5, rounding: .half_up) == -3
+    assert convert<i64>(2.5, rounding: .half_down) == 2
+    ~~~
+
+Rules:
+    OPS-6, OPS-7, OPS-8
+*/
+export enum Rounding {
+    /**
+    Rounds toward zero; it is the default.
+
+    Rules:
+        OPS-8
+    */
+    truncate,
+    /**
+    Rounds toward negative infinity.
+
+    Rules:
+        OPS-8
+    */
+    floor,
+    /**
+    Rounds toward positive infinity.
+
+    Rules:
+        OPS-8
+    */
+    ceiling,
+    /**
+    Rounds to the nearest integer, and a tie to the even one.
+
+    Rules:
+        OPS-8
+    */
+    half_even,
+    /**
+    Rounds to the nearest integer, and a tie away from zero.
+
+    Rules:
+        OPS-8
+    */
+    half_up,
+    /**
+    Rounds to the nearest integer, and a tie toward zero.
+
+    Rules:
+        OPS-8
+    */
+    half_down,
+}
+
+/**
+What a conversion that can fail does with a failure: the `invalid` option of `convert`.
+
+A conversion fails where its value has no `T`: an `f64` that is a NaN,
+an infinity, or outside `i64` once rounded; text that writes no value of
+the type asked for; bytes that are not well-formed UTF-8. The option is
+given as a named argument, `convert<i64>(text, invalid: .fail)`. It is a
+constant, fixed where the call is checked, since it decides the result's
+type. With none given it is `.error`. A conversion that cannot fail
+returns `T` and takes no `invalid`.
+
+Examples:
+    ~~~hgl
+    let parsed: result<i64, error> = convert<i64>("12x")
+    assert is_err(parsed)
+    assert convert<i64>("42", invalid: .fail) == 42
+    assert raises("convert.invalid") { convert<i64>("12x", invalid: .fail) }
+    ~~~
+
+Rules:
+    OPS-7, OPS-8
+*/
+export enum InvalidPolicy {
+    /**
+    The conversion returns a `result<T, error>`, and a failure is an Err with code `convert.invalid`.
+
+    Rules:
+        OPS-8
+    */
+    error,
+    /**
+    The conversion returns the `T`, and a failure is an HGL error with code `convert.invalid`, which escapes.
+
+    Rules:
+        OPS-8
+    */
+    fail,
+}
+
+/**
+The option of `+` and binary `-` between two connections of one type that gives a result while only one of them has a value.
+
+It is written `left +{invalid: .identity} right`, and `identity` is its
+only member. Without it a sum or a difference is lifted as any value
+operation is, and needs both operands valid. It takes two operands and a
+result of one type `T`, which has a value `add_(T, T) -> T`, or for `-` a
+value `sub_(T, T) -> T` and `neg_(T) -> T`; it converts nothing and
+invents no identity value.
+
+| Valid operands | `+` | `-` |
+| --- | --- | --- |
+| Both | `lhs + rhs` | `lhs - rhs` |
+| The left only | `lhs` | `lhs` |
+| The right only | `rhs` | `-rhs` |
+| Neither | The output is invalidated | The output is invalidated |
+
+An operand that is invalidated wakes the node; one that is silent keeps
+its value and wakes nothing. A valid zero, empty text, null or NaN is a
+value, not an invalid operand.
+
+Examples:
+    With one operand valid the sum is that operand; without the option it
+    waits for both.
+
+    ~~~hgl
+    fn sum(left: i64, right: i64) -> i64 => left +{invalid: .identity} right
+    fn plain_sum(left: i64, right: i64) -> i64 => left + right
+    fn difference(left: i64, right: i64) -> i64 => left -{invalid: .identity} right
+
+    assert eval sum(left: [7, _, 9], right: [_, 2, _]) == [7, 9, 11]
+    assert eval plain_sum(left: [7, _, 9], right: [_, 2, _]) == [_, 9, 11]
+    assert eval difference(left: [_, 7], right: [2, _]) == [-2, 5]
+    ~~~
+
+    A null command invalidates a producer's output. Where neither operand
+    is valid, the sum is invalidated too, which `watch` sees.
+
+    ~~~hgl
+    fn produce(command: i64?) -> i64 {
+        inject out
+        when valid(command) {
+            if command != null { return command }
+            invalidate(out)
+        }
+    }
+
+    fn watch(value: i64) -> bool {
+        when valid([]) { return valid(value) }
+    }
+
+    fn sum_validity(left: i64?, right: i64?) -> bool =>
+        watch(produce(left) +{invalid: .identity} produce(right))
+
+    assert eval sum_validity(left: [7, _, null, _], right: [_, 2, _, null]) ==
+        [true, true, true, false]
+    ~~~
+
+Rules:
+    OPS-9, END-4, FN-6, FN-11
+*/
+export enum InvalidInputPolicy {
+    /**
+    With one operand valid the result is that operand, negated where it is the right of a `-`, and with neither the output is invalidated.
+
+    Rules:
+        OPS-9
+    */
+    identity,
+}
+
+/**
+The level of a log record: what `log` takes, and what a logger's `level` drops records below.
+
+`log_debug`, `log_info`, `log_warning` and `log_error` each write a
+record at their level. `logger.level` is the logger's current level: a
+record below it is dropped.
+
+Examples:
+    A node logs each tick at the level its `const` parameter gives.
+
+    ~~~hgl
+    fn noted(value: i64, const level: LogLevel) -> i64 {
+        inject logger
+        when {
+            log(logger, level, "seen")
+            return value
+        }
+    }
+    assert eval noted(value: [1, _, 2], level: .debug) == [1, _, 2]
+    assert eval noted(value: [1], level: LogLevel.error) == [1]
+    ~~~
+
+Rules:
+    CAP-2, CAP-8
+*/
+export enum LogLevel {
+    /**
+    The level of a debug record, which `log_debug` writes.
+
+    Rules:
+        CAP-2
+    */
+    debug,
+    /**
+    The level of an informational record, which `log_info` writes.
+
+    Rules:
+        CAP-2
+    */
+    info,
+    /**
+    The level of a warning, which `log_warning` writes.
+
+    Rules:
+        CAP-2
+    */
+    warning,
+    /**
+    The level of an error record, which `log_error` writes.
+
+    Rules:
+        CAP-2
+    */
+    error,
+}
+
+/**
+The least by which one cycle's evaluation time follows another's: a microsecond.
+
+`earliest_start` is this much after `never`, and `latest_end` this much
+before `forever`.
+
+Examples:
+    ~~~hgl
+    assert smallest_step == 1us
+    assert earliest_start - never == smallest_step
+    ~~~
+
+Rules:
+    CRUN-3
+*/
 export const smallest_step: duration = 1us
+
+/**
+An instant before every evaluation time, at which no cycle runs: 1970-01-01T00:00:00Z.
+
+`earliest_start` is `smallest_step` after it. A wake asked of a scheduler
+at `never` is dropped, as one at any time before the evaluation time is.
+
+Examples:
+    ~~~hgl
+    assert never == @1970-01-01T00:00:00Z
+    ~~~
+
+    Each cycle's evaluation time is after `never` and before `forever`.
+
+    ~~~hgl
+    fn within_run(value: i64) -> bool {
+        inject clock
+        when { return clock.evaluation_time > never && clock.evaluation_time < forever }
+    }
+    assert eval within_run(value: [1, _, 2]) == [true, _, true]
+    ~~~
+
+Rules:
+    CRUN-3, CAP-4
+*/
 export const never: datetime = @1970-01-01T00:00:00Z
+
+/**
+The earliest instant a run starts at: one `smallest_step` after `never`.
+
+A run's start is no earlier. A simulation given no start starts at it;
+a run in real time given none starts at the host clock's present time.
+
+Examples:
+    An `eval` given no start has its first cycle at `earliest_start`.
+
+    ~~~hgl
+    fn time_of(value: i64) -> datetime {
+        inject clock
+        when { return clock.evaluation_time }
+    }
+    assert eval time_of(value: [1, _, 2]) == [earliest_start, _, earliest_start + 2us]
+    ~~~
+
+Rules:
+    CRUN-2, CRUN-3
+*/
 export const earliest_start: datetime = never + smallest_step
+
+/**
+An instant after every evaluation time, at which no cycle runs: 2262-04-11T00:00:00Z.
+
+`latest_end` is `smallest_step` before it.
+
+Examples:
+    ~~~hgl
+    assert forever == @2262-04-11T00:00:00Z
+    assert forever - latest_end == smallest_step
+    ~~~
+
+Rules:
+    CRUN-3
+*/
 export const forever: datetime = @2262-04-11T00:00:00Z
+
+/**
+The latest instant a run ends at: one `smallest_step` before `forever`.
+
+A run's end is no later. An end is exclusive, so no cycle runs at
+`latest_end` or after it.
+
+Examples:
+    A run that starts two steps before `latest_end` has two cycles, and
+    the input's later ticks are not evaluated.
+
+    ~~~hgl
+    fn time_of(value: i64) -> datetime {
+        inject clock
+        when { return clock.evaluation_time }
+    }
+    let t = latest_end - 2us
+    assert eval{start: t} time_of(value: [1, 2, 3, 4]) == [t, t + 1us]
+    ~~~
+
+Rules:
+    CRUN-2, CRUN-3
+*/
 export const latest_end: datetime = forever - smallest_step
 
-# `log` at each level (CAP-2). The native `log` and the capability types
-# are in hgl/native/capabilities.hgl.
+/**
+Write a record of `message` at the debug level.
+
+It is `log(logger, .debug, message)`. The record is dropped where
+`.debug` is below the logger's `level`. A node calls it in its hooks,
+with the logger it injects, and so does a `const fn` the node gives its
+logger to; a graph and a value function inject no logger.
+
+Args:
+    logger: The logger the record is written to.
+    message: The record's text.
+
+Examples:
+    ~~~hgl
+    fn traced(value: i64) -> i64 {
+        inject logger
+        when {
+            log_debug(logger, "value seen")
+            return value
+        }
+    }
+    assert eval traced(value: [1, _, 2]) == [1, _, 2]
+    ~~~
+
+Rules:
+    CAP-2, CAP-8, TIME-8, FN-9
+*/
 export const fn log_debug(logger: Logger, message: str) {
     log(logger, .debug, message)
 }
 
+/**
+Write a record of `message` at the info level.
+
+It is `log(logger, .info, message)`. The record is dropped where `.info`
+is below the logger's `level`. A node calls it in its hooks, with the
+logger it injects, and so does a `const fn` the node gives its logger
+to; a graph and a value function inject no logger.
+
+Args:
+    logger: The logger the record is written to.
+    message: The record's text.
+
+Examples:
+    A node notes its start in `start`, a hook as `when` is.
+
+    ~~~hgl
+    fn opened(value: i64) -> i64 {
+        inject logger
+        start { log_info(logger, "opened") }
+        when { return value }
+    }
+    assert eval opened(value: [4, 5]) == [4, 5]
+    ~~~
+
+Rules:
+    CAP-2, CAP-8, TIME-8, FN-9
+*/
 export const fn log_info(logger: Logger, message: str) {
     log(logger, .info, message)
 }
 
+/**
+Write a record of `message` at the warning level.
+
+It is `log(logger, .warning, message)`. The record is dropped where
+`.warning` is below the logger's `level`. A node calls it in its hooks,
+with the logger it injects, and so does a `const fn` the node gives its
+logger to; a graph and a value function inject no logger.
+
+Args:
+    logger: The logger the record is written to.
+    message: The record's text.
+
+Examples:
+    The node gives its logger to a `const fn`, which warns of a value
+    below zero.
+
+    ~~~hgl
+    const fn warn_if_negative(logger: Logger, value: i64) {
+        if value < 0 { log_warning(logger, "below zero") }
+    }
+
+    fn checked(value: i64) -> i64 {
+        inject logger
+        when {
+            warn_if_negative(logger, value)
+            return value
+        }
+    }
+    assert eval checked(value: [3, -1]) == [3, -1]
+    ~~~
+
+Rules:
+    CAP-2, CAP-8, TIME-8, FN-9
+*/
 export const fn log_warning(logger: Logger, message: str) {
     log(logger, .warning, message)
 }
 
+/**
+Write a record of `message` at the error level.
+
+It is `log(logger, .error, message)`. The record is dropped where
+`.error` is below the logger's `level`. A node calls it in its hooks,
+with the logger it injects, and so does a `const fn` the node gives its
+logger to; a graph and a value function inject no logger.
+
+Args:
+    logger: The logger the record is written to.
+    message: The record's text.
+
+Examples:
+    ~~~hgl
+    fn reported(value: i64) -> i64 {
+        inject logger
+        when {
+            if value == 0 { log_error(logger, "zero seen") }
+            return value
+        }
+    }
+    assert eval reported(value: [0, 1]) == [0, 1]
+    ~~~
+
+Rules:
+    CAP-2, CAP-8, TIME-8, FN-9
+*/
 export const fn log_error(logger: Logger, message: str) {
     log(logger, .error, message)
 }
@@ -87,17 +658,383 @@ fn record<T>(input: T, const key: str) {
     stop { put(global_state, key, entries) }
 }
 
-# Ask for a wake on a scheduler or an alarm (CAP-4, CAP-5). `at` is a
-# `duration` from the current evaluation time, or a `datetime`.
+/**
+Ask for a wake of the node, of its scheduler or of its alarm, after a time or at one.
+
+When the wake comes the node is evaluated, and `scheduled()` holds there:
+with a scheduler whether or not an input ticks then, and with an alarm
+only where no input does. A node calls it in its hooks, with the
+capability it injects, and so does a `const fn` the node gives it to; a
+graph and a value function inject neither.
+
+| `at` | What results |
+| --- | --- |
+| A `duration` more than zero | A wake that long after the current evaluation time |
+| `0s`, in `start` | A wake at the start, the node's first evaluation |
+| Another `duration`: zero outside `start`, or one below zero | Rejected with `schedule.duration_bounds` where the compiler sees its value, a literal or a constant; otherwise the call fails with `schedule.non_positive_duration` |
+| A `datetime` not before the current evaluation time | A wake then |
+| A `datetime` before the current evaluation time | Nothing: the wake is dropped, and nothing fails |
+
+A scheduler keeps its wakes: `next_scheduled_time` and `is_scheduled`
+read them, and `un_schedule` and `reset` cancel them. An alarm is
+cheaper and keeps no record: asking again keeps the earliest wake, and
+it takes no option.
+
+Type Args:
+    C: The capability's type: `Scheduler` or `Alarm`.
+    W: The type of `at`: `duration` or `datetime`.
+
+Args:
+    capability: The scheduler or the alarm of the node that injects it.
+    at: When the wake is asked for: a `duration` from the current
+        evaluation time, or a `datetime`.
+
+Options:
+    - `tag`: a `str?`, null when none is given. A wake asked for under a
+      tag replaces the pending wake of that tag, and
+      `un_schedule(scheduler, tag: name)` cancels it. A scheduler takes
+      it, and an alarm does not. Written
+      `schedule(scheduler, 5s, tag: "poll")`.
+    - `on_wall_clock`: a `bool`, false when none is given. In a run in
+      real time `true` times the wake on the wall clock, `clock.now`:
+      the request is measured from the later of the evaluation time and
+      `clock.now`: a `duration` asks for a wake that long after it, and a
+      `datetime` is a time on the wall clock. A wake that is then already due is not
+      dropped: it comes in the next cycle, at the later of that time and
+      the evaluation time plus `smallest_step`, and in `start` at that
+      time. In simulation it changes nothing. A scheduler takes it, and
+      an alarm does not. Written
+      `schedule(scheduler, 5s, on_wall_clock: true)`.
+
+Raises:
+    - `schedule.non_positive_duration`: a `duration` that is not
+      admitted, where the compiler does not see its value.
+
+Examples:
+    A `duration` asks for a wake that long after the evaluation time,
+    and a `datetime` for one then. Each column of the trace is one
+    microsecond.
+
+    ~~~hgl
+    fn later(value: i64) -> str {
+        inject scheduler, clock
+        when scheduled() { return "woken" }
+        when modified(value) {
+            if value == 1 {
+                schedule(scheduler, 2us)
+            } else {
+                schedule(scheduler, clock.evaluation_time + 1us)
+            }
+            return "asked"
+        }
+    }
+    assert eval later(value: [1]) == ["asked", _, "woken"]
+    assert eval later(value: [2]) == ["asked", "woken"]
+    ~~~
+
+    `0s` in `start` wakes the node's first evaluation, before its input
+    ticks.
+
+    ~~~hgl
+    fn wake_at_start(value: i64) -> str {
+        inject scheduler
+        start { schedule(scheduler, 0s) }
+        when scheduled() && valid([]) { return "scheduled" }
+        when modified(value) { return "input" }
+    }
+    assert eval wake_at_start(value: [_, 7]) == ["scheduled", "input"]
+    ~~~
+
+    A duration of zero outside `start`, known only as the node runs,
+    fails the call.
+
+    ~~~hgl
+    fn delayed(steps: i64) -> str {
+        inject scheduler
+        when scheduled() { return "woken" }
+        when modified(steps) {
+            schedule(scheduler, steps * 1us)
+            return "asked"
+        }
+    }
+    assert eval delayed(steps: [1]) == ["asked", "woken"]
+    assert raises("schedule.non_positive_duration") { eval delayed(steps: [0]) }
+    ~~~
+
+    A wake asked for before the evaluation time is dropped.
+
+    ~~~hgl
+    fn in_the_past(value: i64) -> str {
+        inject scheduler
+        when scheduled() { return "woken" }
+        when modified(value) {
+            schedule(scheduler, never)
+            return "asked"
+        }
+    }
+    assert eval in_the_past(value: [7, _, 9]) == ["asked", _, "asked"]
+    ~~~
+
+    A second wake under the same tag replaces the first.
+
+    ~~~hgl
+    fn replaced() -> bool {
+        inject scheduler
+        start {
+            schedule(scheduler, 1us, tag: "poll")
+            schedule(scheduler, 3us, tag: "poll")
+        }
+        when scheduled() { return true }
+    }
+    assert eval replaced() == [_, _, _, true]
+    ~~~
+
+    An alarm takes the same `at`.
+
+    ~~~hgl
+    fn alarmed(value: i64) -> str {
+        inject alarm
+        when scheduled() { return "woken" }
+        when modified(value) {
+            schedule(alarm, 2us)
+            return "asked"
+        }
+    }
+    assert eval alarmed(value: [1]) == ["asked", _, "woken"]
+    ~~~
+
+Rules:
+    CAP-4, CAP-5, CAP-8, TIME-8, TIME-9, FN-9
+*/
 export operator schedule<C, W>(capability: C, at: W)
 
-# The global store (CAP-6): the value under a key, whether a key holds
-# one, and a value put under a key. A call of `get` writes `V` and leaves
-# the store and the key to be inferred, as `convert<T>(value)` does. `get`
-# can fail, a dictionary's (the language's ERR-6) and the store's: it gives
-# a `result<V, error>`, which takes its form from its place (ERR-15).
+/**
+Read the value under a key, of the run's store or of a dictionary, as a read that fails where the key holds none.
+
+| `store` | `key` | Result |
+| --- | --- | --- |
+| `GlobalState`, the run's store | A `str` fixed when the graph is built | `result<V, error>`, a failure where the key holds no value |
+| `dict<K, T>` | A `K` | `result<T, error>`, a failure with code `value.missing_key` where the dictionary has no such key |
+
+The `result` takes its form from its place. Where a `result<V, error>`
+is expected it is given itself; where a `V`, the value, and a failure is
+raised; where a `V?`, the value, or null for a failure. A `let` that
+writes no type holds the result. Where `V` is itself nullable, a stored
+null is a success, told apart from an absent key.
+
+The store is read where `inject global_state` is: in a node's hooks, and
+in a graph where it is built, evaluated once then, in the order written,
+before any node of that graph starts. The key is fixed when the graph is
+built: in a hook it is written of literals, constants and the node's own
+`const` parameters. Reading the store wakes no node and is no temporal input: a node reads
+what was put before it is evaluated, and what it reads of a `put` by
+another node of the same rank in the same cycle is undefined. The key
+`"run.output"` is the run's: a program that names it is rejected when
+its graph is built.
+
+Type Args:
+    V: The value's type. A call of the store's may write it,
+        `get<i64>(global_state, "count")`, or leave it to its place. Of a
+        dictionary it is the dictionary's value type.
+    S: The type of `store`. It is inferred.
+    K: The type of `key`. It is inferred.
+
+Args:
+    store: The run's store, `global_state`, or a dictionary.
+    key: The key read.
+
+Returns:
+    The value under the key as a success, or a failure where the key
+    holds none.
+
+Raises:
+    - `value.missing_key`: where a `V` is taken of a dictionary's read and
+      the dictionary has no such key.
+
+Ticks:
+    A dictionary's read, given connections in a graph, is lifted: its
+    result ticks each time the dictionary or the key ticks with both
+    valid, the same value again included. The store's read ticks
+    nothing: in a graph it is evaluated once, where the graph is built,
+    and is given no connection (`connection.as_constant`).
+
+Validity:
+    A lifted dictionary's read needs the dictionary and the key valid.
+
+Examples:
+    A graph puts a limit in the store as it is built, and its node reads it.
+
+    ~~~hgl
+    fn limited(value: i64) -> bool {
+        inject global_state
+        when { return value <= get<i64>(global_state, "limit") }
+    }
+
+    fn with_limit(value: i64) -> bool {
+        inject global_state
+        put(global_state, "limit", 5)
+        return limited(value)
+    }
+    assert eval with_limit(value: [3, 7]) == [true, false]
+    ~~~
+
+    A key that holds nothing is a failure: null where an `i64?` is taken,
+    and the result itself in a `let` that writes no type.
+
+    ~~~hgl
+    fn absent(value: i64) -> bool {
+        inject global_state
+        when {
+            let held: i64? = get<i64>(global_state, "absent")
+            let read = get<i64>(global_state, "absent")
+            return held == null && is_err(read)
+        }
+    }
+    assert eval absent(value: [1]) == [true]
+    ~~~
+
+    A dictionary's read, in value code.
+
+    ~~~hgl
+    let prices: dict<str, f64> = ["a": 1.5, "b": 2.0]
+    let found: f64 = get(prices, "a")
+    assert found == 1.5
+    let missing: f64? = get(prices, "z")
+    assert missing == null
+    assert raises("value.missing_key") { let price: f64 = get(prices, "z") }
+    ~~~
+
+    A dictionary's read in a graph ticks with the dictionary.
+
+    ~~~hgl
+    fn price_of(book: dict<str, f64>) -> f64 => get(book, "a")
+    assert eval price_of(book: [["a": 1.0], _, ["a": 2.0, "b": 3.0]]) == [1.0, _, 2.0]
+    ~~~
+
+Rules:
+    CAP-6, CRUN-7, CRUN-8, TIME-2, TIME-8, FN-1, FN-6, FN-9, FN-11,
+    FN-12, ERR-6, ERR-15
+*/
 export operator get<V, S, K>(store: S, key: K) -> result<V, error>
+
+/**
+Whether a key of the run's store holds a value.
+
+A stored null is a value: `has` is true of a key that holds one. The
+store is asked where `inject global_state` is: in a node's hooks, and in
+a graph where it is built, evaluated once then, in the order written,
+before any node of that graph starts. The key is fixed when the graph is
+built: in a hook it is written of literals, constants and the node's own
+`const` parameters. Asking wakes no node and is no temporal input. The key `"run.output"` is
+the run's: a program that names it is rejected when its graph is built.
+
+Type Args:
+    S: The type of `store`. It is inferred.
+    K: The type of `key`. It is inferred.
+
+Args:
+    store: The run's store, `global_state`.
+    key: The key asked about.
+
+Returns:
+    True where the key holds a value, a null included.
+
+Ticks:
+    Nothing ticks: in a graph a call is evaluated once, where the graph
+    is built, and is given no connection (`connection.as_constant`).
+
+Validity:
+    It reads no connection.
+
+Examples:
+    The node asks before each `put`.
+
+    ~~~hgl
+    fn held_before(value: i64) -> bool {
+        inject global_state
+        when {
+            let before = has(global_state, "last")
+            put(global_state, "last", value)
+            return before
+        }
+    }
+    assert eval held_before(value: [3, 7]) == [false, true]
+    ~~~
+
+Rules:
+    CAP-6, CRUN-7, CRUN-8, TIME-8, FN-1, FN-9
+*/
 export operator has<S, K>(store: S, key: K) -> bool
+
+/**
+Put a value under a key of the run's store, for what is evaluated after it to read.
+
+A key keeps the type of its first value: a `put` of another type is
+rejected with `store.key_type` where the two are in one program, and
+fails otherwise. A node puts in its hooks; a graph as it is built, each
+call evaluated once then, in the order written, before any node of that
+graph starts; and an application before its run statement, which is the
+only use it has of the store. The key is fixed when the graph is built:
+in a hook it is written of literals, constants and the node's own `const`
+parameters. A `put` wakes
+no node and is no temporal input: what another node of the same rank
+reads of it in the same cycle is undefined. The key `"run.output"` is the
+run's: a program that names it is rejected when its graph is built.
+
+Type Args:
+    S: The type of `store`. It is inferred.
+    K: The type of `key`. It is inferred.
+    V: The type of `value`. It is inferred.
+
+Args:
+    store: The run's store, `global_state`.
+    key: The key the value is put under.
+    value: The value put there.
+
+Ticks:
+    Nothing ticks: in a graph a call is evaluated once, where the graph
+    is built, and is given no connection (`connection.as_constant`).
+
+Validity:
+    It reads no connection.
+
+Examples:
+    `start` gives the count a value where it has none, and each input
+    tick adds one.
+
+    ~~~hgl
+    fn counted(value: i64) -> i64 {
+        inject global_state
+        start {
+            if !has(global_state, "count") { put(global_state, "count", 0) }
+        }
+        when {
+            put(global_state, "count", get<i64>(global_state, "count") + 1)
+            return get<i64>(global_state, "count")
+        }
+    }
+    assert eval counted(value: [5, _, 5]) == [1, _, 2]
+    ~~~
+
+    A graph puts a value as it is built, before its node starts.
+
+    ~~~hgl
+    fn read_label(value: i64) -> str {
+        inject global_state
+        when { return get<str>(global_state, "label") }
+    }
+
+    fn labelled(value: i64) -> str {
+        inject global_state
+        put(global_state, "label", "bid")
+        return read_label(value)
+    }
+    assert eval labelled(value: [1, _, 2]) == ["bid", _, "bid"]
+    ~~~
+
+Rules:
+    CAP-6, CRUN-7, CRUN-8, TIME-2, TIME-8, FN-1, FN-9, UNIT-14
+*/
 export operator put<S, K, V>(store: S, key: K, value: V)
 
 # The symbol operators. Syntax binds each identity (the language's generics
