@@ -130,10 +130,11 @@ clock and offset at the new instant.
 A tenor of months and days moves a date by its months first, to the same
 day of the month or the last day of a shorter month, and then by its days.
 Only the result is held to the `date` range: the months alone may pass
-its end where the days bring the result back. A tenor of n business days
-starts from the business day on or after the date and counts n business
-days on, so `day + 0B` is the business day on or after `day`. The date is
-always on the left of a tenor.
+its end where the days bring the result back. A tenor of n business
+days, n not below zero, starts from the business day on or after the
+date and counts n business days on, so `day + 0B` is the business day on
+or after `day`. A count below zero moves the other way: `day + (-tenor)`
+is `day - tenor`. The date is always on the left of a tenor.
 
 Type Args:
     L: The left operand's type.
@@ -217,6 +218,7 @@ Examples:
     assert @2026-01-31 + 1M1D == @2026-03-01
     assert @9999-12-15 + (1M - 30D) == @9999-12-16
     assert @2026-01-03 + 0B == @2026-01-05
+    assert @2026-01-03 + (-1B) == @2026-01-01
     assert @2026-01-31 +{rolling_rule: Rolling.following} 1M == @2026-03-02
     ~~~
 
@@ -312,10 +314,11 @@ wall clock and offset at the new instant. To negate one operand, use
 
 A date less a tenor of months and days is the date plus its negation:
 back by the months first, to the same day of the month or the last day
-of a shorter month, and then by the days. A date less n business days
-starts from the business day on or before the date and counts n business
-days back, so `day - 0B` is the business day on or before `day`, which is
-not `day + 0B`.
+of a shorter month, and then by the days. A date less n business days,
+n not below zero, starts from the business day on or before the date and
+counts n business days back, so `day - 0B` is the business day on or
+before `day`, which is not `day + 0B`. A count below zero moves the other
+way: `day - (-tenor)` is `day + tenor`.
 
 Type Args:
     L: The left operand's type.
@@ -400,6 +403,7 @@ Examples:
     assert @2026-03-31 - 1M == @2026-02-28
     assert @2026-01-31 - 2W == @2026-01-17
     assert @2026-01-03 - 0B == @2026-01-02
+    assert @2026-01-03 - (-1B) == @2026-01-06
     assert @2026-03-31 -{rolling_rule: Rolling.preceding} 1M == @2026-02-27
     ~~~
 
