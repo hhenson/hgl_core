@@ -1,6 +1,27 @@
 module core part output
 
-# OUT-1 and OUT-2: write text to the named stream without adding a line end.
-export enum Stream { out, err }
+/**
+Select a process output stream (OUT-1).
 
+Notes:
+    See the Reference in core's formatting specification.
+*/
+export enum Stream {
+    /** Standard output. */
+    out,
+    /** Standard error. */
+    err,
+}
+
+/**
+Write exactly the given text, with no added line ending (OUT-1, OUT-2).
+
+Args:
+    text: The text to write.
+    stream: The process stream. The default is .out.
+    flush: Flush the stream before returning. The default is false.
+
+Notes:
+    See the Reference in core's formatting specification.
+*/
 export native const fn write(text: str, stream: Stream = .out, flush: bool = false)

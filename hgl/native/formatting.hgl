@@ -1,16 +1,55 @@
 module core part formatting
 
-# FMT-1 to FMT-5: a constant format string and the values that fill its places.
+/**
+Fill the places in a constant format string (FMT-1 to FMT-5).
+
+Args:
+    fmt_str: The format string whose places the compiler checks.
+    args: Positional values in the order the places use them.
+    kwargs: Named values, found by the written place names.
+
+Returns:
+    The text with each place filled.
+
+Notes:
+    See the Reference in core's formatting specification.
+*/
 export operator format<...As, ...Ks>(
     const fmt_str: str, args: ...As, kwargs: ...{Ks}) -> str
 
+/**
+Format values immediately in value code (FMT-7, FMT-9).
+
+Args:
+    not_valid: Text for a Marked value that is absent. The default is "<not valid>".
+    ticked: Prefix for a marked place whose value ticked. The default is "*".
+    fmt_str: The constant format string.
+    args: Values for positional places.
+    kwargs: Values for named places.
+
+Returns:
+    The formatted text.
+
+Notes:
+    See the Reference in core's formatting specification.
+*/
 native impl const fn format<...As, ...Ks>{
     const not_valid: str = "<not valid>",
     const ticked: str = "*",
 }(const fmt_str: str, args: ...As, kwargs: ...{Ks}) -> str
 
-# FMT-7 and FMT-9: the value to show and whether it ticked.
+/**
+An optional formatting value and its tick flag (FMT-7, FMT-9).
+
+Type Args:
+    T: The type formatted when the value is present.
+
+Notes:
+    See the Reference in core's formatting specification.
+*/
 export struct Marked<T> {
+    /** The value, or null to use the not_valid option. */
     value: T?
+    /** Whether a marked place writes the ticked prefix. */
     ticked: bool
 }
