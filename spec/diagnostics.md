@@ -1,8 +1,7 @@
 # Diagnostics
 
-Status: DBG-1 through DBG-9 are agreed. What DBG-4 and DBG-6 quote of a
-format string, `{engine_time}`, `{wall_time}` and `{*}`, is spelled as
-FMT-9 proposes. Nothing here is declared in `hgl/` yet.
+Status: DBG-1 through DBG-9 are agreed. Nothing here is declared in `hgl/`
+yet.
 
 ## Scope and API
 
@@ -51,7 +50,9 @@ impl const fn debug_print<...As, ...Ks>(
   arguments it writes its line once, when the graph starts.
 - **DBG-3.** Called in a node's handler or in a value function, it writes
   its line where it is executed, as a print does in any language, with the
-  values its arguments have there.
+  values its arguments have there. Its format string asks for
+  `{wall_time}` there, and for neither `{engine_time}` nor a mark, which
+  are of a graph (FMT-9).
 - **DBG-4.** In a graph a call takes options. `sample` writes one line in
   every that many: `{sample: 10}` the tenth, the twentieth, and so on; it
   is 1 or more. `print_delta` says whether a collection that ticked is
