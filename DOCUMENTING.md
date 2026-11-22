@@ -183,9 +183,10 @@ Args:
     input: The endpoint asked about: an input, or a child of one.
 
 Returns:
-    True where the endpoint holds a value. For a window, true while it
-    holds one. For a `ref` parameter, true once it has been given a
-    designation, whatever its target holds.
+    True where the endpoint holds a value. For a window, true once a
+    value has arrived, and still true when exits have emptied it. For a
+    `ref` parameter, true once it has been given a designation, whatever
+    its target holds.
 
 Examples:
     `value` is silent, then 7, then silent, while `probe` ticks in each
