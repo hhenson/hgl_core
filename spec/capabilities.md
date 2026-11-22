@@ -62,8 +62,8 @@ form, `get(dictionary, key, fallback)` (ERR-6), which is not declared in
   language's TIME-8, which rejects one the compiler sees). One asked for at a
   `datetime` before the current evaluation time, or at it outside `start`,
   is dropped: there is no wake, and no failure. In `start` one at the
-  current evaluation time asks for a wake: the node wakes in the run's
-  first cycle. `on_wall_clock: true` times a wake on the wall
+  current evaluation time asks for a wake at the start, the node's first
+  evaluation, as `0s` does. `on_wall_clock: true` times a wake on the wall
   clock, `clock.now`, in a run in real time. The time the request is
   measured from is then the later of the evaluation time and `clock.now`: a
   `duration` asks for a wake that long after it, and a `datetime` is a time
