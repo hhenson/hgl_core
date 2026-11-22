@@ -11,9 +11,13 @@ These HGL cases check the behavior of core's operators, portable bodies and eval
 | `recorded_ticks` | Absolute recording times for published nullable deltas |
 | `record_eval` | Empty recordings and retention of earlier recorded deltas |
 | `conversions` | Each conversion: rounding, a number as text and text as a number, and what fails |
+| `formatting` | Places, typed specifiers, conversion and marked values |
+| `output` | Output to each process stream and publications from a writing handler |
 | `tenors` | Tenor arithmetic, text, calendar extension and rolling rules |
 | `zoned_datetimes` | A duration added to a zoned datetime, and equality by instant and zone or as UTC |
 
 Run `hgl test hgl tests/implementation --target hgraph` from the core checkout
 with that target installed. Shared runtime observations live in
-[the conformance suite](../conformance/README.md).
+[the conformance suite](../conformance/README.md). The output cases describe
+the expected stream bytes for an external harness. A trace assertion in
+those cases observes the publications.

@@ -1,6 +1,7 @@
 # Output
 
-Status: OUT-1 and OUT-2 are agreed. Nothing here is declared in `hgl/` yet.
+Status: OUT-1 and OUT-2 are agreed. The native is declared in
+[`hgl/native/output.hgl`](../hgl/native/output.hgl).
 
 ## Scope and API
 
@@ -48,5 +49,6 @@ fn counted(value: i64) -> i64 {
 ```
 
 Each time the handler runs it writes a line to standard output, which is
-flushed, and one to standard error. No conformance case observes them: a
-trace does not see either stream.
+flushed, and one to standard error. The
+[implementation cases](../tests/implementation/output.hgl) observe the
+counts and give the expected output on each stream.

@@ -1,7 +1,9 @@
 # Formatting
 
 Status: FMT-1 through FMT-9 are agreed, but for the sentence of FMT-9 that
-begins "Proposed:". Nothing here is declared in `hgl/` yet.
+begins "Proposed:". The operator, its value candidate and `Marked` are
+declared in [`hgl/native/formatting.hgl`](../hgl/native/formatting.hgl).
+The graph candidate is specified for a later implementation step.
 
 ## Scope and API
 
@@ -161,4 +163,5 @@ argument has (`format.argument`); `format("fill", qty)`, an argument no
 place takes (`format.unused`); `format("at {:.2f}", qty)` with `qty` an
 `i64`, a precision an integer does not admit (`format.specifier`); and
 `format("at {", price)`, a brace that opens no place (`format.syntax`).
-No conformance case is claimed.
+The [implementation cases](../tests/implementation/formatting.hgl)
+exercise the value candidate.

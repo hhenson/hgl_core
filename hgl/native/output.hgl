@@ -1,0 +1,6 @@
+module core part output
+
+# OUT-1 and OUT-2: write text to the named stream without adding a line end.
+export enum Stream { out, err }
+
+export native const fn write(text: str, stream: Stream = .out, flush: bool = false)

@@ -1,0 +1,107 @@
+module core_implementation part formatting
+
+const fn filled(qty: i64, price: f64) -> str =>
+    format("fill {} at {:.2f}", qty, price)
+
+const fn padded(level: i64) -> str =>
+    format("level {level:>3} of {{book}}", level: level)
+
+struct OrderId {
+    number: i64
+}
+
+impl const fn convert(value: OrderId) -> str => "order " + convert<str>(value.number)
+
+/**
+Positional and named arguments fill their places while doubled braces
+give literal braces.
+
+:Rules: FMT-1, FMT-2, FMT-3
+:Status: agreed
+*/
+test format_places {
+    assert filled(10, 101.5) == "fill 10 at 101.50"
+    assert padded(7) == "level   7 of {book}"
+    assert format("fill {} at {price:.2f}", 10, price: 101.5) == "fill 10 at 101.50"
+    assert format("{{no places}}") == "{no places}"
+}
+
+/**
+The scalar types stay typed when their specifiers are applied.
+
+:Rules: FMT-4, FMT-5, OPS-6
+:Status: agreed
+*/
+test format_scalars {
+    assert format("{:+d} {:04x}", 42, 42) == "+42 002a"
+    assert format("{:.2f} {:.2e}", 1.25, 1.25) == "1.25 1.25e+00"
+    assert format("{:>5} {:.2}", "ab", "abcd") == "   ab ab"
+    assert format("{:>6} {:d}", true, false) == "  true 0"
+    assert format("{}", 1.25) == convert<str>(1.25)
+    assert format("{}", "a b") == "a b"
+}
+
+/**
+An explicit chrono specifier applies to each supported temporal type.
+
+:Rules: FMT-4
+:Status: agreed
+*/
+test format_temporal_values {
+    assert format("{:%Y-%m-%d} {:%d/%m/%Y}", @2026-11-21, @2026-11-21) ==
+        "2026-11-21 21/11/2026"
+    assert format("{:%H:%M} {:%M:%H}", @09:30:00, @09:30:00) == "09:30 30:09"
+    assert format("{:%Y-%m-%d %H:%M} {:%d/%m/%Y %H:%M}",
+        @2026-11-21T09:30:00Z, @2026-11-21T09:30:00Z) ==
+        "2026-11-21 09:30 21/11/2026 09:30"
+    assert format("{:%H:%M} {:%M:%H}", 90m, 90m) == "01:30 30:01"
+}
+
+/**
+A value of a program-defined type uses its conversion to text.
+
+:Rules: FMT-5, OPS-4
+:Status: agreed
+*/
+test format_converts_a_user_type {
+    assert format("id: {}", OrderId(number: 7)) == "id: order 7"
+}
+
+/**
+A Marked value uses its payload's specifier, or the missing value text.
+
+:Rules: FMT-7
+:Status: agreed
+*/
+test format_marked_payloads {
+    let present = Marked<f64>(value: 101.5, ticked: true)
+    let absent = Marked<f64>(value: null, ticked: false)
+    assert format("mid {:.1f}", present) == "mid 101.5"
+    assert format("mid {:.1f}", absent) == "mid <not valid>"
+    assert format{not_valid: "missing"}("mid {:.1f}", absent) == "mid missing"
+}
+
+/**
+A mark on a Marked value uses the configured text where it ticked.
+
+:Rules: FMT-7, FMT-9
+:Status: proposed
+*/
+test format_marks_ticked_payloads {
+    let ticked = Marked<f64>(value: 101.5, ticked: true)
+    let unchanged = Marked<f64>(value: 101.5, ticked: false)
+    assert format("mid {*:.1f}", ticked) == "mid *101.5"
+    assert format("mid {*:.1f}", unchanged) == "mid 101.5"
+    assert format{ticked: "!"}("mid {*mid:.1f}", mid: ticked) == "mid !101.5"
+}
+
+/**
+The wall clock placeholder accepts a datetime specifier in value code.
+A literal percent leaves the assertion independent of the current time.
+
+:Rules: FMT-4, FMT-9
+:Status: agreed
+*/
+test format_wall_time_in_value_code {
+    assert format("{wall_time:%%}") == "%"
+}

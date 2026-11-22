@@ -1,0 +1,16 @@
+module core part formatting
+
+# FMT-1 to FMT-5: a constant format string and the values that fill its places.
+export operator format<...As, ...Ks>(
+    const fmt_str: str, args: ...As, kwargs: ...{Ks}) -> str
+
+native impl const fn format<...As, ...Ks>{
+    const not_valid: str = "<not valid>",
+    const ticked: str = "*",
+}(const fmt_str: str, args: ...As, kwargs: ...{Ks}) -> str
+
+# FMT-7 and FMT-9: the value to show and whether it ticked.
+export struct Marked<T> {
+    value: T?
+    ticked: bool
+}
