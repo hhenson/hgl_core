@@ -70,21 +70,22 @@ test format_time_directives {
 }
 
 /**
-Precision before a chrono directive sets the fractional digits in seconds.
-The default is six digits.
+Seconds omit the fraction unless the directive gives a precision.
+A millisecond display drops finer digits.
 
 :Rules: FMT-4
-:Status: proposed
+:Status: agreed
 */
 test format_second_fractions {
     let time_of_day = @21:07:08.250987
-    assert format("{:.0%H:%M:%S}", time_of_day) == "21:07:08"
-    assert format("{:.3%H:%M:%S}", @21:07:08.250000) == "21:07:08.250"
-    assert format("{:.6%T}", time_of_day) == "21:07:08.250987"
-    assert format("{:.9%T}", time_of_day) == "21:07:08.250987000"
-    assert format("{:%S}", time_of_day) == "08.250987"
-    assert format("{:.3%S}", @2026-11-22T21:07:08.250000Z) == "08.250"
-    assert format("{:.3%S}", 1s250ms) == "01.250"
+    assert format("{:%H:%M:%S.0}", time_of_day) == "21:07:08"
+    assert format("{:%H:%M:%S.3}", time_of_day) == "21:07:08.250"
+    assert format("{:%T.6}", time_of_day) == "21:07:08.250987"
+    assert format("{:%T.9}", time_of_day) == "21:07:08.250987000"
+    assert format("{:%S} {:%T}", time_of_day, time_of_day) == "08 21:07:08"
+    assert format("{:%S.3/%S.6}", time_of_day) == "08.250/08.250987"
+    assert format("{:%S.3}", @2026-11-22T21:07:08.250987Z) == "08.250"
+    assert format("{:%S.3}", 1s250ms987us) == "01.250"
 }
 
 /**
@@ -118,7 +119,7 @@ test format_default_durations {
 A negative duration begins with a minus.
 
 :Rules: FMT-5
-:Status: proposed
+:Status: agreed
 */
 test format_default_negative_duration {
     assert format("{}", -90m) == "-1h30m"
@@ -152,7 +153,7 @@ test format_default_composite_values {
 Composite text escapes strings as HGL literals and writes a null part as null.
 
 :Rules: FMT-5, OPS-4
-:Status: proposed
+:Status: agreed
 */
 test format_default_escaped_and_null_parts {
     let strings: list<str> = ["a\n\"b\\c"]
