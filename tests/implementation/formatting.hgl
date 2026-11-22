@@ -70,10 +70,28 @@ test format_time_directives {
 }
 
 /**
+Precision before a chrono directive sets the fractional digits in seconds.
+The default is six digits.
+
+:Rules: FMT-4
+:Status: proposed
+*/
+test format_second_fractions {
+    let time_of_day = @21:07:08.250987
+    assert format("{:.0%H:%M:%S}", time_of_day) == "21:07:08"
+    assert format("{:.3%H:%M:%S}", @21:07:08.250000) == "21:07:08.250"
+    assert format("{:.6%T}", time_of_day) == "21:07:08.250987"
+    assert format("{:.9%T}", time_of_day) == "21:07:08.250987000"
+    assert format("{:%S}", time_of_day) == "08.250987"
+    assert format("{:.3%S}", @2026-11-22T21:07:08.250000Z) == "08.250"
+    assert format("{:.3%S}", 1s250ms) == "01.250"
+}
+
+/**
 Dates, times and UTC instants use ISO text. A nonzero fraction has six digits.
 
 :Rules: FMT-5
-:Status: proposed
+:Status: agreed
 */
 test format_default_temporal_values {
     assert format("{}", @2026-11-22) == "2026-11-22"
@@ -84,17 +102,25 @@ test format_default_temporal_values {
 }
 
 /**
-Duration text uses whole numbers in the largest units, with a leading minus
-for a negative duration.
+Duration text uses whole numbers in the largest units.
 
 :Rules: FMT-5
-:Status: proposed
+:Status: agreed
 */
 test format_default_durations {
     assert format("{}", 90m) == "1h30m"
     assert format("{}", 1500ms) == "1s500ms"
     assert format("{}", 250us) == "250us"
     assert format("{}", 0s) == "0s"
+}
+
+/**
+A negative duration begins with a minus.
+
+:Rules: FMT-5
+:Status: proposed
+*/
+test format_default_negative_duration {
     assert format("{}", -90m) == "-1h30m"
 }
 
@@ -104,24 +130,33 @@ struct Point {
 }
 
 /**
-Collection and struct text uses HGL spellings, including string escapes.
-Every field appears in declaration order.
+Collection and struct text uses HGL spellings. Every field appears in
+declaration order.
 
 :Rules: FMT-5, OPS-4, CTRL-12
-:Status: proposed
+:Status: agreed
 */
 test format_default_composite_values {
     let numbers: list<i64> = [1, 2]
     let members: set<i64> = [1, 2]
     let dictionary: dict<str, i64> = ["a": 1]
-    let strings: list<str> = ["a\n\"b\\c"]
-    let absent: tuple<i64?, str> = (null, "a")
     assert format("{}", numbers) == "[1, 2]"
     let set_text = format("{}", members)
     assert set_text == "[1, 2]" || set_text == "[2, 1]"
     assert format("{}", dictionary) == "[\"a\": 1]"
     assert format("{}", (1, "a")) == "(1, \"a\")"
     assert format("{}", Point(y: 2.0, x: 1.0)) == "Point(x: 1.0, y: 2.0)"
+}
+
+/**
+Composite text escapes strings as HGL literals and writes a null part as null.
+
+:Rules: FMT-5, OPS-4
+:Status: proposed
+*/
+test format_default_escaped_and_null_parts {
+    let strings: list<str> = ["a\n\"b\\c"]
+    let absent: tuple<i64?, str> = (null, "a")
     assert format("{}", strings) == "[\"a\\n\\\"b\\\\c\"]"
     assert format("{}", absent) == "(null, \"a\")"
 }
@@ -154,7 +189,7 @@ test format_marked_payloads {
 A mark on a Marked value uses the configured text where it ticked.
 
 :Rules: FMT-7, FMT-9
-:Status: proposed
+:Status: agreed
 */
 test format_marks_ticked_payloads {
     let ticked = Marked<f64>(value: 101.5, ticked: true)

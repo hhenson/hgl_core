@@ -1,8 +1,9 @@
 # Formatting
 
-Status: FMT-1 through FMT-9 are agreed. Paragraphs and sentences beginning
-"Proposed:" are proposed. The operator, its value candidate and `Marked` are
-declared in [`hgl/native/formatting.hgl`](../hgl/native/formatting.hgl).
+Status: FMT-1 through FMT-9 are agreed. The sentences beginning
+"Proposed:" in FMT-4 and FMT-5 are proposed. The operator, its value
+candidate and `Marked` are declared in
+[`hgl/native/formatting.hgl`](../hgl/native/formatting.hgl).
 The graph candidate is specified for a later implementation step.
 
 ## Scope and API
@@ -70,12 +71,18 @@ export struct Marked<T> {
   the specifiers it admits for an integer, a floating-point number, a
   string and a boolean, and `date`, `time`, `datetime` and `duration`,
   with those it admits for a date and a time, `{:%Y-%m-%d}`. A value of
-  any other type takes `{}` alone.
-
-  Proposed: A `time` takes `%H`, `%M`, `%S`, `%I`, `%p`, `%R` and `%T`
-  with text between them. A directive that reads a date rejects
-  (`format.specifier`). A `date` takes date directives and rejects time
-  directives with the same code.
+  any other type takes `{}` alone. The seconds are written with their
+  fraction, to the millisecond, the microsecond or the nanosecond, as
+  that library writes them: with `%S`, and `%T`, which ends in it.
+  Proposed: a precision before the directives gives the digits of that
+  fraction, `{:.3%H:%M:%S}` for milliseconds, `09:30:00.250`, `.6` for
+  microseconds, `.9` for nanoseconds and `.0` for none; with no
+  precision there are six, the resolution of a `time`, a `datetime` and
+  a `duration`. It is taken out where the call is compiled, and the
+  library is given the value at that precision. Proposed: a `time`
+  admits the directives that read the hour, the minute and the second,
+  `%H`, `%M`, `%S`, `%I`, `%p`, `%R` and `%T`, and a `date` those that
+  read a date; one of the other's rejects (`format.specifier`).
 - **FMT-5.** With no specifier a `str` is written as its characters, with
   no quotes, and an `i64`, an `f64` and a `bool` as `convert<str>` of each
   gives ([scalar operators](scalar-operators.md), OPS-6). A value of a type
@@ -83,27 +90,21 @@ export struct Marked<T> {
   has that conversion, core's or a candidate the program declares for a
   type of its own, and one that has none rejects where the call is
   compiled. A `date`, a `time` and a `datetime` with no specifier are
-  written in their ISO 8601 form, and a `duration` as its literal is.
+  written in their ISO 8601 form: `2026-11-22`; `09:30:00`, and where
+  the fraction of a second is not zero with its six digits,
+  `09:30:00.250000`; and `2026-11-22T09:30:00Z`, a `datetime` being an
+  instant in UTC, with its fraction as a `time` has it. A `duration` is
+  written as its literal is, in its largest units, a whole number of
+  each unit that is not zero: `1h30m`, `1s500ms`, and `0s` for none.
   Core gives `convert<str>` for a list, a set, a dictionary, a tuple and
-  a struct, in a form that shows its parts, the strings among them in
-  quotes, for a person to read (OPS-4).
-
-  Proposed: A `date` gives `2026-11-22` and a `time` gives `09:30:00`.
-  A nonzero fraction of a second gives six digits, `09:30:00.250000`.
-  A `datetime` gives its UTC instant as `2026-11-22T09:30:00Z` with
-  the fraction as for a `time`.
-
-  Proposed: A `duration` gives its literal in the largest units, a whole
-  number for each nonzero unit. Examples are `1h30m`, `1s500ms` and
-  `250us`. Zero gives `0s`. A negative duration begins with `-`.
-
-  Proposed: A collection or struct is written as in HGL source. Each
-  part uses the same rules, with a `str` quoted and escaped and none
-  written as `null`. A list and a set use `[1, 2]`, a dictionary uses
-  `["a": 1]`, a tuple uses `(1, "a")`, and a struct uses
-  `Point(x: 1.0, y: 2.0)` with every field in declaration order. A set
-  or dictionary follows the order of a `for` over it. CTRL-12 leaves
-  those traversal orders unspecified.
+  a struct (OPS-4), which writes the value as a program writes it, each
+  part by this rule and a `str` among them in quotes: `[1, 2]` for a
+  list and for a set, `["a": 1]`, `(1, "a")`, and
+  `Point(x: 1.0, y: 2.0)` with every field in the order declared.
+  Proposed: a `duration` below zero is written after a `-`; a set and a
+  dictionary are written in the order a `for` over them visits; a part
+  that is null is written `null`; and a `str` among the parts is written
+  with the escapes its literal has.
 - **FMT-6.** `format` is an operator with a candidate for value code and
   one for a graph. Called where a graph is built its result is a text
   that ticks: in each cycle in which an argument ticks, once every
@@ -140,12 +141,12 @@ export struct Marked<T> {
   gives another, before its value, where its argument ticked in the
   cycle. The evaluation time and a mark are of a graph, where there is a
   cycle and an argument ticks: a call where a graph is built asks for
-  them. `{wall_time}` is asked for anywhere. Proposed: in value code a
-  call that asks for `{engine_time}` rejects (`format.argument`), and so
-  does one that marks a place whose argument is no `Marked`
-  (`format.specifier`); a mark on a `Marked` is written there where its
-  `ticked` is true, which is how the candidate for a graph gives the
-  native what ticked (FMT-8).
+  them. `{wall_time}` is asked for anywhere. In value code a call that
+  asks for `{engine_time}` rejects (`format.argument`), and so does one
+  that marks a place whose argument is no `Marked` (`format.specifier`);
+  a mark on a `Marked` is written there where its `ticked` is true,
+  which is how the candidate for a graph gives the native what ticked
+  (FMT-8).
 
 ## Examples
 
