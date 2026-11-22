@@ -62,10 +62,12 @@ form, `get(dictionary, key, fallback)` (ERR-6), which is not declared in
   not admitted, a negative one in `start` included, fails the call (the
   language's TIME-8, which rejects one the compiler sees). One asked for at a
   `datetime` before the current evaluation time is dropped: there is no
-  wake, and no failure. One at the current evaluation time is asked for in
-  `start` alone, where it asks for a wake at the start, the node's first
-  evaluation, as `0s` does. Proposed: outside `start` it is dropped, as an
-  earlier one is. `on_wall_clock: true` times a wake on the wall
+  wake and no failure, and the run's log has a warning of it. One at the
+  current evaluation time is asked for in `start` alone, where it asks
+  for a wake at the start, the node's first evaluation, as `0s` does;
+  outside `start` it is dropped with that warning, as an earlier one is.
+  Proposed: a node is warned of once in a run, at its first dropped wake,
+  and where it had more, their count is logged when the node stops. `on_wall_clock: true` times a wake on the wall
   clock, `clock.now`, in a run in real time. The time the request is
   measured from is then the later of the evaluation time and `clock.now`: a
   `duration` asks for a wake that long after it, and a `datetime` is a time
