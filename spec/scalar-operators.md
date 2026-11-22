@@ -4,7 +4,9 @@ Status: agreed operator domains for the scalar types other than numbers, the
 rounding and range of a duration or an instant result, the comparison
 outcome type, the domains of the conversion operator, what each conversion
 yields, its options, and generic temporal identity handling. Runtime
-conformance execution and the native ABI remain pending.
+conformance execution and the native ABI remain pending. The sentences of
+OPS-2 and OPS-7 that begin "Proposed:" are proposed. The order of `bytes`
+and the conversions of an enum are not declared in `hgl/` yet.
 
 ## Contract
 
@@ -24,8 +26,13 @@ owns symbol syntax, precedence, and phase checking. An instant is a
   zero; a count below zero is an HGL error with code
   `numeric.out_of_range`.
 - **OPS-2.** `<`, `<=`, `>`, `>=`, and `<=>` compare two values of one type
-  among `str`, `bool`, `date`, `time`, `datetime`, `civil_datetime`, and
-  `duration`. `==` and `!=` compare two values of one type. The zoned types
+  among `str`, `bytes`, `bool`, `date`, `time`, `datetime`,
+  `civil_datetime`, and `duration`. Text is ordered by code point, so
+  `"B" < "a"`, and `bytes` by unsigned octet (the language's TYPE-1), as
+  text is. `false` is below `true`. An earlier `date`, `time`, or
+  `datetime` is below a later one. A `duration` is ordered by its signed
+  length, so `-5m < 0s`. Proposed: an earlier `civil_datetime` is below a
+  later one. `==` and `!=` compare two values of one type. The zoned types
   have no order. Two `zoned_datetime` values are equal when their instants
   and their zone names both are; compared as UTC, they are equal when their
   instants are (the language's TYPE-2). The option is `utc`, a `bool`
@@ -64,7 +71,8 @@ owns symbol syntax, precedence, and phase checking. An instant is a
   an error or a sentinel value. A conversion can fail: an `f64` that is NaN,
   an infinity, or outside `i64` once rounded; text that is not what the
   third table reads as the type asked for; bytes that are not well-formed
-  UTF-8. Its error policy is
+  UTF-8. Proposed: an `i64` that is no member's number fails its
+  conversion to an enum. Its error policy is
   checked wherever it can be: the conversion then returns `result<T, error>`,
   and a failure is an Err, ordinary result data (NUM-10). A policy under
   which a failure escapes instead is an option.
@@ -122,7 +130,7 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 
 | `convert` from | To |
 | --- | --- |
-| `i64` | `f64`, `bool`, `str` |
+| `i64` | `f64`, `bool`, `str`, an enum |
 | `f64` | `i64`, `bool`, `str` |
 | `bool` | `i64`, `f64`, `str` |
 | `str` | `i64`, `f64`, `bool`, `bytes` |
@@ -130,6 +138,7 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 | `date` | `datetime` |
 | `datetime` | `date` |
 | `tenor` | `str` |
+| An enum | `i64`, `str` |
 | A list, a set, a dictionary, a tuple, a struct | `str` |
 
 | Conversion | Yields |
@@ -148,6 +157,9 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 | `date` to `datetime` | The start of that date, in UTC |
 | `datetime` to `date` | The date of the instant, in UTC |
 | `tenor` to `str` | Its text, in its largest units (TEN-9) |
+| An enum to `str` | The member's name: `"buy"` for `Side.buy` (the language's TYPE-7) |
+| An enum to `i64` | The member's number |
+| `i64` to an enum | The member of that number |
 | A list, a set, a dictionary, a tuple or a struct to `str` | The value as a program writes it, a `str` among its parts in quotes: `[1, 2]`, `["a": 1]`, `(1, "a")`, `Point(x: 1.0, y: 2.0)` ([formatting](formatting.md), FMT-5) |
 
 | Option | Applies to | Members | Default |

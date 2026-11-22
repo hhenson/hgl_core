@@ -42,8 +42,9 @@ Core owns numerical domains, public configuration, results, and errors.
   `==` accepts absolute (`abs`) and relative (`rel`) tolerance, each defaulting
   to zero. For finite operands, closeness is the symmetric condition below.
   Tolerances must be finite and nonnegative. Configured `!=` is the complement
-  under the same options. An invalid tolerance is an HGL error under the
-  ordinary phase rules.
+  under the same options. An invalid tolerance, negative or not finite, is
+  an HGL error with code `numeric.invalid_tolerance`, under the ordinary
+  phase rules.
 
 ```text
 abs(a - b) <= max(abs_tolerance,
