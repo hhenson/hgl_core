@@ -23,9 +23,12 @@ read-only properties, and the operations on it.
 The types and the native operations are declared in
 `hgl/native/capabilities.hgl`; `LogLevel`, the `log_*` helpers, and the
 operators `schedule`, `get`, `has`, and `put` in `hgl/core/core.hgl`. Each
-of the four is an operator: its name has a meaning beyond one capability,
-and other candidates join it as they are declared. `get` already has the
-dictionary's (the language's ERR-6). Core also gives its three-argument
+of the four is an operator: its name has a meaning beyond one capability.
+`schedule` states its domain, a scheduler or an alarm and a duration or a
+datetime, `requires C in {Scheduler, Alarm} && W in {duration, datetime}`
+(the language's GEN-3, TIME-8), and takes no other candidate. Other
+candidates join `get`, `has`, and `put` as they are declared: `get`
+already has the dictionary's (the language's ERR-6). Core also gives its three-argument
 form, `get(dictionary, key, fallback)` (ERR-6), which is not declared in
 `hgl/` yet.
 
