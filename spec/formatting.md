@@ -1,7 +1,7 @@
 # Formatting
 
-Status: FMT-1 through FMT-9 are agreed, but for each sentence that begins
-"Proposed:". Nothing here is declared in `hgl/` yet.
+Status: FMT-1 through FMT-9 are agreed, but for the sentence of FMT-9 that
+begins "Proposed:". Nothing here is declared in `hgl/` yet.
 
 ## Scope and API
 
@@ -75,11 +75,11 @@ export struct Marked<T> {
   FMT-4 does not name is written as `convert<str>` of it gives: the type
   has that conversion, core's or a candidate the program declares for a
   type of its own, and one that has none rejects where the call is
-  compiled. Proposed: a `date`, a `time` and a `datetime` with no
-  specifier are written in their ISO 8601 form, and a `duration` as its
-  literal is. Proposed: core gives `convert<str>` for a list, a set, a
-  dictionary, a tuple and a struct, in a form that shows its parts, the
-  strings among them in quotes, for a person to read.
+  compiled. A `date`, a `time` and a `datetime` with no specifier are
+  written in their ISO 8601 form, and a `duration` as its literal is.
+  Core gives `convert<str>` for a list, a set, a dictionary, a tuple and
+  a struct, in a form that shows its parts, the strings among them in
+  quotes, for a person to read (OPS-4).
 - **FMT-6.** `format` is an operator with a candidate for value code and
   one for a graph. Called where a graph is built its result is a text
   that ticks: in each cycle in which an argument ticks, once every
@@ -107,16 +107,21 @@ export struct Marked<T> {
 - **FMT-9.** The evaluation time, the time of day, and a mark on what
   ticked are asked for in the format string itself. Where the call is
   compiled they are taken out of it, and the rest is given to the fmt
-  library with what they add. Proposed, as to how each is spelled:
-  `{engine_time}` is the evaluation time of the cycle the text is made
-  in, written where a graph is built, and `{wall_time}` the time of day
-  of the machine, written anywhere; each is a `datetime`, takes a
-  specifier as one does, and is no name a call gives an argument under.
-  A `*` after a place's opening brace marks the place, `{*}`, `{*:.2f}`,
-  `{*mid}`: it is written with the text of the `ticked` option, `*`
-  unless the call gives another, before its value, where its argument
-  ticked in the cycle. In value code that is an argument that is a
-  `Marked` whose `ticked` is true.
+  library with what they add. `{engine_time}` is the evaluation time of
+  the cycle the text is made in, and `{wall_time}` the time of day of
+  the machine; each is a `datetime`, takes a specifier as one does, and
+  is no name a call gives an argument under. A `*` after a place's
+  opening brace marks the place, `{*}`, `{*:.2f}`, `{*mid}`: it is
+  written with the text of the `ticked` option, `*` unless the call
+  gives another, before its value, where its argument ticked in the
+  cycle. The evaluation time and a mark are of a graph, where there is a
+  cycle and an argument ticks: a call where a graph is built asks for
+  them. `{wall_time}` is asked for anywhere. Proposed: in value code a
+  call that asks for `{engine_time}` rejects (`format.argument`), and so
+  does one that marks a place whose argument is no `Marked`
+  (`format.specifier`); a mark on a `Marked` is written there where its
+  `ticked` is true, which is how the candidate for a graph gives the
+  native what ticked (FMT-8).
 
 ## Examples
 
