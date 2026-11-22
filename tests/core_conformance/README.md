@@ -1,6 +1,11 @@
-# Core implementation tests
+# Core conformance tests
 
-These HGL cases check the behavior of core's operators, portable bodies and eval harness.
+These HGL cases check that core's own code conforms to core's contract: its
+operators, its portable bodies and its eval harness. They are test code only.
+They form a module of their own, `core_conformance`, so that they use core as a
+program does; nothing of them ships, and no program imports them. A struct or
+a candidate declared here is a fixture of a test, never part of core: core's
+source is `hgl/`.
 
 | Part | What it checks |
 | --- | --- |
@@ -14,6 +19,6 @@ These HGL cases check the behavior of core's operators, portable bodies and eval
 | `tenors` | Tenor arithmetic, text, calendar extension and rolling rules |
 | `zoned_datetimes` | A duration added to a zoned datetime, and equality by instant and zone or as UTC |
 
-Run `hgl test hgl tests/implementation --target hgraph` from the core checkout
+Run `hgl test hgl tests/core_conformance --target hgraph` from the core checkout
 with that target installed. Shared runtime observations live in
 [the conformance suite](../conformance/README.md).

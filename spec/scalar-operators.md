@@ -238,7 +238,7 @@ forward an hour at 01:00 UTC on 29 March 2026:
 | `@2026-09-03T09:30+01:00[Europe/London] == @2026-09-03T08:30+00:00[UTC]` | false: one instant, two zones |
 | `@2026-09-03T09:30+01:00[Europe/London] =={utc: true} @2026-09-03T08:30+00:00[UTC]` | true |
 
-The [zoned datetime cases](https://github.com/hhenson/hgl_core/blob/main/tests/implementation/zoned_datetimes.hgl)
+The [zoned datetime cases](https://github.com/hhenson/hgl_core/blob/main/tests/core_conformance/zoned_datetimes.hgl)
 check these.
 
 Accepted illustration of equality between values that hold others (OPS-2),
