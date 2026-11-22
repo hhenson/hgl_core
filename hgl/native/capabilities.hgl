@@ -116,6 +116,7 @@ What `schedule` takes for `at`:
 | A `duration` more than zero | A wake |
 | `0s`, asked in `start` | A wake at the start, the node's first evaluation |
 | Another `duration`: zero outside `start`, or one less than zero | Rejected with `schedule.duration_bounds` where the compiler sees its value, a literal or a constant; elsewhere the call fails with `schedule.non_positive_duration` |
+| A `datetime` at or after the current evaluation time | A wake |
 | A `datetime` before the current evaluation time | Nothing: the wake is dropped, with no failure |
 
 `schedule` on a scheduler takes a `tag`, a `str?` that is null when
@@ -215,13 +216,19 @@ Rules:
 export native type Alarm
 
 /**
-The capability a node or a graph has by `inject global_state`: the run's store, of ordinary values under string keys.
+The capability a node, a graph or an application has by `inject global_state`: the run's store, of ordinary values under string keys.
 
-`get<V>(global_state, key)` reads the value under a key, `has` asks
-whether the key holds one, and `put` puts one there. Each key is fixed
-when the graph is built. The store has no property. A node uses it in
-its hooks; a graph that injects it uses it where the graph is built, and
-puts its values there before any node of that graph starts.
+`get<V>(global_state, key)` reads the value under a key and gives a
+`result<V, error>`; the call may write `V` or infer it from its place.
+`has` asks whether the key holds a value, and `put` puts one there. Each
+key is fixed when the graph is built. The store has no property.
+
+- A node uses it in its hooks.
+- A graph uses it where the graph is built: each call on it is
+  evaluated once then, in the order written, before any node of that
+  graph starts, and is given no connection (`connection.as_constant`).
+- An application uses it only to set the run's store, with calls of
+  `put` before its run statement.
 
 - A key that holds no value is a failure of `get`. The place the call is
   given to takes the `result`, raises the failure where it needs the
@@ -265,7 +272,7 @@ Examples:
     fn absent(value: i64) -> bool {
         inject global_state
         when {
-            let held: i64? = get(global_state, "absent")
+            let held: i64? = get<i64>(global_state, "absent")
             return held == null
         }
     }
@@ -273,7 +280,7 @@ Examples:
     ~~~
 
 Rules:
-    CAP-1, CAP-6, CRUN-7, CRUN-8, TIME-2, TIME-8, FN-1, FN-9, ERR-15
+    CAP-1, CAP-6, CRUN-7, CRUN-8, TIME-2, TIME-8, FN-1, FN-9, ERR-15, UNIT-14
 */
 export native type GlobalState
 
@@ -284,9 +291,14 @@ A run has one configuration, fixed for the run, which it is given and
 the program does not make: no call constructs a `RunConfig`. A test
 gives an `eval` or a `run` its configuration in braces after the word,
 `eval{start: t, length: 3s} f(...)`, an entry for each field it gives.
-An application and an integration test read it by `inject run_config`;
-no function does, and one that needs a bound of the run takes it as a
-`const` argument.
+An application's run statement takes none (`run.configuration`): what
+starts the application supplies its configuration, and the application
+gives defaults for the fields that leaves out, with
+`inject run_config{length: 3s}` before its run statement. An `end` or a
+`length` that what starts it gives replaces a default of either.
+An application and an integration test read the configuration by
+`inject run_config`; no function does, and one that needs a bound of the
+run takes it as a `const` argument.
 
 | Property | Type | What it is |
 | --- | --- | --- |
@@ -317,8 +329,9 @@ Examples:
     assert eval{start: t, length: 2us} time_of(value: [10, _, 20]) == [t]
     ~~~
 
-    An application gives a default for a field and reads the
-    configuration as supplied. This cannot run as an example: an example
+    An application gives a default for `start` and reads the
+    configuration as supplied: the default, or the start that what
+    starts the application gives. This cannot run as an example: an example
     is a test of its module, and `inject run_config` belongs to an
     application or an integration test.
 
@@ -336,7 +349,7 @@ Examples:
     ~~~
 
 Rules:
-    CAP-1, CAP-7, CRUN-1, CRUN-2, RUN-6, TIME-8
+    CAP-1, CAP-7, CRUN-1, CRUN-2, RUN-6, TIME-8, UNIT-14
 */
 export native type RunConfig {
     start: datetime?
