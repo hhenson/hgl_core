@@ -1,4 +1,4 @@
-module conformance part structural_conversion
+module core_implementation part structural_conversion
 
 struct CollectionOrderId {
     number: i64

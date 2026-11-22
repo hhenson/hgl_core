@@ -1,4 +1,4 @@
-module conformance part formatting
+module core_implementation part formatting
 
 const fn filled(qty: i64, price: f64) -> str =>
     format("fill {} at {:.2f}", qty, price)
@@ -354,7 +354,7 @@ Rules:
     FMT-4, FMT-5
 
 Status:
-    proposed
+    agreed
 */
 test format_pads_chrono_text {
     assert format("{:>12}", @09:30:00) == "    09:30:00"

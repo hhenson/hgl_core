@@ -1,37 +1,86 @@
 module core part formatting
 
 /**
-Fill the places in a constant format string (FMT-1 to FMT-5).
+Fill the places in a constant format string.
+
+`{}` consumes the next positional argument and `{name}` uses the given
+name. Double a brace to write it literally. A place may add a specifier
+after a colon, as in `{price:.2f}`. A value outside the built-in specifier
+types uses its `convert<str>` with no specifier.
+
+The call rejects during compilation for a nonconstant format string
+(`argument.constant`), an unmatched brace (`format.syntax`), a place with
+no matching argument (`format.argument`), an unused argument
+(`format.unused`), or a specifier the value's type does not admit
+(`format.specifier`). A value without a required text conversion also
+rejects during compilation.
+
+Type Args:
+    As: The types of the positional values, in supplied order.
+    Ks: The types of the named values, keyed by their supplied names.
 
 Args:
-    fmt_str: The format string whose places the compiler checks.
-    args: Positional values in the order the places use them.
-    kwargs: Named values, found by the written place names.
+    fmt_str: The constant pattern containing literal text and places.
+    args: The arguments that fill positional places.
+    kwargs: The arguments that fill named places.
 
 Returns:
-    The text with each place filled.
+    The literal text with each place filled by its formatted value.
+
+Examples:
+    ~~~hgl
+    assert format("fill {} at {price:.2f}", 10, price: 101.5) == "fill 10 at 101.50"
+    assert format("{{ready}}") == "{ready}"
+    ~~~
 
 Notes:
-    See the [formatting reference](https://github.com/hhenson/hgl_core/blob/main/spec/formatting.md#reference).
+    See the [formatting reference](https://github.com/hhenson/hgl_core/blob/main/spec/formatting.md#reference)
+    for the admitted specifiers and each type's default text.
+
+Rules:
+    FMT-1, FMT-2, FMT-3, FMT-4, FMT-5
 */
 export operator format<...As, ...Ks>(
     const fmt_str: str, args: ...As, kwargs: ...{Ks}) -> str
 
 /**
-Format values immediately in value code (FMT-7, FMT-9).
+Format values where the call is evaluated in value code.
+
+A `Marked` argument uses the specifiers of its payload type. If the
+payload is absent, the place uses `not_valid` without applying the
+specifier. In a place with `*`, a ticked argument also adds the
+`ticked` prefix. A mark on any other argument rejects with
+`format.specifier`. `{wall_time}` uses the process clock as a
+`datetime`; `{engine_time}` rejects with `format.argument` in value code.
+
+Type Args:
+    As: The types of the positional values, in supplied order.
+    Ks: The types of the named values, keyed by their supplied names.
 
 Args:
-    not_valid: Text for a Marked value that is absent. The default is "<not valid>".
-    ticked: Prefix for a marked place whose value ticked. The default is "*".
+    not_valid: Text for an absent `Marked` payload. The default is `"<not valid>"`.
+    ticked: Prefix for a marked place whose argument ticked. The default is `"*"`.
     fmt_str: The constant format string.
-    args: Values for positional places.
-    kwargs: Values for named places.
+    args: The arguments that fill positional places.
+    kwargs: The arguments that fill named places.
 
 Returns:
-    The formatted text.
+    The formatted text, including requested prefixes.
+
+Examples:
+    ~~~hgl
+    let price = Marked<f64>(value: 101.5, ticked: true)
+    assert format("mid {*:.1f}", price) == "mid *101.5"
+    let absent = Marked<f64>(value: null, ticked: false)
+    assert format{not_valid: "missing"}("mid {:.1f}", absent) == "mid missing"
+    ~~~
 
 Notes:
-    See the [formatting reference](https://github.com/hhenson/hgl_core/blob/main/spec/formatting.md#reference).
+    See the [formatting reference](https://github.com/hhenson/hgl_core/blob/main/spec/formatting.md#reference)
+    for the mark and clock place spellings.
+
+Rules:
+    FMT-4, FMT-7, FMT-9
 */
 native impl const fn format<...As, ...Ks>{
     const not_valid: str = "<not valid>",
@@ -39,17 +88,52 @@ native impl const fn format<...As, ...Ks>{
 }(const fmt_str: str, args: ...As, kwargs: ...{Ks}) -> str
 
 /**
-An optional formatting value and its tick flag (FMT-7, FMT-9).
+Carry a value for formatting and record whether it ticked.
+
+The payload may be absent. `format` uses its `not_valid` option for
+an absent payload and its `ticked` option when a marked place sees a tick.
 
 Type Args:
     T: The type formatted when the value is present.
 
+Examples:
+    ~~~hgl
+    let sample = Marked<i64>(value: 5, ticked: true)
+    assert format("{*}", sample) == "*5"
+    ~~~
+
 Notes:
     See the [formatting reference](https://github.com/hhenson/hgl_core/blob/main/spec/formatting.md#reference).
+
+Rules:
+    FMT-7, FMT-9
 */
 export struct Marked<T> {
-    /** The value, or null to use the not_valid option. */
+    /**
+    Hold the payload for the place, or null when it is absent.
+
+    Examples:
+        ~~~hgl
+        let sample = Marked<i64>(value: null, ticked: false)
+        assert sample.value == null
+        ~~~
+
+    Rules:
+        FMT-7
+    */
     value: T?
-    /** Whether a marked place writes the ticked prefix. */
+
+    /**
+    Indicate whether a marked place writes the tick prefix.
+
+    Examples:
+        ~~~hgl
+        let sample = Marked<i64>(value: 5, ticked: true)
+        assert sample.ticked
+        ~~~
+
+    Rules:
+        FMT-9
+    */
     ticked: bool
 }
