@@ -42,9 +42,10 @@ text.
   `Ticks:` and `Validity:`.
 - **DOC-6.** `Examples:` has at least one example that runs (SDOC-9): the
   common use first, then the case most likely to surprise. A temporal
-  declaration is shown with an `eval` and its trace. An example marked
-  `no-run` is one that cannot run in a test, and the text beside it says
-  why.
+  declaration is shown with an `eval` and its trace, and what is asked
+  inside a node with a helper the example declares for itself. An
+  example marked `no-run` is one that cannot run in a test, and the text
+  beside it says why.
 - **DOC-7.** A related declaration is named in backticks, which links it
   (SDOC-8): the inverse, the checked form, the one to use in its place.
 - **DOC-8.** What is a formula is written as one, and a flow that words
@@ -130,7 +131,8 @@ Rules:
 export const smallest_step: duration = 1us
 ```
 
-A function asked of an endpoint, whose example cannot run as a test:
+A function asked of an endpoint, whose example declares the node that
+asks it:
 
 ```hgl
 /**
@@ -155,14 +157,14 @@ Returns:
     designation, whatever its target holds.
 
 Examples:
-    An endpoint is asked inside a node, and a test declares none, so this
-    is shown and not run. Given `value` silent, then 7, then silent, with
-    `probe` ticking in each cycle, `held` ticks false, true, true.
+    `value` is silent, then 7, then silent, while `probe` ticks in each
+    cycle.
 
-    ~~~hgl no-run
+    ~~~hgl
     fn held(value: i64, probe: bool) -> bool {
         when valid([]) { return valid(value) }
     }
+    assert eval held(value: [_, 7, _], probe: [true, true, true]) == [false, true, true]
     ~~~
 
 Rules:
