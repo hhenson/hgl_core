@@ -38,10 +38,11 @@ marker and leave the probe out of its subscriptions.
 Use an HGL `/** ... */` documentation comment attached to each named test.
 Its first sentence states the observable rule. Explain a fixture or a
 deliberate gap in the input when that helps a reader predict the outcome.
-End the comment with two reStructuredText fields on separate lines:
+End the comment with `Rules:` and `Status:` sections, each with its
+contents on the next line indented four spaces (DOC-11).
 
-- `:Rules:` lists the applicable core or language rule IDs, separated by commas.
-- `:Status:` is `agreed` or `proposed`. If a case depends on a proposed
+- `Rules:` lists the applicable core or language rule IDs, separated by commas.
+- `Status:` is `agreed` or `proposed`. If a case depends on a proposed
   profile, use `proposed` and name that dependency in the comment.
 
 The module and test name identify the case. A documentation tool can use
