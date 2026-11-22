@@ -5,8 +5,13 @@ Fill the places in a constant format string.
 
 `{}` consumes the next positional argument and `{name}` uses the given
 name. Double a brace to write it literally. A place may add a specifier
-after a colon, as in `{price:.2f}`. A value outside the built-in specifier
-types uses its `convert<str>` with no specifier.
+after a colon, as in `{price:.2f}`.
+
+| Value | Place |
+| --- | --- |
+| Integer, float, string or boolean | The type's numeric or text specifiers |
+| Date, time, datetime or duration | The type's date or time directives and optional padding |
+| Any other type | A place with no specifier, using its `convert<str>` |
 
 The call rejects during compilation for a nonconstant format string
 (`argument.constant`), an unmatched brace (`format.syntax`), a place with
@@ -58,11 +63,15 @@ Type Args:
     Ks: The types of the named values, keyed by their supplied names.
 
 Args:
-    not_valid: Text for an absent `Marked` payload. The default is `"<not valid>"`.
-    ticked: Prefix for a marked place whose argument ticked. The default is `"*"`.
     fmt_str: The constant format string.
     args: The arguments that fill positional places.
     kwargs: The arguments that fill named places.
+
+Options:
+    - `not_valid`: text for an absent `Marked` payload. The default is
+      `"<not valid>"`. Set it with `format{not_valid: "missing"}(...)`.
+    - `ticked`: prefix for a marked place whose argument ticked. The
+      default is `"*"`. Set it with `format{ticked: "!"}(...)`.
 
 Returns:
     The formatted text, including requested prefixes.
