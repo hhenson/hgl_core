@@ -12,7 +12,7 @@ The remaining eval profile and pack mechanics are proposed.
 - **CONF-3.** Runtime conformance cases form a test-only module, `conformance`,
   assembled from parts. Rejection cases form `conformance.rejections`.
   Production artifacts do not ship either module.
-- **CONF-4.** Ordinary implementation tests remain distinct from portable
+- **CONF-4.** Tests of core's own code remain distinct from portable
   conformance. Target adapters may supply host observations, never new expected
   results. Compiler internals are tested in their implementation project.
 - **CEVAL-1.** Eval is a [run](execution.md) of an entry it generates
@@ -264,7 +264,7 @@ A recorder that borrows a reused delta buffer could return `[D2, _, D2]`.
 | `command: []` | Replay schedules no events. | `[]` |
 | `command: [0]` | `update_members` evaluates once without publishing. | `[]` |
 
-The [core fixtures](https://github.com/hhenson/hgl_core/blob/main/tests/implementation/record_eval.hgl)
+The [core fixtures](https://github.com/hhenson/hgl_core/blob/main/tests/core_conformance/record_eval.hgl)
 check both cases.
 
 ### Run isolation
