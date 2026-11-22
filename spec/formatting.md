@@ -1,7 +1,7 @@
 # Formatting
 
-Status: FMT-1 through FMT-9 are agreed, but for the sentence of FMT-9 that
-begins "Proposed:". The operator, its value candidate and `Marked` are
+Status: FMT-1 through FMT-9 are agreed. Paragraphs and sentences beginning
+"Proposed:" are proposed. The operator, its value candidate and `Marked` are
 declared in [`hgl/native/formatting.hgl`](../hgl/native/formatting.hgl).
 The graph candidate is specified for a later implementation step.
 
@@ -71,6 +71,11 @@ export struct Marked<T> {
   string and a boolean, and `date`, `time`, `datetime` and `duration`,
   with those it admits for a date and a time, `{:%Y-%m-%d}`. A value of
   any other type takes `{}` alone.
+
+  Proposed: A `time` takes `%H`, `%M`, `%S`, `%I`, `%p`, `%R` and `%T`
+  with text between them. A directive that reads a date rejects
+  (`format.specifier`). A `date` takes date directives and rejects time
+  directives with the same code.
 - **FMT-5.** With no specifier a `str` is written as its characters, with
   no quotes, and an `i64`, an `f64` and a `bool` as `convert<str>` of each
   gives ([scalar operators](scalar-operators.md), OPS-6). A value of a type
@@ -82,6 +87,23 @@ export struct Marked<T> {
   Core gives `convert<str>` for a list, a set, a dictionary, a tuple and
   a struct, in a form that shows its parts, the strings among them in
   quotes, for a person to read (OPS-4).
+
+  Proposed: A `date` gives `2026-11-22` and a `time` gives `09:30:00`.
+  A nonzero fraction of a second gives six digits, `09:30:00.250000`.
+  A `datetime` gives its UTC instant as `2026-11-22T09:30:00Z` with
+  the fraction as for a `time`.
+
+  Proposed: A `duration` gives its literal in the largest units, a whole
+  number for each nonzero unit. Examples are `1h30m`, `1s500ms` and
+  `250us`. Zero gives `0s`. A negative duration begins with `-`.
+
+  Proposed: A collection or struct is written as in HGL source. Each
+  part uses the same rules, with a `str` quoted and escaped and none
+  written as `null`. A list and a set use `[1, 2]`, a dictionary uses
+  `["a": 1]`, a tuple uses `(1, "a")`, and a struct uses
+  `Point(x: 1.0, y: 2.0)` with every field in declaration order. A set
+  or dictionary follows the order of a `for` over it. CTRL-12 leaves
+  those traversal orders unspecified.
 - **FMT-6.** `format` is an operator with a candidate for value code and
   one for a graph. Called where a graph is built its result is a text
   that ticks: in each cycle in which an argument ticks, once every
@@ -164,4 +186,5 @@ place takes (`format.unused`); `format("at {:.2f}", qty)` with `qty` an
 `i64`, a precision an integer does not admit (`format.specifier`); and
 `format("at {", price)`, a brace that opens no place (`format.syntax`).
 The [implementation cases](../tests/implementation/formatting.hgl)
-exercise the value candidate.
+exercise the value candidate. The catalogue codes have their own
+[source rejection cases](../tests/conformance/rejections/formatting.hgl).

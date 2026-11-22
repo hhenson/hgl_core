@@ -58,6 +58,75 @@ test format_temporal_values {
 }
 
 /**
+Time-of-day directives write the hour, minute, second and meridiem.
+
+:Rules: FMT-4
+:Status: proposed
+*/
+test format_time_directives {
+    assert format("{:%H:%M:%S} {:%I:%M %p}", @09:30:00, @21:05:06) ==
+        "09:30:00 09:05 PM"
+    assert format("{:%R} {:%T}", @21:05:06, @21:05:06) == "21:05 21:05:06"
+}
+
+/**
+Dates, times and UTC instants use ISO text. A nonzero fraction has six digits.
+
+:Rules: FMT-5
+:Status: proposed
+*/
+test format_default_temporal_values {
+    assert format("{}", @2026-11-22) == "2026-11-22"
+    assert format("{}", @09:30:00) == "09:30:00"
+    assert format("{}", @09:30:00.250000) == "09:30:00.250000"
+    assert format("{}", @2026-11-22T09:30:00Z) == "2026-11-22T09:30:00Z"
+    assert format("{}", @2026-11-22T09:30:00.250000Z) == "2026-11-22T09:30:00.250000Z"
+}
+
+/**
+Duration text uses whole numbers in the largest units, with a leading minus
+for a negative duration.
+
+:Rules: FMT-5
+:Status: proposed
+*/
+test format_default_durations {
+    assert format("{}", 90m) == "1h30m"
+    assert format("{}", 1500ms) == "1s500ms"
+    assert format("{}", 250us) == "250us"
+    assert format("{}", 0s) == "0s"
+    assert format("{}", -90m) == "-1h30m"
+}
+
+struct Point {
+    x: f64
+    y: f64
+}
+
+/**
+Collection and struct text uses HGL spellings, including string escapes.
+Every field appears in declaration order.
+
+:Rules: FMT-5, OPS-4, CTRL-12
+:Status: proposed
+*/
+test format_default_composite_values {
+    let numbers: list<i64> = [1, 2]
+    let members: set<i64> = [1, 2]
+    let dictionary: dict<str, i64> = ["a": 1]
+    let strings: list<str> = ["a\n\"b\\c"]
+    let absent: tuple<i64?, str> = (null, "a")
+    assert format("{}", numbers) == "[1, 2]"
+    let set_text = format("{}", members)
+    assert set_text == "[1, 2]" || set_text == "[2, 1]"
+    assert format("{}", dictionary) == "[\"a\": 1]"
+    assert format("{}", (1, "a")) == "(1, \"a\")"
+    assert format("{}", Point(y: 2.0, x: 1.0)) == "Point(x: 1.0, y: 2.0)"
+    assert format("{}", strings) == "[\"a\\n\\\"b\\\\c\"]"
+    assert format("{}", absent) == "(null, \"a\")"
+}
+
+/**
 A value of a program-defined type uses its conversion to text.
 
 :Rules: FMT-5, OPS-4
