@@ -148,7 +148,7 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 | `date` to `datetime` | The start of that date, in UTC |
 | `datetime` to `date` | The date of the instant, in UTC |
 | `tenor` to `str` | Its text, in its largest units (TEN-9) |
-| A list, a set, a dictionary, a tuple or a struct to `str` | A text that shows its parts, the strings among them in quotes, for a person to read ([formatting](formatting.md), FMT-5) |
+| A list, a set, a dictionary, a tuple or a struct to `str` | The value as a program writes it, a `str` among its parts in quotes: `[1, 2]`, `["a": 1]`, `(1, "a")`, `Point(x: 1.0, y: 2.0)` ([formatting](formatting.md), FMT-5) |
 
 | Option | Applies to | Members | Default |
 | --- | --- | --- | --- |
