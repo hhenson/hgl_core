@@ -34,14 +34,22 @@ text.
   rightly: when its result ticks and what it needs valid; what a null, a
   NaN, an empty collection or a zero does; what it leaves to another
   declaration. Short paragraphs, with no history and nothing of how it is
-  built.
+  built. Where a declaration takes several forms of operand, they are a
+  table of what is given and what results, not a sentence that lists
+  them.
 - **DOC-5.** `Type Args:` and `Args:` name every generic parameter,
   parameter and option, each with what it means; an option says what it
   is when none is given. `Returns:` says what the result is. `Raises:`
-  names each code and when it is raised. A temporal declaration has
-  `Ticks:` and `Validity:`.
+  has an entry for each code, keyed by the code, that says when it is
+  raised. A temporal declaration has `Ticks:` and `Validity:`, and so
+  does an operator that is used in a graph: when its result ticks, and
+  what it needs valid. An operator's options, which its candidates
+  declare, are no entries of `Args:`: they have a section of their own,
+  `Options:`, with for each what it does, what it is when none is given,
+  which operands take it, and how a call writes it.
 - **DOC-6.** `Examples:` has at least one example that runs (SDOC-9): the
-  common use first, then the case most likely to surprise. A temporal
+  common use first, then the case most likely to surprise, and one for
+  each form of operand the comment names. A temporal
   declaration is shown with an `eval` and its trace, and what is asked
   inside a node with a helper the example declares for itself. An
   example marked `no-run` is one that cannot run in a test, and the text
@@ -80,6 +88,16 @@ value. One that can, a `str` that writes no number among them, gives a
 `result`, or with `invalid: .fail` the value itself and an error that
 escapes where it fails.
 
+| From | To |
+| --- | --- |
+| `i64` | `f64`, `bool`, `str` |
+| `f64` | `i64`, `bool`, `str` |
+| `bool` | `i64`, `f64`, `str` |
+| `str` | `i64`, `f64`, `bool`, `bytes` |
+| `bytes` | `str` |
+| `date` | `datetime`, and back |
+| `tenor` | `str` |
+
 Type Args:
     T: The type to convert to. The call writes it.
     V: The type of the value given. It is inferred.
@@ -89,9 +107,19 @@ Type Args:
 Args:
     value: The value to convert.
 
+Options:
+    rounding: How an `f64` becomes an `i64`: `.truncate` when none is
+        given, or `.floor`, `.ceiling`, `.half_even`, `.half_up`,
+        `.half_down`. Written `convert<i64>(price, rounding: .half_even)`.
+    nan: The `i64` a NaN becomes. With none given a NaN is a failure.
+    invalid: What a failure is, for a conversion that can fail: `.error`
+        when none is given, which makes the result a `result<T, error>`,
+        or `.fail`, which makes it a `T` and the failure an error that
+        escapes.
+
 Returns:
-    The value as a `T`. The table of conversions in
-    `spec/scalar-operators.md` says what each yields.
+    The value as a `T`: a number as its nearest, a `bool` as 0 or 1, a
+    text as the value it writes.
 
 Raises:
     convert.invalid: Under `invalid: .fail`, a value that has no `T`.
