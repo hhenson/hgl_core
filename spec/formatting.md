@@ -186,6 +186,6 @@ argument has (`format.argument`); `format("fill", qty)`, an argument no
 place takes (`format.unused`); `format("at {:.2f}", qty)` with `qty` an
 `i64`, a precision an integer does not admit (`format.specifier`); and
 `format("at {", price)`, a brace that opens no place (`format.syntax`).
-The [implementation cases](../tests/implementation/formatting.hgl)
+The [conformance cases](../tests/conformance/formatting.hgl)
 exercise the value candidate. The catalogue codes have their own
 [source rejection cases](../tests/conformance/rejections/formatting.hgl).
