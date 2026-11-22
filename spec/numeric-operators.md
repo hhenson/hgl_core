@@ -3,8 +3,7 @@
 Status: agreed baseline, explicit operator configuration, approximate equality,
 full comparison, IEEE division default, the zero policy of every division,
 and checked-division result contract. No executable conformance or native ABI
-is specified. `hgl/` declares `abs` and `rel` among the parameters of their
-candidates yet, not in braces.
+is specified.
 
 ## Contract
 
