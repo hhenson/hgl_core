@@ -138,13 +138,65 @@ Rules:
     TEN-7, TEN-8
 */
 export enum Rolling {
-    /** The business day on or after the date. */
+    /**
+    The business day on or after the date.
+
+    Examples:
+        2026-01-03 is a Saturday.
+
+        ~~~hgl
+        assert roll(Rolling.following, Weekdays(), @2026-01-03) == @2026-01-05
+        assert roll(Rolling.following, Weekdays(), @2026-01-05) == @2026-01-05
+        ~~~
+
+    Rules:
+        TEN-8
+    */
     following,
-    /** The business day on or after the date, or where that is in another month the one on or before. */
+    /**
+    The business day on or after the date, or where that is in another month the one on or before.
+
+    Examples:
+        2026-01-31 is a Saturday, and the business day after it is in February.
+
+        ~~~hgl
+        assert roll(Rolling.modified_following, Weekdays(), @2026-01-03) == @2026-01-05
+        assert roll(Rolling.modified_following, Weekdays(), @2026-01-31) == @2026-01-30
+        ~~~
+
+    Rules:
+        TEN-8
+    */
     modified_following,
-    /** The business day on or before the date. */
+    /**
+    The business day on or before the date.
+
+    Examples:
+        2026-01-03 is a Saturday.
+
+        ~~~hgl
+        assert roll(Rolling.preceding, Weekdays(), @2026-01-03) == @2026-01-02
+        assert roll(Rolling.preceding, Weekdays(), @2026-01-02) == @2026-01-02
+        ~~~
+
+    Rules:
+        TEN-8
+    */
     preceding,
-    /** The business day on or before the date, or where that is in another month the one on or after. */
+    /**
+    The business day on or before the date, or where that is in another month the one on or after.
+
+    Examples:
+        2026-02-01 is a Sunday, and the business day before it is in January.
+
+        ~~~hgl
+        assert roll(Rolling.modified_preceding, Weekdays(), @2026-01-04) == @2026-01-02
+        assert roll(Rolling.modified_preceding, Weekdays(), @2026-02-01) == @2026-02-02
+        ~~~
+
+    Rules:
+        TEN-8
+    */
     modified_preceding,
 }
 
