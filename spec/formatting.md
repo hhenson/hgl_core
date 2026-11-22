@@ -82,9 +82,10 @@ export struct Marked<T> {
   `%p`, `%R` and `%T`, and a `date` those that read a date; one of the
   other's rejects (`format.specifier`). A `datetime` admits both.
   Proposed: the directives of a date are those the reference lists; a
-  `duration` admits those of a `time`, its `%H` the hours over its whole
-  days; and that library's locale flag, `L`, is not admitted, so that a
-  text does not depend on where the program runs.
+  `duration` admits those of a `time`, and `%j`, as that library writes
+  them: `%j` its whole days, and `%H` the hours left after those days,
+  `00` to `23`; and that library's locale flag, `L`, is not admitted, so
+  that a text does not depend on where the program runs.
 - **FMT-5.** With no specifier a `str` is written as its characters, with
   no quotes, and an `i64`, an `f64` and a `bool` as `convert<str>` of each
   gives ([scalar operators](scalar-operators.md), OPS-6). A value of a type
@@ -226,6 +227,11 @@ any text between them: `{:%Y-%m-%d %H:%M}`. The examples are of
 | `%%` | A percent sign | `%` | Each of them |
 
 The names of a month and of a day of the week are the English ones.
+
+Proposed, as FMT-4 says: which directives of a date the table lists, and
+a `duration` among those that take a time's. Of a `duration`, `%H` is
+the hours left after its whole days, which `%j` writes, with no zeros
+before them: `{:%j %T}` of `1d1h` is `1 01:00:00`.
 
 ### With no specifier
 
