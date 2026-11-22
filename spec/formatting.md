@@ -93,10 +93,10 @@ export struct Marked<T> {
   precision is. The directives of a date are those the reference
   lists. That library's locale flag, `L`, is not admitted, so that a
   text does not depend on where the program runs. `%j` writes a
-  `duration`'s whole days. Proposed: a fill, an alignment and a width
-  stand before the directives, `{:>12%H:%M}`, and pad what they write;
-  with no directive they pad the text FMT-5 gives, `{:>12}` of the time
-  half past nine being `"    09:30:00"`. A sign, `#`, `0` or a type
+  `duration`'s whole days. A fill, an alignment and a width stand
+  before the directives, `{:>12%H:%M}`, and pad what they write; with
+  no directive they pad the text FMT-5 gives, `{:>12}` of the time half
+  past nine being `"    09:30:00"`. Proposed: a sign, `#`, `0` or a type
   letter there rejects (`format.specifier`).
 - **FMT-5.** With no specifier a `str` is written as its characters, with
   no quotes, and an `i64`, an `f64` and a `bool` as `convert<str>` of each
@@ -214,8 +214,8 @@ four types too.
 
 A specifier of these is made of directives, each a `%` and a letter, with
 any text between them: `{:%Y-%m-%d %H:%M}`. A fill, an alignment and a
-width may stand before them, as for a number, and pad the whole
-(proposed, FMT-4): `{:>12%H:%M}` is `"       09:30"`. The examples are of
+width may stand before them, as for a number, and pad the whole:
+`{:>12%H:%M}` is `"       09:30"`. The examples are of
 `2026-11-22T09:30:00.25Z`, a Sunday.
 
 | Directive | Writes | Example | Taken by |
