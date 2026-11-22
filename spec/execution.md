@@ -45,6 +45,8 @@ ends, and what it gives back.
   earliest start, `earliest_start`, is one smallest step after `never`, and
   the latest end, `latest_end`, one smallest step before `forever`: a run's
   start is no earlier than the first and its end no later than the second.
+  A run whose start or end lies outside them is an HGL error with code
+  `run.bounds`.
 - **CRUN-4.** In simulation a cycle runs at the next scheduled time without
   waiting, and the run ends when nothing is scheduled before its `end`. The
   same entry, arguments and configuration give the same cycles and the same

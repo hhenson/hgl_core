@@ -10,7 +10,8 @@ numeric baseline and policy behavior; the
 the other scalar types, the comparison outcome, and conversion. Other
 inventory rows retain their status. The operators those two contracts cover
 are declared as HGL source in `hgl/core/core.hgl` and
-`hgl/native/scalar_operators.hgl`.
+`hgl/native/scalar_operators.hgl`, but for those the scalar contract's
+status names.
 The [scalar endpoint contract](temporal-endpoints.md) defines publication,
 validity, notification, and retained data for directly bound scalar endpoints;
 its operations are declared in `hgl/native/endpoints.hgl`.
