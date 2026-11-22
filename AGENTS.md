@@ -19,6 +19,8 @@
   each case as described in `tests/conformance/README.md`. Core operators and
   the eval harness have their own implementation tests. Do not claim execution
   for a document example.
+- Document every exported declaration of `hgl/` as [DOCUMENTING.md](DOCUMENTING.md)
+  says, from its page in `spec/`.
 - Define observable obligations before target symbols or internal layouts.
   Native adapters must preserve shared expected results.
 - Core has no optional-library dependency. Keep the test host's privileges
