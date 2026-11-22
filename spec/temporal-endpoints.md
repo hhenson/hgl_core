@@ -1,7 +1,6 @@
 # Scalar temporal endpoint observations
 
-Status: END-1 through END-10 are agreed, but for the sentence of END-9
-that begins "Proposed:", which is proposed.
+Status: END-1 through END-10 are agreed.
 
 ## Scope and API
 
@@ -218,8 +217,8 @@ selectors follow the language contract rather than this one-endpoint table.
   a window also takes its delta as the arrival it holds, as `replay`
   publishes a recorded one (the language's TIME-7). `removed_value(x)`
   of it gives the V itself, null included.
-  A window emptied by exits stays valid. Proposed: where a value leaves
-  and none arrives, `last_modified(x)` is the exit's time.
+  A window emptied by exits stays valid. Where a value leaves and none
+  arrives, `last_modified(x)` is the exit's time.
   The
   [window cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/window_ticks.hgl)
   check a window of ticks, its read where a `result` is taken, a lifted
