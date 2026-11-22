@@ -1118,7 +1118,7 @@ with the zone's wall clock and offset at the new instant.
 | `duration` | `duration` | `duration` |
 | `datetime`, `civil_datetime` or `zoned_datetime` | `duration`, in either order | The moved instant, of the same type |
 | `date` | `duration`, in either order | `civil_datetime` |
-| `date` | `time` | `civil_datetime`: that time on that date |
+| `date` | `time`, in either order | `civil_datetime`: that time on that date |
 | `tenor` | `tenor` of the same form | `tenor`, count by count |
 | `date` | `tenor` | `date` |
 
@@ -1205,6 +1205,7 @@ Examples:
     assert @2026-09-03 + 36h == @2026-09-04T12:00
     assert 36h + @2026-09-03 == @2026-09-04T12:00
     assert @2026-09-03 + @09:30 == @2026-09-03T09:30
+    assert @09:30 + @2026-09-03 == @2026-09-03T09:30
     assert 6M + 6M == 1Y
     assert 2B + 1B == 3B
     ~~~

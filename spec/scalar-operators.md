@@ -105,7 +105,7 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 | `+` | `duration` and `duration` | `duration` |
 | `+` | A `datetime`, `civil_datetime`, or `zoned_datetime` and a `duration`, in either order | That instant's type |
 | `+` | `date` and `duration`, in either order | `civil_datetime` |
-| `+` | `date` and `time` | `civil_datetime` |
+| `+` | `date` and `time`, in either order | `civil_datetime` |
 | `-` | `duration` less `duration` | `duration` |
 | `-` | A `datetime`, `civil_datetime`, or `zoned_datetime` less a `duration` | That instant's type |
 | `-` | `date` less a `duration` | `civil_datetime` |
