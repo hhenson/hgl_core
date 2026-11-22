@@ -1,7 +1,8 @@
 # Formatting
 
-Status: FMT-1 through FMT-9 are agreed. The [reference](#reference)
-lists every form in one place. Nothing here is declared in `hgl/` yet.
+Status: FMT-1 through FMT-9 are agreed, but for the sentence of FMT-4
+that begins "Proposed:". The [reference](#reference) lists every form in
+one place. Nothing here is declared in `hgl/` yet.
 
 ## Scope and API
 
@@ -92,7 +93,11 @@ export struct Marked<T> {
   precision is. The directives of a date are those the reference
   lists. That library's locale flag, `L`, is not admitted, so that a
   text does not depend on where the program runs. `%j` writes a
-  `duration`'s whole days.
+  `duration`'s whole days. Proposed: a fill, an alignment and a width
+  stand before the directives, `{:>12%H:%M}`, and pad what they write;
+  with no directive they pad the text FMT-5 gives, `{:>12}` of the time
+  half past nine being `"    09:30:00"`. A sign, `#`, `0` or a type
+  letter there rejects (`format.specifier`).
 - **FMT-5.** With no specifier a `str` is written as its characters, with
   no quotes, and an `i64`, an `f64` and a `bool` as `convert<str>` of each
   gives ([scalar operators](scalar-operators.md), OPS-6). A value of a type
@@ -208,7 +213,9 @@ four types too.
 ### A date, a time and a duration
 
 A specifier of these is made of directives, each a `%` and a letter, with
-any text between them: `{:%Y-%m-%d %H:%M}`. The examples are of
+any text between them: `{:%Y-%m-%d %H:%M}`. A fill, an alignment and a
+width may stand before them, as for a number, and pad the whole
+(proposed, FMT-4): `{:>12%H:%M}` is `"       09:30"`. The examples are of
 `2026-11-22T09:30:00.25Z`, a Sunday.
 
 | Directive | Writes | Example | Taken by |
