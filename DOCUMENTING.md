@@ -40,13 +40,15 @@ text.
 - **DOC-5.** `Type Args:` and `Args:` name every generic parameter,
   parameter and option, each with what it means; an option says what it
   is when none is given. `Returns:` says what the result is. `Raises:`
-  has an entry for each code, keyed by the code, that says when it is
-  raised. A temporal declaration has `Ticks:` and `Validity:`, and so
+  is a list with an item for each code, the code first, that says when
+  it is raised. A temporal declaration has `Ticks:` and `Validity:`, and so
   does an operator that is used in a graph: when its result ticks, and
   what it needs valid. An operator's options, which its candidates
   declare, are no entries of `Args:`: they have a section of their own,
-  `Options:`, with for each what it does, what it is when none is given,
-  which operands take it, and how a call writes it.
+  `Options:`, a list with an item for each: what it does, what it is
+  when none is given, which operands take it, and how a call writes it.
+  Both are Markdown lists, so that they read as lists wherever the text
+  is shown.
 - **DOC-6.** `Examples:` has at least one example that runs (SDOC-9): the
   common use first, then the case most likely to surprise, and one for
   each form of operand the comment names. A temporal
@@ -108,21 +110,23 @@ Args:
     value: The value to convert.
 
 Options:
-    rounding: How an `f64` becomes an `i64`: `.truncate` when none is
-        given, or `.floor`, `.ceiling`, `.half_even`, `.half_up`,
-        `.half_down`. Written `convert<i64>(price, rounding: .half_even)`.
-    nan: The `i64` a NaN becomes. With none given a NaN is a failure.
-    invalid: What a failure is, for a conversion that can fail: `.error`
-        when none is given, which makes the result a `result<T, error>`,
-        or `.fail`, which makes it a `T` and the failure an error that
-        escapes.
+    - `rounding`: how an `f64` becomes an `i64`: `.truncate`, toward
+      zero, when none is given, or `.floor`, `.ceiling`, `.half_even`,
+      `.half_up`, `.half_down`. Written
+      `convert<i64>(price, rounding: .half_even)`.
+    - `nan`: the `i64` a NaN becomes. With none given a NaN is a failure.
+    - `invalid`: what a failure is, for a conversion that can fail:
+      `.error` when none is given, which makes the result a
+      `result<T, error>`, or `.fail`, which makes it a `T` and the
+      failure an error that escapes.
 
 Returns:
-    The value as a `T`: a number as its nearest, a `bool` as 0 or 1, a
-    text as the value it writes.
+    The value as a `T`: an `i64` as the nearest `f64`, an `f64` as the
+    integer its `rounding` selects, a `bool` as 0 or 1, a text as the
+    value it writes.
 
 Raises:
-    convert.invalid: Under `invalid: .fail`, a value that has no `T`.
+    - `convert.invalid`: under `invalid: .fail`, a value that has no `T`.
 
 Examples:
     ~~~hgl
