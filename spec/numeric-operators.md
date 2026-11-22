@@ -3,7 +3,8 @@
 Status: agreed baseline, explicit operator configuration, approximate equality,
 full comparison, IEEE division default, the zero policy of every division,
 and checked-division result contract. No executable conformance or native ABI
-is specified.
+is specified. `hgl/` declares `abs` and `rel` among the parameters of their
+candidates yet, not in braces.
 
 ## Contract
 
@@ -95,12 +96,16 @@ abs(a - b) <= max(abs_tolerance,
   follows the language contract: return the same error from an enclosing value
   function, or propagate it to node failure in `when`. A returned Err alone
   cannot satisfy an escaping-error assertion.
-- **NUM-11.** The built-in `abs` and `rel` tolerance options are scalar f64
-  configuration. In temporal composition they bind during graph construction;
-  in a value function or runtime hook they are values for the current
-  invocation. They create no temporal dependency. A temporal tolerance requires
-  an explicitly admitted temporal parameter. Configuration order and phase
-  checking follow EXPR-12 through EXPR-14 in the language specification.
+- **NUM-11.** `abs` and `rel` are configuration parameters of the numeric
+  candidates of `eq_` and `ne_` (the language's FN-18), each an `f64`. They
+  are written in the braces of either spelling, `a =={abs: 0.01} b` and
+  `eq_{abs: 0.01}(a, b)`, and a named argument in the parentheses does not
+  name one. In temporal composition they bind during graph construction,
+  and a connection given to one rejects (`connection.as_constant`); in a
+  value function or runtime hook they are values for the current
+  invocation. They create no temporal dependency (the language's EXPR-14).
+  Configuration order and phase checking follow EXPR-12 through EXPR-14 in
+  the language specification.
 - **NUM-12.** Every division takes `zero`: `/`, `//`, and `%`, of numbers and
   of durations (OPS-1). The policies one admits, and its default, follow
   from what its result can hold, as the second table below says. A policy a
@@ -169,10 +174,10 @@ NaN/infinity names in the table describe outcomes, not source literal syntax.
 | `1e308 =={rel: 1.9} -1e308` | false, despite overflow in a naive difference/threshold calculation |
 | Tolerance 1 applied to 0/0.75, 0.75/1.5, and 0/1.5 | true; true; false |
 | `left() =={abs: tolerance()} right()` with value helpers recording their names | Invocation order left, tolerance, right; each once |
-| `eq_(left(), right(), abs: tolerance())` with the same value helpers | Invocation order left, right, tolerance; each once |
+| `eq_{abs: tolerance()}(left(), right())` with the same value helpers | Invocation order tolerance, left, right; each once |
 | Scalar tolerance helper configuring a temporal comparison over several ticks | Helper called once during graph construction; bound tolerance reused |
 | Tolerance helper inside a runtime-hook comparison evaluated several times | Helper called for each reached comparison evaluation |
-| Temporal endpoint supplied to the scalar `abs` option in composition | Source rejection; no implicit extra temporal input |
+| Temporal endpoint supplied to the scalar `abs` option in composition, in either spelling | Source rejection, `connection.as_constant`; no implicit extra temporal input |
 
 ## Checked-division examples
 
