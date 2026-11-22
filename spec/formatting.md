@@ -1,7 +1,7 @@
 # Formatting
 
-Status: FMT-1 through FMT-9 are agreed, but for the sentences of FMT-4
-that begin "Proposed:". Nothing here is declared in `hgl/` yet.
+Status: FMT-1 through FMT-9 are agreed, but for the sentence of FMT-4
+that begins "Proposed:". Nothing here is declared in `hgl/` yet.
 
 ## Scope and API
 
@@ -73,7 +73,7 @@ export struct Marked<T> {
   fraction of the second too, to the millisecond, the microsecond or
   the nanosecond, the digits after it dropped. It is taken out where
   the call is compiled, and the library is given the rest and the value
-  at that precision. Proposed: the precision is a `.` and one digit
+  at that precision. The precision is a `.` and one digit
   directly after the directive, `{:%H:%M:%S.3}` for milliseconds,
   `09:30:00.250`, `.6` for microseconds, `.9` for nanoseconds, and `.0`
   for none, as with no precision. Proposed: a `time`
