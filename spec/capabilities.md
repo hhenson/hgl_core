@@ -1,7 +1,6 @@
 # Capabilities
 
-Status: CAP-1 to CAP-7 are agreed. The meanings under "Proposed behaviour"
-are proposed.
+Status: CAP-1 to CAP-8 are agreed.
 
 ## Scope and API
 
@@ -111,12 +110,11 @@ dictionary's (the language's ERR-6).
   has no operation. Who injects it, who supplies it, and where it is read
   are the language's RUN-6.
 
-## Proposed behaviour
+## What each member observes
 
-What each property and operation observes, from the engine's contract. None is
-a requirement until agreed.
+- **CAP-8.** Each property and operation observes what this table gives.
 
-| Member | Proposed meaning |
+| Member | Meaning |
 | --- | --- |
 | `clock.evaluation_time` | The logical time of the current cycle: the same for every node in it, and constant throughout it. In `start` it is the run's start time; `stop` retains the last cycle's |
 | `clock.now` | The engine's estimate of wall-clock time: the computer's clock in UTC in real time, and evaluation time plus the cycle time in simulation. It may change between reads |
