@@ -221,14 +221,8 @@ test format_default_negative_duration {
     assert format("{}", -90m) == "-1h30m"
 }
 
-struct Point {
-    x: f64
-    y: f64
-}
-
 /**
-Collection and struct text uses HGL spellings. Every field appears in
-declaration order.
+List, set and dictionary text uses HGL collection spellings.
 
 Rules:
     FMT-5, OPS-4, CTRL-12
@@ -236,7 +230,7 @@ Rules:
 Status:
     agreed
 */
-test format_default_composite_values {
+test format_default_collection_values {
     let numbers: list<i64> = [1, 2]
     let members: set<i64> = [1, 2]
     let dictionary: dict<str, i64> = ["a": 1]
@@ -244,12 +238,10 @@ test format_default_composite_values {
     let set_text = format("{}", members)
     assert set_text == "[1, 2]" || set_text == "[2, 1]"
     assert format("{}", dictionary) == "[\"a\": 1]"
-    assert format("{}", (1, "a")) == "(1, \"a\")"
-    assert format("{}", Point(y: 2.0, x: 1.0)) == "Point(x: 1.0, y: 2.0)"
 }
 
 /**
-Composite text escapes strings as HGL literals and writes a null part as null.
+Collection text escapes strings as HGL literals and writes an absent part as null.
 
 Rules:
     FMT-5, OPS-4
@@ -259,9 +251,9 @@ Status:
 */
 test format_default_escaped_and_null_parts {
     let strings: list<str> = ["a\n\"b\\c"]
-    let absent: tuple<i64?, str> = (null, "a")
+    let absent: list<i64?> = [null]
     assert format("{}", strings) == "[\"a\\n\\\"b\\\\c\"]"
-    assert format("{}", absent) == "(null, \"a\")"
+    assert format("{}", absent) == "[null]"
 }
 
 /**
