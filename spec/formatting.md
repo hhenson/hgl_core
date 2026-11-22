@@ -1,7 +1,7 @@
 # Formatting
 
-Status: FMT-1 through FMT-9 are agreed, but for the sentence of FMT-4
-that begins "Proposed:". The [reference](#reference) lists every form in
+Status: FMT-1 through FMT-9 are agreed, but for the sentences of FMT-4
+that begin "Proposed:". The [reference](#reference) lists every form in
 one place. Nothing here is declared in `hgl/` yet.
 
 ## Scope and API
@@ -81,11 +81,18 @@ export struct Marked<T> {
   read the hour, the minute and the second, `%H`, `%M`, `%S`, `%I`,
   `%p`, `%R` and `%T`, and a `date` those that read a date; one of the
   other's rejects (`format.specifier`). A `datetime` admits both.
-  Proposed: the directives of a date are those the reference lists; a
-  `duration` admits those of a `time`, and `%j`, as that library writes
-  them: `%j` its whole days, and `%H` the hours left after those days,
-  `00` to `23`; and that library's locale flag, `L`, is not admitted, so
-  that a text does not depend on where the program runs.
+  A `duration` admits those of a `time`, and its `%H` is the hours left
+  after its whole days, `00` to `23`, as that library writes it. The
+  whole of a `duration` as hours is asked for by a specifier of its
+  own, so that `%H` means one thing and neither is taken for the other.
+  Proposed: that specifier is the unit's directive in square brackets,
+  `%[H]` the whole of it in hours, `%[M]` in minutes and `%[S]` in
+  seconds, each of two digits or more, and `%[S]` with a precision as
+  `%S` has: `{:%[H]:%M:%S}` of `1d1h` is `25:00:00`. It is taken out
+  where the call is compiled, as a precision is. Proposed: the
+  directives of a date are those the reference lists; `%j` writes a
+  `duration`'s whole days; and that library's locale flag, `L`, is not
+  admitted, so that a text does not depend on where the program runs.
 - **FMT-5.** With no specifier a `str` is written as its characters, with
   no quotes, and an `i64`, an `f64` and a `bool` as `convert<str>` of each
   gives ([scalar operators](scalar-operators.md), OPS-6). A value of a type
@@ -224,14 +231,18 @@ any text between them: `{:%Y-%m-%d %H:%M}`. The examples are of
 | `%S.3`, `%S.6`, `%S.9` | The second with its fraction: to the millisecond, the microsecond, the nanosecond | `00.250`, `00.250000`, `00.250000000` | `time`, `datetime`, `duration` |
 | `%R` | `%H:%M` | `09:30` | `time`, `datetime`, `duration` |
 | `%T` | `%H:%M:%S`, and `%T.3` as `%S.3` | `09:30:00`, `09:30:00.250` | `time`, `datetime`, `duration` |
+| `%[H]`, `%[M]`, `%[S]` | The whole of a duration in hours, in minutes, in seconds: of `1d1h30m`, | `25`, `1530`, `91800` | `duration` |
+| `%j` | Its whole days: of `1d1h30m`, | `1` | `duration` |
 | `%%` | A percent sign | `%` | Each of them |
 
 The names of a month and of a day of the week are the English ones.
 
-Proposed, as FMT-4 says: which directives of a date the table lists, and
-a `duration` among those that take a time's. Of a `duration`, `%H` is
-the hours left after its whole days, which `%j` writes, with no zeros
-before them: `{:%j %T}` of `1d1h` is `1 01:00:00`.
+Of a `duration`, `%H` is the hours left after its whole days, and
+`%[H]` the whole of it in hours: of `1d1h`, `{:%H:%M:%S}` is `01:00:00`,
+`{:%[H]:%M:%S}` is `25:00:00`, and `{:%j %T}` is `1 01:00:00`.
+
+Proposed, as FMT-4 says: which directives of a date the table lists; the
+spelling `%[H]`, `%[M]` and `%[S]`; and `%j` of a `duration`.
 
 ### With no specifier
 
