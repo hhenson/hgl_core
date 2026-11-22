@@ -65,7 +65,7 @@ text.
 
 Each is a declaration of core as its comment would stand. A fence inside
 a comment is of backticks or of tildes; these are of tildes because this
-page's own fences are of backticks. The assertions shown have been run.
+page's own fences are of backticks.
 
 An operator:
 
