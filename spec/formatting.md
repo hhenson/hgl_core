@@ -1,8 +1,7 @@
 # Formatting
 
-Status: FMT-1 through FMT-9 are agreed, but for the sentence of FMT-4
-that begins "Proposed:". The [reference](#reference) lists every form in
-one place. Nothing here is declared in `hgl/` yet.
+Status: FMT-1 through FMT-9 are agreed. The [reference](#reference)
+lists every form in one place. Nothing here is declared in `hgl/` yet.
 
 ## Scope and API
 
@@ -96,8 +95,8 @@ export struct Marked<T> {
   `duration`'s whole days. A fill, an alignment and a width stand
   before the directives, `{:>12%H:%M}`, and pad what they write; with
   no directive they pad the text FMT-5 gives, `{:>12}` of the time half
-  past nine being `"    09:30:00"`. Proposed: a sign, `#`, `0` or a type
-  letter there rejects (`format.specifier`).
+  past nine being `"    09:30:00"`. A sign, `#`, `0` or a type letter
+  there rejects (`format.specifier`).
 - **FMT-5.** With no specifier a `str` is written as its characters, with
   no quotes, and an `i64`, an `f64` and a `bool` as `convert<str>` of each
   gives ([scalar operators](scalar-operators.md), OPS-6). A value of a type
