@@ -1,9 +1,8 @@
 # Documenting core
 
-Status: agreed that every exported declaration of core is documented, to a
-high standard, and that existing comments are brought to the language's
-present form. DOC-1 to DOC-11 are that standard, proposed until reviewed.
-No declaration of `hgl/` has a documentation comment yet.
+Status: DOC-1 to DOC-11 are agreed. Every exported declaration of core is
+documented to them, and existing comments are brought to the language's
+present form.
 
 Core's reference is generated from these comments. A reader meets a
 declaration there first, and often there only: the comment has to be
