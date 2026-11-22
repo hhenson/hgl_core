@@ -21,7 +21,7 @@ owns endpoint interpretation, handler selection, and phase admission.
 | Runtime parameter payload | T; requires readable valid input, subject to declared nullable/default argument binding |
 | A collection's child, `parts[1]`, `quote.bid` | An endpoint, valid or not; its payload requires its own admission; see END-8 |
 | A `ref` parameter, `ref low: i64`, and its children | Endpoints, not values: no payload or `delta_value` read (the language's FN-16); see END-10 |
-| `delta_value(value)` | `delta<T>` (the language's TYPE-16): T for a scalar input, for a nullable scalar the optional that holds what was published, and for a window the value that arrived, held in that optional for a nullable V; a `result` where the place takes one, an `err` where there is no delta; see END-3 and END-9 |
+| `delta_value(value)` | The current cycle's `delta<T>` (TYPE-16), with the read form chosen by its place. A duration window takes the result and nullable forms. See END-3 and END-9. |
 | `removed_value(window)` | `result<V, error>`: the value that left the window in the cycle, or an `err` where none left; see END-9 |
 | `is_active(input)` | bool; current activity of this direct input, including while invalid |
 | `last_modified(value)` | Agreed `datetime?`; see END-6 |
@@ -94,14 +94,15 @@ selectors follow the language contract rather than this one-endpoint table.
   check a list and a set, and the
   [dictionary cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/dictionary_ticks.hgl)
   a dictionary.
-  `delta_value(x)` takes its form from its place (the language's ERR-14):
-  where the place expects `result<delta<T>, error>` it gives `ok` of the
-  delta, or an `err` coded `value.unset_read` where `x` has no delta in
-  the cycle; elsewhere it gives the delta, and the read fails with that
-  code where there is none. Only a window of a duration has a tick with
-  no delta (END-9): for every other endpoint the `result` form is `ok`, so
-  generic code, `record` among it, reads a delta in that form.
-  The checker must prove `x` is valid and modified at the call.
+  An endpoint that does not tick in the cycle has no delta. An
+  admitted `delta_value(x)` takes its form from its place (ERR-14, ERR-15).
+  A `delta<T>` place gives the delta or fails with `value.unset_read`.
+  A `result<delta<T>, error>` place gives `ok` of the delta or an
+  `err` with that code. A `delta<T>?` place gives the delta or null.
+  A window of a duration takes the result and nullable forms (TYPE-11, END-9).
+  It alone can tick without a delta, so a modified endpoint of any
+  other type gives `ok` in the result form. Delta reads follow the
+  admission rules for the endpoint (TIME-1, TIME-4).
 - **END-4.** Invalidation clears validity, modification, payload, and delta.
   The transition to invalid notifies active subscribers. A node awakened by
   it can observe the invalid input in `when valid([])`. An explicit
@@ -144,27 +145,28 @@ selectors follow the language contract rather than this one-endpoint table.
   The [collection validity cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/collection_ticks.hgl)
   check a fixed list, a tuple and a struct, and a struct with an optional
   field.
-- **END-8.** A child of a collection is an endpoint whether or not it is
-  valid: `valid`, `modified`, `delta_value` and `last_modified` take it,
-  and `all_valid` where it is a collection, `valid(parts[1])`. Its value
-  and its delta are read where the child is admitted (the language's
-  TIME-1). A read at an index known only when it runs, `parts[i]`, of a
-  child that is not valid fails with `value.unset_read`, or gives an `err`
-  of an `error` with that code where its place expects a
-  `result<T, error>` (the language's ERR-14). A read of a struct, a tuple
-  or a fixed list whole is admitted where it is all valid, a child among
-  them by its own `all_valid`, `all_valid(rows[0])`; in the value
-  read, an optional child that is not valid is null, and its own `valid`
-  tells that from a published null. One checked when it runs, `rows[i]`
-  read whole, that is not all valid fails or gives an `err` as a child's
-  read does. A dictionary or an unsized list is read whole where it is
-  valid (the language's TIME-1). A position of an unsized list that holds
-  no value reads in the whole value as the language's TIME-1 table has it
-  for the element type: NaN for an `f64`, null for a `V?`, and for every
-  other element type, which has no value for it, the read fails with
-  `value.unset_read`, or gives an `err` where its place expects a
-  `result<T, error>`.
-  The
+- **END-8.** A collection's child is an endpoint whether or not it is
+  valid. An untyped binding, `let entry = parts[i]`, holds the endpoint
+  and reads no value. `valid(entry)` and other endpoint operations can
+  inspect it. A use that requires a value reads it at that use, under
+  the admission rules of TIME-1. For a child whose read is checked at
+  runtime, a `T` place gives its value or fails with `value.unset_read`.
+  A `result<T, error>` place gives `ok` of the value or an `err` with
+  that code. A `T?` place gives the value or null (ERR-14, ERR-15).
+  A struct, tuple or fixed list read whole needs its own `all_valid`,
+  including when it is a child such as `rows[i]`. A checked whole read
+  of one that is not all valid takes the same three forms. An unset optional
+  part of an otherwise readable whole is null, and its own `valid`
+  tells that case from a published null.
+  A dictionary or unsized list is admitted for a whole read where it
+  is valid. The dictionary omits wholly unset entries. An entry that
+  is valid but not all valid makes the whole dictionary read take the
+  same failure forms as an incomplete child. In a whole unsized list
+  read, a gap gives NaN for an `f64` and null for a `V?`. For a gap
+  whose element type has no value for it, the whole list read takes the
+  same failure forms (TIME-1).
+  The [endpoint read cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/endpoint_reads.hgl)
+  check the read forms and the endpoint binding. The
   [collection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/collection_ticks.hgl)
   check both reads and a whole read, and the
   [rejection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/rejections/collection_children.hgl)
@@ -185,28 +187,27 @@ selectors follow the language contract rather than this one-endpoint table.
   cycle are one tick. When the last value leaves, the window is empty. So
   `all_valid(x)` becomes true only at an arrival, and may become false at
   an exit. A read of a window's value gives a `list<V>` of the values
-  held, oldest first. Before the
-  window is all valid that read fails with `value.unset_read`, or gives an `err` of an `error`
-  with that code where its place expects a `result<list<V>, error>` (the
-  language's ERR-14). A lifted value function is given the window only
+  held, oldest first. Below `all_valid`, a `list<V>` place fails with
+  `value.unset_read`, a `result<list<V>, error>` place gives an `err`
+  with that code and a `list<V>?` place gives null (ERR-14). A lifted value function is given the window only
   where it is all valid: one that is valid and not all valid does not
   invoke it, though its parameter has a default (the language's FN-11).
   `delta_value(x)` of a window is the value that arrived in the cycle
   (the language's TYPE-16), read before the window is all valid as after.
   In a cycle in which a value only leaves a window of a duration, the
-  window ticks and has no delta: read where its place expects a
-  `result<delta<T>, error>`, `delta_value(x)` gives an `err` coded
-  `value.unset_read` there (END-3). A read of the delta of a window of a
-  duration whose place is not a `result` is rejected (`payload.unguarded`,
-  the language's TYPE-11): an arrival may be missing at its tick. One of a
-  window of a tick count is not: it ticks only at an arrival.
+  window ticks and has no delta. In that cycle `delta_value(x)` gives an
+  `err` coded `value.unset_read` in a `result<delta<T>, error>` place
+  and null in a `delta<T>?` place (END-3). A place for `delta<T>`
+  alone rejects a duration window's delta with `payload.unguarded` (TYPE-11).
+  A window of a tick count ticks only at an arrival and takes the
+  three forms of END-3.
   `removed_value(x)` is the value that left the window in the cycle: in
   one of a tick count, the oldest value an arrival pushes out; in one of a
   duration, the value that leaves by age, a value arriving then or not.
   It is read only where its place expects a `result<V, error>`, and gives
   `ok` of that value, or an `err` coded `value.unset_read` where none left
-  (the language's ERR-14); a read whose place is not a `result` is
-  rejected for every window (`payload.unguarded`). A node publishes a V to
+  (the language's ERR-14). A `V` or `V?` place rejects the read with
+  `payload.unguarded` for every window (TYPE-11). A node publishes a V to
   a window, which arrives, and nothing else.
   The delta of a window of a nullable V, `rolling_window<f64?, 3>`, is
   the nullable's own delta, `delta<f64?>`, which holds what arrived, a
@@ -224,8 +225,9 @@ selectors follow the language contract rather than this one-endpoint table.
   check a window of ticks, its read where a `result` is taken, a lifted
   parameter with a default, and its delta and `removed_value` once it is
   full; in a window of a duration, an exit with nothing arriving,
-  `all_valid` falling back, a minimum of zero, the delta and
-  `removed_value` at an exit alone and at an exit with an arrival, and the
+  `all_valid` falling back, a minimum of zero, the result and nullable
+  delta forms at an exit alone and at an exit with an arrival,
+  `removed_value` at those ticks, and the
   validity of a window emptied by exits; and a recording of a window of a
   duration, which holds its arrivals, and its replay. The
   [window rejection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/rejections/window_reads.hgl)
