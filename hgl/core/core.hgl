@@ -112,17 +112,17 @@ instant moves by elapsed time, keeping its zone if it has one. A date
 plus a duration starts at midnight. A months-and-days tenor moves a date
 by its months first, falling back to the last day of a shorter month.
 
-| Operands | Result |
-| --- | --- |
-| Two `i64` values | `i64` sum |
-| Two `f64` values, or `i64` and `f64` in either order | `f64` sum |
-| Two `str` values | `str`, with the right text after the left |
-| Two `duration` values | `duration` sum |
-| `datetime`, `civil_datetime` or `zoned_datetime` and a `duration`, in either order | The moved instant, of the same instant type |
-| `date` and `duration`, in either order | `civil_datetime` |
-| `date` and `time`, in either order | `civil_datetime` on that date at that time |
-| Two `tenor` values of the same form | `tenor`, with their counts added |
-| `date` on the left and `tenor` on the right | `date` moved by the tenor |
+| Left | Right | Result |
+| --- | --- | --- |
+| `i64` | `i64` | `i64` sum |
+| `i64` or `f64` | `i64` or `f64`, with at least one `f64` | `f64` sum |
+| `str` | `str` | `str`, with the right text after the left |
+| `duration` | `duration` | `duration` sum |
+| `datetime`, `civil_datetime` or `zoned_datetime` | `duration` (either order) | The moved instant, of the same instant type |
+| `date` | `duration` (either order) | `civil_datetime` |
+| `date` | `time` (either order) | `civil_datetime` on that date at that time |
+| `tenor` | `tenor` of the same form | `tenor`, with their counts added |
+| `date` | `tenor` | `date` moved by the tenor |
 
 Type Args:
     L: The left operand's type.
@@ -149,20 +149,22 @@ Returns:
     The sum in the type shown above. For a difference, use `sub_`.
 
 Raises:
-    - `numeric.out_of_range`: an integer, instant, duration or tenor count
-      result is outside its range.
+    - `numeric.out_of_range`: an integer, instant, date, duration or
+      tenor count result is outside its range.
     - `tenor.mixed_units`: a business-day tenor and a months-and-days tenor
       are added.
 
 Ticks:
-    Ordinary lifting publishes on an admitted evaluation following an input
-    notification, including for an equal result. With `.identity`, input
-    invalidation can also wake the node. Silence adds no work.
+    The sum ticks on an input tick when both operands have values, even
+    when the sum is unchanged. With `.identity`, an input tick or
+    invalidation gives a tick whenever at least one input has a value.
+    With neither input valid, the output becomes invalid.
 
 Validity:
     Ordinary lifting needs each temporal operand valid. Retained values
     suffice. With `.identity`, add two valid values, pass through the sole
-    valid one, or invalidate the output when neither is valid.
+    valid one, or invalidate the output when neither is valid. A valid
+    zero, empty text, null or NaN still counts as a value.
 
 Examples:
     ~~~hgl
@@ -173,9 +175,9 @@ Examples:
     assert 8 + 3 == 11
     assert 1.5 + 0.5 == 2.0
     let count: i64 = 2
-    let part: f64 = 0.5
-    assert count + part == 2.5
-    assert part + count == 2.5
+    let fraction: f64 = 0.5
+    assert count + fraction == 2.5
+    assert fraction + count == 2.5
     assert "bid" + " price" == "bid price"
     assert 1h + 30m == 90m
 
@@ -259,21 +261,23 @@ Returns:
     The difference in the type shown above. To negate one operand, use `neg_`.
 
 Raises:
-    - `numeric.out_of_range`: an integer, instant, duration or tenor count
-      result is outside its range.
+    - `numeric.out_of_range`: an integer, instant, date, duration or
+      tenor count result is outside its range.
     - `tenor.mixed_units`: one tenor counts business days and the other
       counts months and days.
 
 Ticks:
-    Ordinary lifting publishes on an admitted evaluation following an input
-    notification, including for an equal result. With `.identity`, input
-    invalidation can also wake the node. Silence adds no work.
+    The difference ticks on an input tick when both operands have values,
+    even when the difference is unchanged. With `.identity`, an input
+    tick or invalidation gives a tick whenever at least one input has a
+    value. With neither input valid, the output becomes invalid.
 
 Validity:
     Ordinary lifting needs each temporal operand valid. Retained values
     suffice. With `.identity`, subtract two valid values, pass through a
     sole valid left value, negate a sole valid right value, or invalidate
-    the output when neither is valid.
+    the output when neither is valid. A valid zero, empty text, null or
+    NaN still counts as a value.
 
 Examples:
     ~~~hgl
@@ -284,9 +288,9 @@ Examples:
     assert 8 - 3 == 5
     assert 1.5 - 0.5 == 1.0
     let count: i64 = 2
-    let part: f64 = 0.5
-    assert count - part == 1.5
-    assert part - count == -1.5
+    let fraction: f64 = 0.5
+    assert count - fraction == 1.5
+    assert fraction - count == -1.5
     assert 90m - 30m == 1h
 
     assert @2026-09-03T09:30Z - 5m == @2026-09-03T09:25Z
@@ -327,13 +331,13 @@ Duration scaling rounds to the nearest microsecond, with ties to even.
 A tenor's counts are scaled separately. Repeating a string zero times
 gives an empty string.
 
-| Operands | Result |
-| --- | --- |
-| Two `i64` values | `i64` product |
-| Two `f64` values, or `i64` and `f64` in either order | `f64` product |
-| `duration` and `i64` or `f64`, in either order | Scaled `duration` |
-| `tenor` and `i64`, in either order | Scaled `tenor` |
-| `str` and `i64`, in either order | Repeated `str` |
+| Left | Right | Result |
+| --- | --- | --- |
+| `i64` | `i64` | `i64` product |
+| `i64` or `f64` | `i64` or `f64`, with at least one `f64` | `f64` product |
+| `duration` | `i64` or `f64` (either order) | Scaled `duration` |
+| `tenor` | `i64` (either order) | Scaled `tenor` |
+| `str` | `i64` (either order) | Repeated `str` |
 
 Type Args:
     L: The left operand's type.
@@ -367,14 +371,14 @@ Examples:
     assert 4 * 3 == 12
     assert 1.5 * 2.0 == 3.0
     let count: i64 = 3
-    let part: f64 = 0.5
-    assert count * part == 1.5
-    assert part * count == 1.5
+    let fraction: f64 = 0.5
+    assert count * fraction == 1.5
+    assert fraction * count == 1.5
 
     assert 1s * count == 3s
     assert count * 1s == 3s
-    assert 1us * part == 0us
-    assert part * 3us == 2us
+    assert 1us * fraction == 0us
+    assert fraction * 3us == 2us
     assert 1M2D * count == 3M6D
     assert count * 2B == 6B
     assert "ab" * count == "ababab"
@@ -412,12 +416,15 @@ Args:
 
 Options:
     - `zero`: a compile-time `ZeroPolicy`, written as in `lhs /{zero: .error} rhs`.
-      For an `f64` quotient, the default is `.ieee`. A finite nonzero numerator
+      A finite nonzero numerator under `.ieee`
       over signed zero gives infinity with the combined signs, and zero over
-      zero gives NaN. `.nan` gives NaN for every zero divisor. Both choices
-      require an `f64` quotient.
-      `.error` gives a result for any quotient type. `.fail` raises on zero
-      and is the default for a duration quotient.
+      zero gives NaN. `.nan` gives NaN for every zero divisor.
+      `.error` gives a result and `.fail` raises on zero.
+
+      | Quotient | Policies | Default |
+      | --- | --- | --- |
+      | `f64` | `.ieee`, `.nan`, `.error`, `.fail` | `.ieee` |
+      | `duration` | `.error`, `.fail` | `.fail` |
 
 Returns:
     The quotient shown above. Under `.error` it is `ok(quotient)`, or an
@@ -491,10 +498,13 @@ Args:
 
 Options:
     - `zero`: a compile-time `ZeroPolicy`, written as in `lhs //{zero: .error} rhs`.
-      For an `f64` quotient, `.ieee` is the default and gives the floored IEEE
-      quotient. `.nan` gives NaN on zero. Both choices require an `f64`
-      quotient. `.error` gives a result for any quotient type. `.fail` raises
-      on zero and is the default for an `i64` quotient.
+      `.ieee` gives the floored IEEE quotient. `.nan` gives NaN on zero.
+      `.error` gives a result and `.fail` raises on zero.
+
+      | Quotient | Policies | Default |
+      | --- | --- | --- |
+      | `f64` | `.ieee`, `.nan`, `.error`, `.fail` | `.ieee` |
+      | `i64` | `.error`, `.fail` | `.fail` |
 
 Returns:
     The floored quotient shown above. Under `.error` it is `ok(quotient)`,
@@ -565,10 +575,13 @@ Args:
 
 Options:
     - `zero`: a compile-time `ZeroPolicy`, written as in `lhs %{zero: .error} rhs`.
-      For an `f64` remainder, the default is `.ieee`. It and `.nan` both
-      give NaN on zero and require an `f64` remainder. `.error` gives a result
-      for either remainder type. `.fail` raises on zero and is the default
-      for an `i64` remainder.
+      `.ieee` and `.nan` give NaN on zero.
+      `.error` gives a result and `.fail` raises on zero.
+
+      | Remainder | Policies | Default |
+      | --- | --- | --- |
+      | `f64` | `.ieee`, `.nan`, `.error`, `.fail` | `.ieee` |
+      | `i64` | `.error`, `.fail` | `.fail` |
 
 Returns:
     The remainder shown above. Under `.error` it is `ok(remainder)`,
