@@ -1,4 +1,4 @@
-module core_implementation part formatting
+module core_conformance part formatting
 
 const fn filled(qty: i64, price: f64) -> str =>
     format("fill {} at {:.2f}", qty, price)

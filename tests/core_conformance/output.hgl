@@ -1,4 +1,4 @@
-module core_implementation part output
+module core_conformance part output
 
 fn counted(value: i64) -> i64 {
     state seen: i64 = 0

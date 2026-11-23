@@ -50,5 +50,5 @@ fn counted(value: i64) -> i64 {
 
 Each time the handler runs it writes a line to standard output, which is
 flushed, and one to standard error. The
-[implementation cases](../tests/implementation/output.hgl) observe the
+[Core conformance cases](../tests/core_conformance/output.hgl) observe the
 counts and give the expected output on each stream.
