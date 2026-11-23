@@ -49,7 +49,11 @@ are native, in `hgl/native/tenors.hgl`.
 - **TEN-5.** A calendar says which dates are business days. It is any value
   for which a value `business_day(calendar, date) -> bool` exists. `+` and
   `-` of a date and a tenor take one as the option `calendar`. Where none is
-  given the calendar is `Weekdays()`.
+  given the calendar is `Weekdays()`. `calendar` is a parameter of those
+  candidates, so a graph may give it a connection, and the date is then
+  worked out again when the calendar changes, in either spelling:
+  `day +{calendar: open_days} 2B` and `add_(day, 2B, calendar: open_days)`
+  (the language's EXPR-14, FN-6).
 - **TEN-6.** A count of business days starts from a business day. For a
   count n that is not negative, `day + tenor` is the business day on or
   after `day`, and then the nth business day after that; `day - tenor` is

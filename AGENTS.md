@@ -13,11 +13,12 @@
   under `explanations/` only when a concept needs detailed justification.
 - Put runtime native declarations in `hgl/native/`; core HGL bodies and required
   native implementation parts in `hgl/core/`. Add target source only as required.
-- Keep portable conformance in `tests/conformance/`; ordinary implementation
-  tests in `tests/implementation/`. Author shared runtime cases in HGL, using
+- Keep portable conformance in `tests/conformance/`; tests of core's own code
+  in `tests/core_conformance/`. Nothing under `tests/` is part of core: core's
+  source is `hgl/`. Author shared runtime cases in HGL, using
   public core surfaces. Attach the rule, status and observable expectation to
   each case as described in `tests/conformance/README.md`. Core operators and
-  the eval harness have their own implementation tests. Do not claim execution
+  the eval harness have their own core conformance tests. Do not claim execution
   for a document example.
 - Document every exported declaration of `hgl/` as [DOCUMENTING.md](DOCUMENTING.md)
   says, from its page in `spec/`.

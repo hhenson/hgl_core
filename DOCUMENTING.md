@@ -1,9 +1,8 @@
 # Documenting core
 
-Status: agreed that every exported declaration of core is documented, to a
-high standard, and that existing comments are brought to the language's
-present form. DOC-1 to DOC-11 are that standard, proposed until reviewed.
-No declaration of `hgl/` has a documentation comment yet.
+Status: DOC-1 to DOC-11 are agreed. Every exported declaration of core is
+documented to them, and existing comments are brought to the language's
+present form.
 
 Core's reference is generated from these comments. A reader meets a
 declaration there first, and often there only: the comment has to be
@@ -184,9 +183,10 @@ Args:
     input: The endpoint asked about: an input, or a child of one.
 
 Returns:
-    True where the endpoint holds a value. For a window, true while it
-    holds one. For a `ref` parameter, true once it has been given a
-    designation, whatever its target holds.
+    True where the endpoint holds a value. For a window, true once a
+    value has arrived, and still true when exits have emptied it. For a
+    `ref` parameter, true once it has been given a designation, whatever
+    its target holds.
 
 Examples:
     `value` is silent, then 7, then silent, while `probe` ticks in each

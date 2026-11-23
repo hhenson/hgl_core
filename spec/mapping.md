@@ -1,8 +1,9 @@
 # Mapping and reduction
 
 Status: MAP-1 through MAP-10, RED-1 through RED-7 and SET-1 through SET-2
-are agreed. Nothing here is declared in `hgl/` yet: the declarations below
-wait for a compiler that reads their forms.
+are agreed. Of what is here, `hgl/` declares the properties of `add_` and of
+`mul_` (RED-7): the other declarations below wait for a compiler that reads
+their forms.
 
 ## Scope and API
 

@@ -1,7 +1,6 @@
 # Capabilities
 
-Status: CAP-1 to CAP-7 are agreed. The meanings under "Proposed behaviour"
-are proposed.
+Status: CAP-1 to CAP-8 are agreed.
 
 ## Scope and API
 
@@ -24,9 +23,14 @@ read-only properties, and the operations on it.
 The types and the native operations are declared in
 `hgl/native/capabilities.hgl`; `LogLevel`, the `log_*` helpers, and the
 operators `schedule`, `get`, `has`, and `put` in `hgl/core/core.hgl`. Each
-of the four is an operator: its name has a meaning beyond one capability,
-and other candidates join it as they are declared. `get` already has the
-dictionary's (the language's ERR-6).
+of the four is an operator: its name has a meaning beyond one capability.
+`schedule` states its domain, a scheduler or an alarm and a duration or a
+datetime, `requires C in {Scheduler, Alarm} && W in {duration, datetime}`
+(the language's GEN-3, TIME-8), and takes no other candidate. Other
+candidates join `get`, `has`, and `put` as they are declared: `get`
+already has the dictionary's (the language's ERR-6). Core also gives its three-argument
+form, `get(dictionary, key, fallback)` (ERR-6), which is not declared in
+`hgl/` yet.
 
 ## Agreed rules
 
@@ -35,7 +39,9 @@ dictionary's (the language's ERR-6).
   `Alarm`, `GlobalState`, `RunConfig`. Core constructs none in HGL. A
   property is read as an ordinary value and is not assigned.
 - **CAP-2.** `log(logger, level, message)` writes one record of `message` at
-  `level`, a `LogLevel`: `debug`, `info`, `warning`, or `error`.
+  `level`, a `LogLevel`: `debug`, `info`, `warning`, or `error`. The
+  levels are ordered as declared: `debug` is below `info`, `info` below
+  `warning`, and `warning` below `error`.
   `log_debug`, `log_info`, `log_warning`, and `log_error` each call `log` at
   their level. `logger.level` is the logger's current level.
 - **CAP-3.** A clock has four properties: `evaluation_time`, `now`, and
@@ -58,7 +64,13 @@ dictionary's (the language's ERR-6).
   not admitted, a negative one in `start` included, fails the call (the
   language's TIME-8, which rejects one the compiler sees). One asked for at a
   `datetime` before the current evaluation time is dropped: there is no
-  wake, and no failure. `on_wall_clock: true` times a wake on the wall
+  wake and no failure, and the run's log has a warning of it. One at the
+  current evaluation time is asked for in `start` alone, where it asks
+  for a wake at the start, the node's first evaluation, as `0s` does;
+  outside `start` it is dropped with that warning, as an earlier one is.
+  A node is warned of once each time it starts, at its first dropped
+  wake, and the warning names the node and the time the wake was asked
+  for; where it had more, their count is logged when the node stops. `on_wall_clock: true` times a wake on the wall
   clock, `clock.now`, in a run in real time. The time the request is
   measured from is then the later of the evaluation time and `clock.now`: a
   `duration` asks for a wake that long after it, and a `datetime` is a time
@@ -71,9 +83,12 @@ dictionary's (the language's ERR-6).
   nothing: the wake is timed on evaluation time, as one asked for without
   it, so that a graph runs the same in either. The failure's code is
   `schedule.non_positive_duration`; the language rejects a duration the
-  compiler sees with `schedule.duration_bounds`. The
+  compiler sees with `schedule.duration_bounds`. The examples of
+  `schedule` in
+  [`hgl/core/core.hgl`](https://github.com/hhenson/hgl_core/blob/main/hgl/core/core.hgl)
+  check the failure, the
   [scheduling cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/scheduled_wakes.hgl)
-  check the failure and the wall-clock option in simulation, and the
+  the wall-clock option in simulation, and the
   [rejection cases](https://github.com/hhenson/hgl_core/blob/main/tests/conformance/rejections/scheduled_wakes.hgl)
   the rejection.
 - **CAP-5.** An alarm is a cheaper scheduler: best effort, with nothing
@@ -85,24 +100,26 @@ dictionary's (the language's ERR-6).
   may be asked of it is what CAP-4 says may be asked of the scheduler,
   alike: a `duration` more than zero, or zero in `start`, which asks for a
   wake at the start, the node's first evaluation; a `datetime` before the
-  current evaluation time is dropped.
+  current evaluation time is dropped, and one at it is as CAP-4 has it.
 - **CAP-6.** The global store is a run-wide store of ordinary values under
   string keys, each fixed when the graph is built (the language's FN-1).
   `get<V>(global_state, key)` returns `result<V, error>`. The call may specify
-  V or infer it from its place. An absent key gives a failure. The place
+  V or infer it from its place. An absent key gives a failure, with code
+  `value.missing_key`, as a dictionary's does (the language's ERR-6). The place
   takes the result, raises the failure when it needs the value, or takes
   null in the nullable form (ERR-15). When V itself is nullable, a stored
   null is a success.
   `has(global_state, key)` is whether the key holds a value.
   `put(global_state, key, value)` puts one there. A key keeps the type of
   its first value: a `put` of another type is rejected where the two are in
-  one program, with code `store.key_type` (the language's TIME-8), and fails
-  otherwise. Reading or writing the store wakes no node and is no temporal
+  one program, and fails otherwise, each with code `store.key_type` (the
+  language's TIME-8). Reading or writing the store wakes no node and is no temporal
   input, so it orders no two nodes: a `put` is seen by what is evaluated
   after it, and the language's TIME-2 leaves the order of two nodes of one
   rank undefined. What one of them sees of the other's `put` in the same
   cycle is undefined. The key `"run.output"` is the run's (CRUN-8): a
-  program that names it is rejected when its graph is built.
+  program that names it is rejected when its graph is built, with code
+  `store.reserved_key`.
 - **CAP-7.** `run_config` is the configuration of the run (CRUN-2), as it
   is supplied to the run (the language's RUN-6). It has three properties:
   `start` and `end`, each a `datetime?`, and `length`, a `duration?`. A
@@ -111,12 +128,11 @@ dictionary's (the language's ERR-6).
   has no operation. Who injects it, who supplies it, and where it is read
   are the language's RUN-6.
 
-## Proposed behaviour
+## What each member observes
 
-What each property and operation observes, from the engine's contract. None is
-a requirement until agreed.
+- **CAP-8.** Each property and operation observes what this table gives.
 
-| Member | Proposed meaning |
+| Member | Meaning |
 | --- | --- |
 | `clock.evaluation_time` | The logical time of the current cycle: the same for every node in it, and constant throughout it. In `start` it is the run's start time; `stop` retains the last cycle's |
 | `clock.now` | The engine's estimate of wall-clock time: the computer's clock in UTC in real time, and evaluation time plus the cycle time in simulation. It may change between reads |
@@ -129,7 +145,7 @@ a requirement until agreed.
 | `un_schedule(scheduler, tag: name)` | Cancels the wake asked for under `name` |
 | `reset(scheduler)` | Cancels every pending wake |
 | A wake asked for under a tag | Replaces the pending wake of that tag |
-| `logger.level` | Records below it are dropped |
+| `logger.level` | Records of a level below it (CAP-2) are dropped |
 
 ## Accepted illustration
 

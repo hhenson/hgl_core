@@ -3,7 +3,7 @@
 Each named HGL test describes an observable runtime rule. The same source,
 stimulus and expected result apply to every backend. Build fixtures from
 ordinary HGL and the public operations of the mandatory core. Core operator
-semantics have their own [implementation tests](../implementation/README.md).
+semantics have their own [core conformance tests](../core_conformance/README.md).
 
 ## Reading a case
 
