@@ -68,3 +68,42 @@ test collection_conversions_compose {
     let entries: dict<str, list<date?>> = ["dates": dates]
     assert convert<str>(entries) == "[\"dates\": [2026-11-22, null]]"
 }
+
+/**
+A present nullable member uses the payload's selected conversion and an
+absent member is written as null.
+
+Rules:
+    OPS-4, FMT-5, GEN-5
+
+Status:
+    agreed
+*/
+test collection_conversions_of_nullable_members {
+    let members: list<CollectionOrderId?> = [CollectionOrderId(number: 7), null]
+    let entries: dict<str, CollectionOrderId?> = ["next": CollectionOrderId(number: 9)]
+    assert convert<str>(members) == "[order 7, null]"
+    assert convert<str>(entries) == "[\"next\": order 9]"
+}
+
+struct CustomTextMember {
+    number: i64
+}
+
+impl const fn convert(value: CustomTextMember) -> str => convert<str>(value.number)
+impl const fn convert(value: list<CustomTextMember>) -> str => "custom members"
+
+/**
+Formatting selects a program's more-specific collection conversion.
+
+Rules:
+    OPS-4, FMT-5, GEN-5
+
+Status:
+    agreed
+*/
+test collection_conversion_preserves_selection {
+    let members: list<CustomTextMember> = [CustomTextMember(number: 7)]
+    assert convert<str>(members) == "custom members"
+    assert format("{}", members) == convert<str>(members)
+}

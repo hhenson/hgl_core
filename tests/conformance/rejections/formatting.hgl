@@ -209,3 +209,52 @@ const fn format_chrono_with_type_letter() -> str {
     # expect-error(type, "format.specifier")
     return format("{:12f}", @09:30:00)
 }
+
+/**
+A pattern that is only known when the program runs rejects.
+
+Rules:
+    FMT-1, FMT-3
+
+Status:
+    agreed
+*/
+const fn format_needs_constant_text(pattern: str) -> str {
+    # expect-error(type, "argument.constant")
+    return format(pattern)
+}
+
+struct UnwritableFormatValue {
+    id: i64
+}
+
+/**
+A type without a text conversion cannot fill a place.
+
+Rules:
+    FMT-5, GEN-5
+
+Status:
+    agreed
+*/
+const fn format_needs_conversion(value: UnwritableFormatValue) -> str {
+    # expect-error(operator, "operator.no_candidate")
+    return format("{}", value)
+}
+
+const fn format_with_generic_pattern<const Pattern: str>(value: i64) -> str =>
+    format(Pattern, value)
+
+/**
+A generic string argument is checked where the call gives it a value.
+
+Rules:
+    FMT-1, FMT-3, FMT-4, GEN-7
+
+Status:
+    proposed
+*/
+const fn format_specializes_pattern() -> str {
+    # expect-error(type, "format.specifier")
+    return format_with_generic_pattern<"{:.2f}">(42)
+}

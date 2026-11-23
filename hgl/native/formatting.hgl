@@ -13,13 +13,6 @@ after a colon, as in `{price:.2f}`.
 | Date, time, datetime or duration | The type's date or time directives and optional padding |
 | Any other type | A place with no specifier, using its `convert<str>` |
 
-The call rejects during compilation for a nonconstant format string
-(`argument.constant`), an unmatched brace (`format.syntax`), a place with
-no matching argument (`format.argument`), an unused argument
-(`format.unused`), or a specifier the value's type does not admit
-(`format.specifier`). A value without a required text conversion also
-rejects during compilation.
-
 Type Args:
     As: The types of the positional values, in supplied order.
     Ks: The types of the named values, keyed by their supplied names.
@@ -31,6 +24,14 @@ Args:
 
 Returns:
     The literal text with each place filled by its formatted value.
+
+Raises:
+    - `argument.constant`: the format string is not constant at compilation.
+    - `format.syntax`: an unmatched brace.
+    - `format.argument`: a place has no matching argument.
+    - `format.unused`: an argument fills no place.
+    - `format.specifier`: a place's type does not admit its specifier.
+    - `operator.no_candidate`: a value has no required `convert<str>`.
 
 Examples:
     ~~~hgl
