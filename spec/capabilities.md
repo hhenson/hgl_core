@@ -68,8 +68,9 @@ form, `get(dictionary, key, fallback)` (ERR-6), which is not declared in
   current evaluation time is asked for in `start` alone, where it asks
   for a wake at the start, the node's first evaluation, as `0s` does;
   outside `start` it is dropped with that warning, as an earlier one is.
-  A node is warned of once in a run, at its first dropped wake,
-  and where it had more, their count is logged when the node stops. `on_wall_clock: true` times a wake on the wall
+  A node is warned of once each time it starts, at its first dropped
+  wake, and the warning names the node and the time the wake was asked
+  for; where it had more, their count is logged when the node stops. `on_wall_clock: true` times a wake on the wall
   clock, `clock.now`, in a run in real time. The time the request is
   measured from is then the later of the evaluation time and `clock.now`: a
   `duration` asks for a wake that long after it, and a `datetime` is a time
