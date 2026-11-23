@@ -19,17 +19,10 @@ FN-8).
 | `format{options}(fmt_str, args..., kwargs...)` | The text of `fmt_str` with its places filled |
 | `Marked<T>` | A value of T or none, and whether it ticked, for a place to show |
 
-```hgl
-export operator format<...As, ...Ks>(
-    const fmt_str: str, args: ...As, kwargs: ...{Ks}) -> str
+The native declaration gives the value candidate and `Marked<T>`'s fields.
+The graph candidate's signature is shown here for reference.
 
-# In a node's handler or a value function: the one native.
-native impl const fn format<...As, ...Ks>{
-    const not_valid: str = "<not valid>",
-    const ticked: str = "*",
-}(const fmt_str: str, args: ...As, kwargs: ...{Ks}) -> str
-
-# In a graph: its text ticks. Written in HGL on the native.
+```text
 impl fn format<...As, ...Ks>{
     const not_valid: str = "<not valid>",
     const ticked: str = "*",
@@ -38,11 +31,6 @@ impl fn format<...As, ...Ks>{
     const require_valid: bool = true,
     trigger: signal?,
 }(const fmt_str: str, args: ...As, kwargs: ...{Ks}) -> str
-
-export struct Marked<T> {
-    value: T?
-    ticked: bool
-}
 ```
 
 ## Rules

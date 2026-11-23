@@ -11,13 +11,8 @@ written in HGL on it and on `format` ([formatting](formatting.md)).
 
 | Core API | Contract |
 | --- | --- |
-| `write(text, stream, flush)` | The text, on standard output or standard error |
-
-```hgl
-export enum Stream { out, err }
-
-export native const fn write(text: str, stream: Stream = .out, flush: bool = false)
-```
+| `write(text: str, stream: Stream = .out, flush: bool = false)` | Write the text to the selected stream |
+| `Stream` | `.out` for standard output, `.err` for standard error |
 
 ## Rules
 
