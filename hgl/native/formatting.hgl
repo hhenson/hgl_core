@@ -22,6 +22,12 @@ Args:
     args: The arguments that fill positional places.
     kwargs: The arguments that fill named places.
 
+Options:
+    - `not_valid: str`: text for an absent `Marked` payload. The default is
+      `"<not valid>"`. Set it with `format{not_valid: "missing"}(...)`.
+    - `ticked: str`: prefix for a marked place whose `Marked` argument ticked.
+      The default is `"*"`. Set it with `format{ticked: "!"}(...)`.
+
 Returns:
     The literal text with each place filled by its formatted value.
 
@@ -44,7 +50,7 @@ Notes:
     for the admitted specifiers and each type's default text.
 
 Rules:
-    FMT-1, FMT-2, FMT-3, FMT-4, FMT-5
+    FMT-1, FMT-2, FMT-3, FMT-4, FMT-5, FMT-7, FMT-9
 */
 export operator format<...As, ...Ks>(
     const fmt_str: str, args: ...As, kwargs: ...{Ks}) -> str
@@ -67,12 +73,6 @@ Args:
     fmt_str: The constant format string.
     args: The arguments that fill positional places.
     kwargs: The arguments that fill named places.
-
-Options:
-    - `not_valid`: text for an absent `Marked` payload. The default is
-      `"<not valid>"`. Set it with `format{not_valid: "missing"}(...)`.
-    - `ticked`: prefix for a marked place whose argument ticked. The
-      default is `"*"`. Set it with `format{ticked: "!"}(...)`.
 
 Returns:
     The formatted text, including requested prefixes.
