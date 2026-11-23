@@ -23,10 +23,11 @@ The [list operations](list-operations.md) `append` and `extend` are declared
 in `hgl/native/lists.hgl`.
 The [mapping and reduction contract](mapping.md) defines `map`, `reduce`,
 and the key-set operations; none is declared in `hgl/` yet.
-The [output contract](output.md) defines `write`, the
-[formatting contract](formatting.md) a format string and `format`, and the
-[diagnostics contract](diagnostics.md) `debug_print`, which is written on
-both; none is declared in `hgl/` yet.
+The [output contract](output.md) defines `write`, declared in
+`hgl/native/output.hgl`. The [formatting contract](formatting.md) defines
+`format`, whose native value candidate is declared in
+`hgl/native/formatting.hgl`. The [diagnostics contract](diagnostics.md)
+defines `debug_print`, which will use both.
 The [tenor contract](tenor-operations.md) defines a tenor's operators, the
 calendar and the rolling rule a date is moved with, declared in
 `hgl/native/tenors.hgl` and `hgl/core/calendar.hgl`.

@@ -1,7 +1,9 @@
 # Formatting
 
 Status: FMT-1 through FMT-9 are agreed. The [reference](#reference)
-lists every form in one place. Nothing here is declared in `hgl/` yet.
+lists every form in one place. The operator, its value candidate and `Marked` are declared in
+[`hgl/native/formatting.hgl`](../hgl/native/formatting.hgl).
+The graph candidate is specified for a later implementation step.
 
 ## Scope and API
 
@@ -17,17 +19,10 @@ FN-8).
 | `format{options}(fmt_str, args..., kwargs...)` | The text of `fmt_str` with its places filled |
 | `Marked<T>` | A value of T or none, and whether it ticked, for a place to show |
 
-```hgl
-export operator format<...As, ...Ks>(
-    const fmt_str: str, args: ...As, kwargs: ...{Ks}) -> str
+The native declaration gives the value candidate and `Marked<T>`'s fields.
+The graph candidate's signature is shown here for reference.
 
-# In a node's handler or a value function: the one native.
-native impl const fn format<...As, ...Ks>{
-    const not_valid: str = "<not valid>",
-    const ticked: str = "*",
-}(const fmt_str: str, args: ...As, kwargs: ...{Ks}) -> str
-
-# In a graph: its text ticks. Written in HGL on the native.
+```text
 impl fn format<...As, ...Ks>{
     const not_valid: str = "<not valid>",
     const ticked: str = "*",
@@ -36,11 +31,6 @@ impl fn format<...As, ...Ks>{
     const require_valid: bool = true,
     trigger: signal?,
 }(const fmt_str: str, args: ...As, kwargs: ...{Ks}) -> str
-
-export struct Marked<T> {
-    value: T?
-    ticked: bool
-}
 ```
 
 ## Rules
@@ -302,7 +292,7 @@ const fn filled(qty: i64, price: f64) -> str =>
 const fn padded(level: i64) -> str =>
     format("level {level:>3} of {{book}}", level: level)
 
-const fn shown(price: f64?, ticked: bool) -> str =>
+const fn shown(ticked: bool, price: f64?) -> str =>
     format("mid {*:.1f}", Marked<f64>(value: price, ticked: ticked))
 
 fn quoted(bid: f64, ask: f64) -> str =>
@@ -311,9 +301,9 @@ fn quoted(bid: f64, ask: f64) -> str =>
 test texts {
     assert filled(10, 101.5) == "fill 10 at 101.50"
     assert padded(7) == "level   7 of {book}"
-    assert shown(101.5, true) == "mid *101.5"
-    assert shown(101.5, false) == "mid 101.5"
-    assert shown(null, false) == "mid <not valid>"
+    assert shown(true, 101.5) == "mid *101.5"
+    assert shown(false, 101.5) == "mid 101.5"
+    assert shown(false, null) == "mid <not valid>"
 }
 ```
 
@@ -327,4 +317,6 @@ argument has (`format.argument`); `format("fill", qty)`, an argument no
 place takes (`format.unused`); `format("at {:.2f}", qty)` with `qty` an
 `i64`, a precision an integer does not admit (`format.specifier`); and
 `format("at {", price)`, a brace that opens no place (`format.syntax`).
-No conformance case is claimed.
+The [Core conformance cases](../tests/core_conformance/formatting.hgl) exercise
+the value candidate. The catalogue codes have their own
+[source rejection cases](../tests/conformance/rejections/formatting.hgl).
