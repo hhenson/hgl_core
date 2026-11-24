@@ -262,6 +262,49 @@ test keyed_map_propagates_a_child_failure {
     assert raises("numeric.division_by_zero") { eval keyed_map_divisions(items: [["a": 0]]) }
 }
 
+fn keyed_add_offset(items: dict<str, i64>, offset: i64) -> dict<str, i64> =>
+    map(add_<i64, i64, i64>, items, offset)
+
+/**
+A selected operator receives each member and the whole offset.
+
+Rules:
+    MAP-2, FN-17
+
+Status:
+    agreed
+*/
+test keyed_map_calls_a_selected_operator {
+    assert eval keyed_add_offset(items: [["a": 3]], offset: [2, 5]) ==
+        [["a": 5], delta<dict<str, i64>>(updated: ["a": 8])]
+}
+
+fn replace_key_in_one_cycle(cycle: i64) -> dict<i64, i64> {
+    inject out
+    when {
+        if cycle == 1 { return [1: 2] }
+        out = delta<dict<i64, i64>>(removed: [1])
+        out = delta<dict<i64, i64>>(updated: [1: 5])
+    }
+}
+
+fn keyed_replacements(cycle: i64) -> dict<i64, i64> =>
+    map{key: "slot"}(keyed_counter, 1, replace_key_in_one_cycle(cycle))
+
+/**
+A key removed and added within one cycle keeps its child and state.
+
+Rules:
+    MAP-7
+
+Status:
+    agreed
+*/
+test keyed_map_keeps_state_after_replacement_within_one_cycle {
+    assert eval keyed_replacements(cycle: [1, 2]) ==
+        [[1: 1121], delta<dict<i64, i64>>(updated: [1: 1251])]
+}
+
 fn fixed_tree_sum(values: list<i64, 2>) -> i64 => reduce(add_, values)
 
 const fn append_digit(accumulated: i64, digit: i64) -> i64 => accumulated * 10 + digit
