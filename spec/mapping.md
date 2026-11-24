@@ -151,9 +151,14 @@ exported (the language's UNIT-3).
   positional or named (the language's FN-8). One whose type is its
   parameter's type is given whole to every child. One that is a
   `dict<K, P>`, a `list<P>`, or a `list<P, N>`, for a parameter of type `P` is split: each
-  child reads the entry of its own key, or position. A generic `f` is
-  given with its generic arguments: the function type takes any signature
-  and decides none of them (FN-17).
+  child reads the entry of its own key, or position. A function given
+  bare as `f`, an operator or a generic function, takes its types from
+  what the arguments give `f`'s parameters, a dictionary or a list
+  argument giving its member type and any other argument its own (the
+  language's FN-17 and GEN-3): `map(add_, a, b)` over two `list<i64, N>`
+  selects `add_`'s candidate for two `i64`. To give a dictionary or a
+  list whole to every child, the call writes the function's generic
+  arguments.
 - **MAP-3.** At least one argument is split, which each candidate's `any`
   requires. A call in which every argument is whole has no candidate,
   with `keys` given or not.
@@ -234,7 +239,9 @@ exported (the language's UNIT-3).
   As a connection it changes as keys are added and removed, and not when
   an entry's value changes.
 - **SET-2.** `union(a, b)` has the members either set has, and
-  `intersection(a, b)` those both have.
+  `intersection(a, b)` those both have. An input that is not valid is
+  taken as a set with no members: `union` then has the other's members,
+  and `intersection` none.
 
 ## Examples
 
