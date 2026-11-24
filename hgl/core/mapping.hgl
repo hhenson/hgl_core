@@ -203,12 +203,15 @@ Validity:
     The ordered form waits for a valid `zero`. It carries the accumulator
     past an invalid member. The tree form combines two valid sides and
     forwards the one valid side of a pair. A withdrawn member leaves the
-    reduction of the members that remain.
+    reduction of the members that remain. A step combines while its
+    accumulator and member are both valid. When a stopped step starts
+    again, its callback has fresh state.
 
     Over a list of nonnullable members, a nullable combiner receives every
     position, with null for an invalid endpoint. Over a list of nullable
     members, a published null is a valid member and an invalid endpoint
-    is skipped.
+    is skipped. The nullable tree starts on the list's first publication
+    and takes no part of `zero`.
 
 Raises:
     - `operator.no_candidate`: An ordered reduction omits its zero or a set or dictionary lacks the required tree laws.
@@ -312,6 +315,10 @@ fn reduce_tree_pair<V>(f: fn(V, V) -> V, left: V, right: V) -> V {
     } else { right }
 }
 
+fn tree_reduction_has_member<V>(accumulated: V, zero: signal) -> bool {
+    when valid([]) { return valid(accumulated) }
+}
+
 fn tree_reduction_zero<V>(zero: V?) -> V {
     inject out
     when valid([]) {
@@ -327,7 +334,7 @@ impl fn reduce<V, N, const associative: bool = associative(f)>(
 {
     var accumulated = items[0]
     for i in 1..<N { accumulated = reduce_tree_pair(f, accumulated, items[i]) }
-    return if reduction_is_valid(accumulated) {
+    return if tree_reduction_has_member(accumulated, zero) {
         accumulated
     } else { tree_reduction_zero(zero) }
 }
@@ -378,9 +385,17 @@ impl fn reduce<L, R, N, const associative: bool = associative(f)>(
 }
 
 fn nullable_reduction_member<V>(member: V, items: signal) -> V? {
+    state was_valid: bool = false
+    inject out
     when valid([]) {
-        if valid(member) { return member }
-        return null
+        let present = valid(member)
+        # The list wakes a position for its first publication. A later tick
+        # of a different position leaves this value alone.
+        if !valid(out) || present != was_valid || (present && modified(member)) {
+            was_valid = present
+            if valid(member) { return member }
+            return null
+        }
     }
 }
 

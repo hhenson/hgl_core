@@ -104,6 +104,74 @@ test fixed_reduce_selects_tree_and_ordered_folds {
     ) == [123]
 }
 
+/**
+Fixed reductions select the exact input type for callbacks inferred from the list.
+
+Rules:
+    GEN-5, RED-2, RED-3
+
+Status:
+    proposed
+*/
+test fixed_reduce_selects_inferred_callbacks {
+    fn generic_last<T>(a: T, b: T) -> T => b
+    fn generic_first<A, B>(a: A, b: B) -> A => a
+    operator combine<T>(a: T, b: T) -> T
+    impl fn combine<T>(a: T, b: T) -> T => a
+
+    fn digits(items: list<i64, 3>) -> i64 =>
+        reduce(fn(a, b) => a * 10 + b, items, 1)
+    fn sum(items: list<i64, 3>) -> i64 =>
+        reduce{associative: true}(fn(a, b) => a + b, items)
+    fn last(items: list<i64, 3>) -> i64 =>
+        reduce{associative: true}(generic_last, items)
+    fn first(items: list<i64, 3>) -> i64 =>
+        reduce(generic_first, items, 7)
+    fn combined(items: list<str, 2>) -> str =>
+        reduce{associative: true}(combine, items)
+
+    assert eval digits(items: [[2, 3, 4]]) == [1234]
+    assert eval sum(items: [[1, 2, 3]]) == [6]
+    assert eval last(items: [[1, 2, 3]]) == [3]
+    assert eval first(items: [[1, 2, 3]]) == [7]
+    assert eval combined(items: [["a", "b"]]) == ["a"]
+}
+
+/**
+An inferred callback prefers the input type given by another argument.
+
+A written nullable parameter selects the nullable candidate. An inferred
+callback may still use a nullable input when that is the only candidate.
+
+Rules:
+    GEN-5, FN-17
+
+Status:
+    proposed
+*/
+test inferred_callback_prefers_the_argument_type {
+    operator callback_kind<R, F>(f: fn(F) -> i64, items: list<R, 1>) -> i64
+
+    impl fn callback_kind<R>(f: fn(R) -> i64, items: list<R, 1>) -> i64 =>
+        f(items[0])
+
+    impl fn callback_kind<R>(f: fn(R?) -> i64, items: list<R, 1>) -> i64 =>
+        f(items[0]) + 100
+
+    operator nullable_only<R, F>(f: fn(F) -> i64, items: list<R, 1>) -> i64
+
+    impl fn nullable_only<R>(f: fn(R?) -> i64, items: list<R, 1>) -> i64 =>
+        f(items[0]) + 100
+
+    fn choose_inferred(items: list<i64, 1>) -> i64 => callback_kind(fn(value) => 3, items)
+    fn choose_written(items: list<i64, 1>) -> i64 => callback_kind(fn(value: i64?) => 4, items)
+    fn choose_only(items: list<i64, 1>) -> i64 => nullable_only(fn(value) => 5, items)
+
+    assert eval choose_inferred(items: [[2]]) == [3]
+    assert eval choose_written(items: [[2]]) == [104]
+    assert eval choose_only(items: [[2]]) == [105]
+}
+
 fn fixed_sparse_ordered(items: list<i64, 3>, seed: i64) -> i64 =>
     reduce(append_digit, items, seed)
 
@@ -112,6 +180,9 @@ fn fixed_sparse_tree(items: list<i64, 3>) -> i64 =>
 
 fn fixed_sparse_tree_with_zero(items: list<i64, 3>) -> i64 =>
     reduce(add_, items, 0)
+
+fn fixed_sparse_tree_with_live_zero(items: list<i64, 3>, zero: i64) -> i64 =>
+    reduce(add_, items, zero)
 
 fn observe_reduction_validity(value: i64, tick: i64) -> bool {
     when valid(tick) { return valid(value) }
@@ -178,6 +249,14 @@ test fixed_tree_reduction_uses_its_zero_when_no_member_is_valid {
         delta<list<i64, 3>>(updated: [2: 11]),
         delta<list<i64, 3>>(removed: [2]),
     ]) == [7, 0, 11, 0]
+    assert eval fixed_sparse_tree_with_live_zero(
+        items: [_, _, delta<list<i64, 3>>(updated: [2: 4])],
+        zero: [0],
+    ) == [0, _, 4]
+    assert eval fixed_sparse_tree_with_live_zero(
+        items: [_, _, delta<list<i64, 3>>(updated: [2: 4])],
+        zero: [_, 0],
+    ) == [_, 0, 4]
 }
 
 fn count_reduction_step(accumulated: i64, member: i64) -> i64 {
@@ -294,6 +373,39 @@ test fixed_reduction_passes_null_to_a_nullable_combiner {
         delta<list<i64, 3>>(removed: [1]),
         delta<list<i64, 3>>(removed: [2]),
     ]) == [17, 16, 17, 15]
+}
+
+fn count_nullable_pair(left: i64?, right: i64?) -> i64? {
+    state visits: i64 = 0
+    when {
+        visits += 1
+        let lhs = if left == null { 0 } else { left }
+        let rhs = if right == null { 0 } else { right }
+        return lhs + rhs + visits * 1000
+    }
+}
+
+fn counted_nullable_tree(items: list<i64, 3>) -> i64? =>
+    reduce{associative: true}(count_nullable_pair, items)
+
+/**
+Only the nullable tree steps that read a changed member need to run.
+
+The first pair reads positions zero and one. Updating position two
+changes the count only in the final pair.
+
+Rules:
+    RED-2, RED-3, FN-11
+
+Status:
+    agreed
+*/
+test fixed_nullable_tree_leaves_an_unchanged_pair_idle {
+    assert eval counted_nullable_tree(items: [
+        [1, 2, 3],
+        delta<list<i64, 3>>(updated: [2: 4]),
+        delta<list<i64, 3>>(updated: [2: 5]),
+    ]) == [2006, 3007, 4008]
 }
 
 fn fixed_ordered_nullable_list(items: list<i64?, 3>) -> i64 =>

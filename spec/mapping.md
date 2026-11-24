@@ -113,6 +113,10 @@ fn reduce_tree_pair<V>(f: fn(V, V) -> V, left: V, right: V) -> V {
     } else { right }
 }
 
+fn tree_reduction_has_member<V>(accumulated: V, zero: signal) -> bool {
+    when valid([]) { return valid(accumulated) }
+}
+
 fn tree_reduction_zero<V>(zero: V?) -> V {
     inject out
     when valid([]) {
@@ -128,7 +132,7 @@ impl fn reduce<V, N, const associative: bool = associative(f)>(
 {
     var accumulated = items[0]
     for i in 1..<N { accumulated = reduce_tree_pair(f, accumulated, items[i]) }
-    return if reduction_is_valid(accumulated) {
+    return if tree_reduction_has_member(accumulated, zero) {
         accumulated
     } else { tree_reduction_zero(zero) }
 }
@@ -179,9 +183,17 @@ impl fn reduce<L, R, N, const associative: bool = associative(f)>(
 }
 
 fn nullable_reduction_member<V>(member: V, items: signal) -> V? {
+    state was_valid: bool = false
+    inject out
     when valid([]) {
-        if valid(member) { return member }
-        return null
+        let present = valid(member)
+        # The list wakes a position for its first publication. A later tick
+        # of a different position leaves this value alone.
+        if !valid(out) || present != was_valid || (present && modified(member)) {
+            was_valid = present
+            if valid(member) { return member }
+            return null
+        }
     }
 }
 
@@ -293,7 +305,9 @@ exported (the language's UNIT-3).
   gives that side, and `f` combines two that are valid. With no valid
   member, the result is `zero`, where given, and is otherwise not valid.
   When a member ceases to be valid, the result is that of the members
-  that remain. A function that takes the member type as nullable,
+  that remain. A step runs while both its accumulator and member are valid.
+  A step that stops starts again with fresh callback state. A function
+  that takes the member type as nullable,
   `fn(L, R?) -> L` over a list of `R` or `fn(V?, V?) -> V?` over a list
   of `V`, is given every position, one that is not valid as null, and
   nothing is passed over for it: `fn(i64, i64?) -> i64` so reduces a
@@ -311,6 +325,8 @@ exported (the language's UNIT-3).
   Over a list of a fixed size the tree form folds in position order from
   the first member that is valid, and does not combine a `zero` (RED-6);
   a list of no positions has no first member, and its call rejects.
+  The nullable tree starts on the list's first publication and takes no
+  part of `zero`.
 - **RED-4.** Over a `set` or a `dict`, which have no order, the
   candidates require `commutative` too, which is `commutative(f)` unless
   the call gives it. A call that meets neither has no candidate, and
@@ -320,7 +336,8 @@ exported (the language's UNIT-3).
   `!associative`, over a list. It folds the valid positions in order, from
   `zero`: `f(f(f(zero, x0), x1), x2)`. Its `zero` has no default: a call
   that leaves it out rejects. While `zero` is not valid there is no
-  result, whatever `f` reads.
+  result, whatever `f` reads. Over a growing list, a withdrawn member that
+  returns starts its callback with fresh state.
 - **RED-6.** A `zero` given to the tree form is an identity of `f`:
   `f(zero, x)` and `f(x, zero)` are `x`. Whether the implementation
   combines it with the members is therefore not observable.
