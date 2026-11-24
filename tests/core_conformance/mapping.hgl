@@ -198,8 +198,10 @@ fn add_catalog_bonus(member: i64, catalog: dict<str, i64>) -> i64 {
 fn keyed_map_with_catalog(items: dict<str, i64>, catalog: dict<str, i64>) -> dict<str, i64> =>
     map(add_catalog_bonus, items, catalog)
 
-fn keyed_map_with_literals(items: dict<str, i64>) -> dict<str, i64> =>
-    map{keys: ["a"]}(add_catalog_bonus, items, ["bonus": 5])
+fn keyed_map_with_literals(items: dict<str, i64>) -> dict<str, i64> {
+    let catalog: dict<str, i64> = ["bonus": 5]
+    return map{keys: ["a"]}(add_catalog_bonus, items, catalog)
+}
 
 /**
 A whole dictionary is shared by every child.
