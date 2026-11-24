@@ -93,7 +93,7 @@ Options:
 
 Returns:
     One entry for each child that has published. A failure leaving a child
-    leaves the map.
+    leaves the map. A fixed-size map gives no result when its child gives none.
 
 Ticks:
     An entry ticks when its child publishes and is removed when its child stops.
@@ -153,6 +153,25 @@ impl fn map<R, N, ...Ps, ...As, const key: str = "key">{
         f(...{for arg in arg_keys(Ps):
             if arg == key { i }
             else if arg in arg_keys(As) { at_position<Ps[arg]>(args[arg], i) }})]
+}
+
+/**
+Run one child with no result for each fixed position.
+
+Rules:
+    MAP-7, MAP-10, GEN-6
+*/
+impl fn map<const N: i64, ...Ps, ...As, const key: str = "key">{
+    const join: Join = .inner,
+}(f: fn(...{Ps}), args: ...{As for f without key})
+    requires any arg in arg_keys(As) { As[arg] == list<Ps[arg], N> }
+          && each arg in arg_keys(As) { As[arg] in {Ps[arg], list<Ps[arg], N>} }
+{
+    for i in 0..<N {
+        f(...{for arg in arg_keys(Ps):
+            if arg == key { i }
+            else if arg in arg_keys(As) { at_position<Ps[arg]>(args[arg], i) }})
+    }
 }
 
 # One argument at one position: its entry where it is split, itself where
