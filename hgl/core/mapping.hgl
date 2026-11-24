@@ -194,14 +194,17 @@ Options:
 Returns:
     The reduction. A growing list, set or dictionary with no valid members
     gives `zero` when supplied and otherwise has no valid value. A fixed-size
-    result requires every position to be valid. The fixed-size tree form
-    rejects a list of size zero.
+    reduction gives every position to `f`. Its tree form rejects a list of
+    size zero.
 
 Ticks:
     The result follows the publications of the inputs the reduction reads.
 
 Validity:
-    Over a fixed-size list every position must be valid for the result to be valid.
+    Over a fixed-size list, validity follows the composed calls. The result
+    is valid once every position is valid where `f` needs both inputs valid.
+    A function that takes and gives nullable values can reduce a list whose
+    positions come and go.
 
 Raises:
     - `operator.no_candidate`: An ordered reduction omits its zero or a set or dictionary lacks the required tree laws.
