@@ -3,7 +3,9 @@
 Status: MAP-1 through MAP-10, RED-1 through RED-7 and SET-1 through SET-2
 are agreed. `hgl/` declares `map` and `reduce` and defines their fixed-size
 candidates. The other candidates declare native implementation obligations.
-The properties of `add_` and `mul_` are declared under RED-7.
+The properties of `add_` and `mul_` are declared under RED-7. RED-2's
+passing over of a position that is not valid is agreed; the two fixed-size
+bodies shown below do not hold it yet.
 
 ## Scope and API
 
@@ -200,11 +202,16 @@ exported (the language's UNIT-3).
 - **RED-1.** `items` is a `list<R>`, a `list<R, N>`, a `set<R>`, or a
   `dict<K, R>`, whose values are what is reduced. `f` combines what has
   been accumulated, an `L`, with a member, an `R`, and gives an `L`.
-- **RED-2.** Only members that are valid are reduced. With none, the result
-  is `zero`, where given, and is otherwise not valid. Over a list of a
-  fixed size every position is reduced, and the result is valid once
-  every position is: a function that takes and gives nullable values
-  reduces one whose positions come and go.
+- **RED-2.** Only members that are valid are reduced, in a list of a
+  fixed size as in every other collection. The ordered form passes over
+  a position that is not valid: what has been accumulated goes on
+  unchanged. In the tree form a pair of which one side alone is valid
+  gives that side, and `f` combines two that are valid. With no valid
+  member, the result is `zero`, where given, and is otherwise not valid.
+  When a member ceases to be valid, the result is that of the members
+  that remain. A function that takes a member as nullable,
+  `fn(L, R?) -> L` or `fn(V?, V?) -> V?`, is given every position, one
+  that is not valid as null, and nothing is passed over for it.
 - **RED-3.** The tree form combines the members in whatever grouping the
   implementation chooses. Its candidates take a function of one type,
   `fn(V, V) -> V`, and require `associative`. That option is
@@ -213,8 +220,8 @@ exported (the language's UNIT-3).
   call says `{associative: true}` of a function that declares nothing, and
   `{associative: false}` to take the ordered form whatever `f` declares.
   Over a list of a fixed size the tree form folds in position order from
-  the first member, and does not combine a `zero` (RED-6); a list of no
-  positions has no first member, and its call rejects.
+  the first member that is valid, and does not combine a `zero` (RED-6);
+  a list of no positions has no first member, and its call rejects.
 - **RED-4.** Over a `set` or a `dict`, which have no order, the
   candidates require `commutative` too, which is `commutative(f)` unless
   the call gives it. A call that meets neither has no candidate, and
@@ -223,7 +230,8 @@ exported (the language's UNIT-3).
 - **RED-5.** The ordered form is the candidate that requires
   `!associative`, over a list. It folds the valid positions in order, from
   `zero`: `f(f(f(zero, x0), x1), x2)`. Its `zero` has no default: a call
-  that leaves it out rejects.
+  that leaves it out rejects. While `zero` is not valid there is no
+  result, whatever `f` reads.
 - **RED-6.** A `zero` given to the tree form is an identity of `f`:
   `f(zero, x)` and `f(x, zero)` are `x`. Whether the implementation
   combines it with the members is therefore not observable.
