@@ -63,8 +63,8 @@ impl fn format<...As, ...Ks>{
   below. A value of any other type takes `{}` alone. Width and precision
   of a `str` count its characters. When a specifier gives an `f64` a
   width and supplies neither a type letter nor a precision, pad its
-  FMT-5 text. A call that
-  uses the type letter `c` for an `i64` rejects (`format.specifier`).
+  FMT-5 text. The `0` flag on a `bool` or a `str` rejects
+  (`format.specifier`), as does the type letter `c` on an `i64`.
   `%S` writes whole seconds, and so does `%T`, which ends in them. A
   precision after either writes the fraction of the second too, to the
   millisecond, the microsecond or the nanosecond, the digits after it
@@ -194,8 +194,8 @@ part may be left out, and those written stand in that order.
 | Fill | Any character, before the alignment | That character where the spaces would be | `{:*^6}` of `"ab"` is `"**ab**"` |
 | Sign | `+`, or a space | A `+`, or a space, before a number that is not below zero | `{:+}` of `5` is `"+5"` |
 | Base prefix | `#` | `0x`, `0b` or `0` before a number in that base | `{:#x}` of `255` is `"0xff"` |
-| Zeros | `0`, before the width | Zeros after the sign where the spaces would be | `{:05}` of `42` is `"00042"` |
-| Width | A number | At least that many characters. For an `f64` with neither a type letter nor a precision, pad its FMT-5 text | `{:>4}` of `"日"` is `"   日"`; `{:>6}` of `3.0` is `"   3.0"` |
+| Zeros | `0`, before the width | Zeros after the sign where the spaces would be; rejects for a `bool` or `str` | `{:05}` of `42` is `"00042"` |
+| Width | A number | At least that many characters. For an `f64` with neither a type letter nor a precision, pad its FMT-5 text | `{:>4}` of `"日"` is `"   日"`; `{:>6}` of `3.0` is `"   3.0"`; `{:5}` of `true` is `"true "` and `{:>5}` is `" true"` |
 | Precision | `.` and a number | Of an `f64`, the digits after the point (`f`, `e`) or the significant digits (`g`); of a `str`, the characters kept | `{:.2f}` of `101.5` is `"101.50"`; `{:.2}` of `"日日日"` is `"日日"` |
 
 | Type | Of | Writes | Example |
@@ -295,7 +295,7 @@ Each is reported where the call is compiled.
 | `format.syntax` | A brace opens no place and closes none | `format("at {", price)` |
 | `format.argument` | A place has no argument; `{engine_time}` in value code | `format("{} at {}", qty)` |
 | `format.unused` | An argument no place takes | `format("fill", qty)` |
-| `format.specifier` | A specifier its argument's type does not admit; in value code, a mark on an argument that is no `Marked` | `format("{:c}", 65)` or `format("{:%H}", day)` with a `date` |
+| `format.specifier` | A specifier its argument's type does not admit; in value code, a mark on an argument that is no `Marked` | `format("{:05}", true)`, `format("{:c}", 65)` or `format("{:%H}", day)` with a `date` |
 
 ## Examples
 
