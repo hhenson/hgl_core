@@ -3,9 +3,8 @@
 Status: MAP-1 through MAP-10, RED-1 through RED-7 and SET-1 through SET-2
 are agreed. `hgl/` declares `map` and `reduce` and defines their fixed-size
 candidates. The other candidates declare native implementation obligations.
-The properties of `add_` and `mul_` are declared under RED-7. RED-2's
-passing over of a position that is not valid is agreed; the two fixed-size
-bodies shown below do not hold it yet.
+The properties of `add_` and `mul_` are declared under RED-7. The
+fixed-size bodies follow RED-2 for invalid positions and nullable combiners.
 
 ## Scope and API
 
@@ -65,6 +64,20 @@ impl fn map<R, N, ...Ps, ...As, const key: str = "key">{
             else if arg in arg_keys(As) { at_position<Ps[arg]>(args[arg], i) }})]
 }
 
+# A child with no result still runs at every fixed position (MAP-10).
+impl fn map<const N: i64, ...Ps, ...As, const key: str = "key">{
+    const join: Join = .inner,
+}(f: fn(...{Ps}), args: ...{As for f without key})
+    requires any arg in arg_keys(As) { As[arg] == list<Ps[arg], N> }
+          && each arg in arg_keys(As) { As[arg] in {Ps[arg], list<Ps[arg], N>} }
+{
+    for i in 0..<N {
+        f(...{for arg in arg_keys(Ps):
+            if arg == key { i }
+            else if arg in arg_keys(As) { at_position<Ps[arg]>(args[arg], i) }})
+    }
+}
+
 # One argument at one position: its entry where it is split, itself where
 # it is whole. The candidates are selected by type. Not exported.
 operator at_position<P, A>(arg: A, const at: i64) -> P
@@ -100,24 +113,113 @@ native impl fn reduce<L, R, const associative: bool = associative(f)>(
     f: fn(L, R) -> L, items: list<R>, zero: L) -> L
     requires !associative
 
-# Tree, over a list of a fixed size: written in HGL, from the first member.
+fn reduction_is_valid<V>(value: V) -> bool {
+    when valid([]) { return valid(value) }
+}
+
+fn reduction_pair_validity<V>(left: V, right: V) -> tuple<bool, bool> {
+    when valid([]) { return (valid(left), valid(right)) }
+}
+
+fn reduce_tree_pair<V>(f: fn(V, V) -> V, left: V, right: V) -> V {
+    let present = reduction_pair_validity(left, right)
+    return if present[0] {
+        if present[1] { f(left, right) } else { left }
+    } else { right }
+}
+
+fn tree_reduction_has_member<V>(accumulated: V, zero: signal) -> bool {
+    when valid([]) { return valid(accumulated) }
+}
+
+fn tree_reduction_zero<V>(zero: V?) -> V {
+    inject out
+    when valid([]) {
+        if valid(zero) && zero != null { return zero }
+        invalidate(out)
+    }
+}
+
+# A fixed-size tree keeps the first valid member and combines the rest.
 impl fn reduce<V, N, const associative: bool = associative(f)>(
     f: fn(V, V) -> V, items: list<V, N>, zero: V? = null) -> V
     requires associative && N != 0
 {
-    var acc = items[0]
-    for i in 1..<N { acc = f(acc, items[i]) }
-    return acc
+    var accumulated = items[0]
+    for i in 1..<N { accumulated = reduce_tree_pair(f, accumulated, items[i]) }
+    return if tree_reduction_has_member(accumulated, zero) {
+        accumulated
+    } else { tree_reduction_zero(zero) }
 }
 
-# Ordered, over a list of a fixed size: written in HGL, from the zero.
+fn ordered_reduction_ready<L, R>(accumulated: L, member: R) -> bool {
+    when valid([]) { return valid(accumulated) && valid(member) }
+}
+
+fn reduce_ordered_member<L, R>(f: fn(L, R) -> L, accumulated: L, member: R) -> L {
+    return if ordered_reduction_ready(accumulated, member) {
+        f(accumulated, member)
+    } else { accumulated }
+}
+
+# A fixed-size ordered fold starts at zero and skips invalid members.
 impl fn reduce<L, R, N, const associative: bool = associative(f)>(
     f: fn(L, R) -> L, items: list<R, N>, zero: L) -> L
     requires !associative
 {
-    var acc = zero
-    for item in items { acc = f(acc, item) }
-    return acc
+    var accumulated = zero
+    for member in items { accumulated = reduce_ordered_member(f, accumulated, member) }
+    return accumulated
+}
+
+fn reduce_ordered_nullable_member<L, R>(f: fn(L, R?) -> L, accumulated: L, member: R) -> L {
+    let value = nullable_reduction_member(member, accumulated)
+    return if reduction_is_valid(accumulated) { f(accumulated, value) } else { accumulated }
+}
+
+# A nullable combiner over nonnullable members receives every position.
+impl fn reduce<L, R, N, const associative: bool = associative(f)>(
+    f: fn(L, R?) -> L, items: list<R, N>, zero: L) -> L
+    requires !associative
+{
+    var accumulated = zero
+    for member in items {
+        accumulated = reduce_ordered_nullable_member(f, accumulated, member)
+    }
+    return accumulated
+}
+
+fn nullable_reduction_member<V>(member: V, wake: signal) -> V? {
+    state was_valid: bool = false
+    inject out
+    when valid([]) {
+        let present = valid(member)
+        # The other input can wake a position for its first publication.
+        # A later tick of that input alone leaves the member idle.
+        if !valid(out) || present != was_valid || (present && modified(member)) {
+            was_valid = present
+            if valid(member) { return member }
+            return null
+        }
+    }
+}
+
+fn reduce_tree_nullable_pair<V>(f: fn(V?, V?) -> V?, left: V?, right: V?) -> V? {
+    # The next pair waits for the preceding pair to publish, including null.
+    return if reduction_is_valid(left) { f(left, right) } else { left }
+}
+
+impl fn reduce<V, N, const associative: bool = associative(f)>(
+    f: fn(V?, V?) -> V?, items: list<V, N>, zero: V? = null
+) -> V?
+    requires associative && N != 0
+{
+    # A list tick supplies a null even for a position that has never published.
+    var accumulated = nullable_reduction_member(items[0], items)
+    for i in 1..<N {
+        accumulated = reduce_tree_nullable_pair(f, accumulated, nullable_reduction_member(items[i], items))
+    }
+    return accumulated
 }
 
 # The laws `reduce` reads (the language's GEN-9), added to the operators
@@ -142,7 +244,7 @@ exported (the language's UNIT-3).
 
 ### Mapping
 
-- **MAP-1.** `map` has three candidates. In the keyed form every argument
+- **MAP-1.** `map` has three collection forms. In the keyed form every argument
   that is split is a dictionary, and the result is a `dict<K, R>`. In the
   form by position every argument that is split is a list, and the result
   is a `list<R>`; where the lists are of one fixed size, `list<P, N>`, the
@@ -212,7 +314,9 @@ exported (the language's UNIT-3).
   gives that side, and `f` combines two that are valid. With no valid
   member, the result is `zero`, where given, and is otherwise not valid.
   When a member ceases to be valid, the result is that of the members
-  that remain. A function that takes the member type as nullable,
+  that remain. A step runs while both its accumulator and member are valid.
+  A step that stops starts again with fresh callback state. A function
+  that takes the member type as nullable,
   `fn(L, R?) -> L` over a list of `R` or `fn(V?, V?) -> V?` over a list
   of `V`, is given every position, one that is not valid as null, and
   nothing is passed over for it: `fn(i64, i64?) -> i64` so reduces a
@@ -230,6 +334,8 @@ exported (the language's UNIT-3).
   Over a list of a fixed size the tree form folds in position order from
   the first member that is valid, and does not combine a `zero` (RED-6);
   a list of no positions has no first member, and its call rejects.
+  The nullable tree starts on the list's first publication and takes no
+  part of `zero`.
 - **RED-4.** Over a `set` or a `dict`, which have no order, the
   candidates require `commutative` too, which is `commutative(f)` unless
   the call gives it. A call that meets neither has no candidate, and
@@ -239,7 +345,8 @@ exported (the language's UNIT-3).
   `!associative`, over a list. It folds the valid positions in order, from
   `zero`: `f(f(f(zero, x0), x1), x2)`. Its `zero` has no default: a call
   that leaves it out rejects. While `zero` is not valid there is no
-  result, whatever `f` reads.
+  result, whatever `f` reads. Over a growing list, a withdrawn member that
+  returns starts its callback with fresh state.
 - **RED-6.** A `zero` given to the tree form is an identity of `f`:
   `f(zero, x)` and `f(x, zero)` are `x`. Whether the implementation
   combines it with the members is therefore not observable.
