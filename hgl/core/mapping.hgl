@@ -83,6 +83,26 @@ Examples:
     assert eval scaled_pair(prices: [[2.0, 3.0]], factor: [4.0]) == [[8.0, 12.0]]
     ~~~
 
+    A keyed map with an explicit set selects only those keys. Running
+    this example requires the planned C++ keyed-map adapter.
+
+    ~~~hgl no-run
+    fn double_price(price: i64) -> i64 => price * 2
+    fn selected_prices(prices: dict<str, i64>, selected: set<str>) -> dict<str, i64> =>
+        map{keys: selected}(double_price, prices)
+    assert eval selected_prices(prices: [["west": 2, "east": 3]], selected: [["west"]]) ==
+        [["west": 4]]
+    ~~~
+
+    A list can gain positions as it changes. Running this example
+    requires the planned C++ native positional map.
+
+    ~~~hgl no-run
+    fn double_item(item: i64) -> i64 => item * 2
+    fn double_items(items: list<i64>) -> list<i64> => map(double_item, items)
+    assert eval double_items(items: [[2, 3]]) == [[4, 6]]
+    ~~~
+
 Rules:
     MAP-1, MAP-2, MAP-3, MAP-4, MAP-5, MAP-6, MAP-7, MAP-8, MAP-9, MAP-10
 */
@@ -158,6 +178,42 @@ Examples:
     ~~~hgl
     fn pair_sum(items: list<i64, 2>) -> i64 => reduce(add_, items)
     assert eval pair_sum(items: [[2, 3], [4, 5]]) == [5, 9]
+    ~~~
+
+    An ordered fold starts from its seed. Here the seed supplies the
+    first digit, and the member positions supply the next two.
+
+    ~~~hgl
+    const fn append_digit(accumulated: i64, digit: i64) -> i64 => accumulated * 10 + digit
+    fn pair_digits(digits: list<i64, 2>) -> i64 => reduce(append_digit, digits, 1)
+    assert eval pair_digits(digits: [[2, 3], [4, 5]]) == [123, 145]
+    ~~~
+
+    The same two forms work on lists whose sizes can change. Running
+    this example requires the planned C++ native list reductions.
+
+    ~~~hgl no-run
+    const fn append_digit(accumulated: i64, digit: i64) -> i64 => accumulated * 10 + digit
+    fn list_sum(items: list<i64>) -> i64 => reduce(add_, items, 0)
+    fn list_digits(digits: list<i64>) -> i64 => reduce(append_digit, digits, 1)
+    assert eval list_sum(items: [[2, 3]]) == [5]
+    assert eval list_digits(digits: [[2, 3]]) == [123]
+    ~~~
+
+    A set uses the tree form with a commutative function. Running this
+    example requires the planned C++ native set reduction.
+
+    ~~~hgl no-run
+    fn set_sum(items: set<i64>) -> i64 => reduce(add_, items, 0)
+    assert eval set_sum(items: [[2, 3]]) == [5]
+    ~~~
+
+    A dictionary reduces its values. Running this example requires the
+    planned C++ native dictionary reduction.
+
+    ~~~hgl no-run
+    fn dictionary_sum(items: dict<str, i64>) -> i64 => reduce(add_, items, 0)
+    assert eval dictionary_sum(items: [["west": 2, "east": 3]]) == [5]
     ~~~
 
 Rules:
