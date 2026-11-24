@@ -61,9 +61,10 @@ impl fn format<...As, ...Ks>{
   and booleans respectively. The date and time directives for `date`,
   `time`, `datetime` and `duration`, such as `{:%Y-%m-%d}`, are described
   below. A value of any other type takes `{}` alone. Width and precision
-  of a `str` count its characters. When a specifier gives an `f64` a
-  width and supplies neither a type letter nor a precision, pad its
-  FMT-5 text. The `0` flag on a `bool` or a `str` rejects
+  of a `str` count its characters. A specifier that supplies neither a
+  type letter nor a precision writes an `f64` as its FMT-5 text, and
+  its sign, fill, alignment and width apply to that text: `{:+}` of
+  `3.0` is `+3.0`. The `0` flag on a `bool` or a `str` rejects
   (`format.specifier`), as does the type letter `c` on an `i64`.
   The specifier `?` alone writes a `str` as a double-quoted HGL
   string literal, with the escapes FMT-5 uses inside a compound value.
@@ -194,10 +195,10 @@ part may be left out, and those written stand in that order.
 | --- | --- | --- | --- |
 | Alignment | `<`, `>` or `^` | The value at the left, the right or the middle of its width. A number is at the right unless told, anything else at the left | `{:>6}` of `"ab"` is `"    ab"` |
 | Fill | Any character, before the alignment | That character where the spaces would be | `{:*^6}` of `"ab"` is `"**ab**"` |
-| Sign | `+`, or a space | A `+`, or a space, before a number that is not below zero | `{:+}` of `5` is `"+5"` |
+| Sign | `+`, or a space | A `+`, or a space, before a number that is not below zero. An `f64` with neither a type letter nor a precision keeps its FMT-5 text | `{:+}` of `5` is `"+5"`, and of `3.0` is `"+3.0"` |
 | Base prefix | `#` | `0x`, `0b` or `0` before a number in that base | `{:#x}` of `255` is `"0xff"` |
 | Zeros | `0`, before the width | Zeros after the sign where the spaces would be; rejects for a `bool` or `str` | `{:05}` of `42` is `"00042"` |
-| Width | A number | At least that many characters. For an `f64` with neither a type letter nor a precision, pad its FMT-5 text | `{:>4}` of `"日"` is `"   日"`; `{:>6}` of `3.0` is `"   3.0"`; `{:5}` of `true` is `"true "` and `{:>5}` is `" true"` |
+| Width | A number | At least that many characters. An `f64` with neither a type letter nor a precision is padded as its FMT-5 text | `{:>4}` of `"日"` is `"   日"`; `{:>6}` of `3.0` is `"   3.0"`; `{:5}` of `true` is `"true "` and `{:>5}` is `" true"` |
 | Precision | `.` and a number | Of an `f64`, the digits after the point (`f`, `e`) or the significant digits (`g`); of a `str`, the characters kept | `{:.2f}` of `101.5` is `"101.50"`; `{:.2}` of `"日日日"` is `"日日"` |
 
 | Type | Of | Writes | Example |
