@@ -50,18 +50,25 @@ impl fn format<...As, ...Ks>{
   (`format.argument`); where an argument is taken by no place
   (`format.unused`); and where a specifier is one its argument's type does
   not admit (`format.specifier`). Nothing of a format string is found
-  wrong while the program runs.
+  wrong while the program runs. A generic body may format an argument
+  whose type depends on its generic parameters without a `requires`
+  for that type. The specifier and text conversion are checked in the
+  instance, at the call that makes it (GEN-7).
 - **FMT-4.** A specifier is of the format language of the fmt library,
   which is Python's: fill and alignment, sign, width, precision, and type.
-  The types that library formats admit one, each given to it as its own
-  type with the specifier as written: `i64`, `f64`, `str` and `bool`, with
-  the specifiers it admits for an integer, a floating-point number, a
-  string and a boolean, and `date`, `time`, `datetime` and `duration`,
-  with those it admits for a date and a time, `{:%Y-%m-%d}`. A value of
-  any other type takes `{}` alone. `%S` writes whole seconds, and so
-  does `%T`, which ends in them. A precision after either writes the
-  fraction of the second too, to the millisecond, the microsecond or
-  the nanosecond, the digits after it dropped. It is taken out where
+  Subject to this rule, `i64`, `f64`, `str` and `bool` admit the
+  library's specifiers for integers, floating-point numbers, strings
+  and booleans respectively. The date and time directives for `date`,
+  `time`, `datetime` and `duration`, such as `{:%Y-%m-%d}`, are described
+  below. A value of any other type takes `{}` alone. Width and precision
+  of a `str` count its characters. When a specifier gives an `f64` a
+  width and supplies neither a type letter nor a precision, pad its
+  FMT-5 text. The `0` flag on a `bool` or a `str` rejects
+  (`format.specifier`), as does the type letter `c` on an `i64`.
+  `%S` writes whole seconds, and so does `%T`, which ends in them. A
+  precision after either writes the fraction of the second too, to the
+  millisecond, the microsecond or the nanosecond, the digits after it
+  dropped. It is taken out where
   the call is compiled, and the library is given the rest and the value
   at that precision. The precision is a `.` and one digit
   directly after the directive, `{:%H:%M:%S.3}` for milliseconds,
@@ -89,17 +96,21 @@ impl fn format<...As, ...Ks>{
   there rejects (`format.specifier`).
 - **FMT-5.** With no specifier a `str` is written as its characters, with
   no quotes, and an `i64`, an `f64` and a `bool` as `convert<str>` of each
-  gives ([scalar operators](scalar-operators.md), OPS-6). A value of a type
-  FMT-4 does not name is written as `convert<str>` of it gives: the type
-  has that conversion, core's or a candidate the program declares for a
-  type of its own, and one that has none rejects where the call is
-  compiled. A `date`, a `time` and a `datetime` with no specifier are
-  written in their ISO 8601 form: `2026-11-22`; `09:30:00`, and where
+  gives ([scalar operators](scalar-operators.md), OPS-6). A `date`, a
+  `time` and a `datetime` with no specifier are written in their ISO 8601
+  form: `2026-11-22`; `09:30:00`, and where
   the fraction of a second is not zero with its six digits,
   `09:30:00.250000`; and `2026-11-22T09:30:00Z`, a `datetime` being an
   instant in UTC, with its fraction as a `time` has it. A `duration` is
   written as its literal is, in its largest units, a whole number of
   each unit that is not zero: `1h30m`, `1s500ms`, and `0s` for none.
+  A nullable argument is written as its value's text when it has a
+  value and as `null` when it has none. A list, set or dictionary delta
+  is written as its constructor (TYPE-16), omitting empty or null
+  properties.
+  Other values use their type's `convert<str>`, core's or a candidate
+  the program declares for a type of its own. Where the type has no
+  conversion, the call rejects where it is compiled.
   Core gives `convert<str>` for a list, a set, a dictionary, a tuple and
   a struct (OPS-4), which writes the value as a program writes it, each
   part by this rule and a `str` among them in quotes: `[1, 2]` for a
@@ -126,8 +137,8 @@ impl fn format<...As, ...Ks>{
   given, holds the text until every argument is valid; with
   `{require_valid: false}` it ticks before that, and an argument with no
   value is written as FMT-7 writes none. `print_delta` says whether a
-  collection that ticked is written as what changed in the cycle, which
-  is the default, or whole. `sample` gives one text in every that many;
+  collection that ticked is written as its delta (FMT-5), which is the
+  default, or whole. `sample` gives one text in every that many;
   it is 1 or more. With a `trigger`, a connection taken as a signal, the
   text ticks in each cycle in which the trigger ticks and in no other,
   with the arguments as they stand, and with no arguments at each tick of
@@ -143,8 +154,11 @@ impl fn format<...As, ...Ks>{
   opening brace marks the place, `{*}`, `{*:.2f}`, `{*mid}`: it is
   written with the text of the `ticked` option, `*` unless the call
   gives another, before its value, where its argument ticked in the
-  cycle. The evaluation time and a mark are of a graph, where there is a
-  cycle and an argument ticks: a call where a graph is built asks for
+  cycle. The prefix also precedes the `not_valid` text when a
+  `Marked<T>` ticked and holds no value. With the defaults, `{*}`
+  writes `*<not valid>` for that argument. The evaluation time and a
+  mark are of a graph, where there is a cycle and an argument ticks:
+  a call where a graph is built asks for
   them. `{wall_time}` is asked for anywhere. In value code a call that
   asks for `{engine_time}` rejects (`format.argument`), and so does one
   that marks a place whose argument is no `Marked` (`format.specifier`);
@@ -180,9 +194,9 @@ part may be left out, and those written stand in that order.
 | Fill | Any character, before the alignment | That character where the spaces would be | `{:*^6}` of `"ab"` is `"**ab**"` |
 | Sign | `+`, or a space | A `+`, or a space, before a number that is not below zero | `{:+}` of `5` is `"+5"` |
 | Base prefix | `#` | `0x`, `0b` or `0` before a number in that base | `{:#x}` of `255` is `"0xff"` |
-| Zeros | `0`, before the width | Zeros after the sign where the spaces would be | `{:05}` of `42` is `"00042"` |
-| Width | A number | At least that many characters | `{:6}` of `42` is `"    42"` |
-| Precision | `.` and a number | Of an `f64`, the digits after the point (`f`, `e`) or the significant digits (`g`); of a `str`, the characters kept | `{:.2f}` of `101.5` is `"101.50"`; `{:.3}` of `"abcdef"` is `"abc"` |
+| Zeros | `0`, before the width | Zeros after the sign where the spaces would be; rejects for a `bool` or `str` | `{:05}` of `42` is `"00042"` |
+| Width | A number | At least that many characters. For an `f64` with neither a type letter nor a precision, pad its FMT-5 text | `{:>4}` of `"日"` is `"   日"`; `{:>6}` of `3.0` is `"   3.0"`; `{:5}` of `true` is `"true "` and `{:>5}` is `" true"` |
+| Precision | `.` and a number | Of an `f64`, the digits after the point (`f`, `e`) or the significant digits (`g`); of a `str`, the characters kept | `{:.2f}` of `101.5` is `"101.50"`; `{:.2}` of `"日日日"` is `"日日"` |
 
 | Type | Of | Writes | Example |
 | --- | --- | --- | --- |
@@ -195,9 +209,9 @@ part may be left out, and those written stand in that order.
 | `g`, `G` | `f64` | The significant digits the precision gives, six with none, and no zeros after them: with an exponent where that exponent is below -4 or not below the number of digits, and without one otherwise | `{:g}` of `1234.5` is `"1234.5"`; of `100000.0`, `"100000"`; of `1000000.0`, `"1e+06"` |
 | `s` | `str`, `bool` | The text, which each has with none | `{:s}` of `true` is `"true"` |
 
-These are the forms in common use. FMT-4 admits the rest of the
+These are the forms in common use. FMT-4 also admits the
 [fmt library's format language](https://fmt.dev/latest/syntax/) for these
-four types too.
+four types, subject to the restrictions in the rule.
 
 ### A date, a time and a duration
 
@@ -253,8 +267,12 @@ Of a `duration`, `%H` is the hours left after its whole days, and
 | A dictionary | The same | `["a": 1]` |
 | A tuple | The same | `(1, "a")` |
 | A struct | The same, every field in the order declared | `Point(x: 1.0, y: 2.0)` |
-| A null among the parts of one of those | `null` | `[1, null]` |
-| A `Marked<T>` that holds none | The text of the `not_valid` option | `<not valid>` |
+| A nullable argument | Its value's text, or `null` | `42`, `null` |
+| A null among the parts of a collection, tuple or struct | `null` | `[1, null]` |
+| A list delta | Its TYPE-16 constructor, omitting empty or null properties | `delta<list<i64>>(updated: [0: 4])` |
+| A set delta | The same | `delta<set<i64>>(added: [1, 2], removed: [3])` |
+| A dictionary delta | The same | `delta<dict<str, i64>>(updated: ["a": 1], removed: ["b"])` |
+| A `Marked<T>` that holds none | The `not_valid` text, with the prefix for a marked place where it ticked | `<not valid>`, `*<not valid>` |
 | Any other type | What `convert<str>` of it gives; the call rejects where the type has none | `1W6D` for a `tenor` |
 
 ### Options
@@ -277,7 +295,7 @@ Each is reported where the call is compiled.
 | `format.syntax` | A brace opens no place and closes none | `format("at {", price)` |
 | `format.argument` | A place has no argument; `{engine_time}` in value code | `format("{} at {}", qty)` |
 | `format.unused` | An argument no place takes | `format("fill", qty)` |
-| `format.specifier` | A specifier its argument's type does not admit; in value code, a mark on an argument that is no `Marked` | `format("{:.2f}", qty)` and `format("{:%H}", day)`, for an `i64` and a `date` |
+| `format.specifier` | A specifier its argument's type does not admit; in value code, a mark on an argument that is no `Marked` | `format("{:05}", true)`, `format("{:c}", 65)` or `format("{:%H}", day)` with a `date` |
 
 ## Examples
 
