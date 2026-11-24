@@ -3,9 +3,8 @@
 Status: MAP-1 through MAP-10, RED-1 through RED-7 and SET-1 through SET-2
 are agreed. `hgl/` declares `map` and `reduce` and defines their fixed-size
 candidates. The other candidates declare native implementation obligations.
-The properties of `add_` and `mul_` are declared under RED-7. RED-2's
-passing over of a position that is not valid is agreed; the two fixed-size
-bodies shown below do not hold it yet.
+The properties of `add_` and `mul_` are declared under RED-7. The
+fixed-size bodies follow RED-2 for invalid positions and nullable combiners.
 
 ## Scope and API
 
@@ -99,24 +98,109 @@ native impl fn reduce<L, R, const associative: bool = associative(f)>(
     f: fn(L, R) -> L, items: list<R>, zero: L) -> L
     requires !associative
 
-# Tree, over a list of a fixed size: written in HGL, from the first member.
+fn reduction_is_valid<V>(value: V) -> bool {
+    when valid([]) { return valid(value) }
+}
+
+fn reduction_pair_validity<V>(left: V, right: V) -> tuple<bool, bool> {
+    when valid([]) { return (valid(left), valid(right)) }
+}
+
+fn reduce_tree_pair<V>(f: fn(V, V) -> V, left: V, right: V) -> V {
+    let present = reduction_pair_validity(left, right)
+    return if present[0] {
+        if present[1] { f(left, right) } else { left }
+    } else { right }
+}
+
+fn tree_reduction_zero<V>(zero: V?) -> V {
+    inject out
+    when valid([]) {
+        if valid(zero) && zero != null { return zero }
+        invalidate(out)
+    }
+}
+
+# A fixed-size tree keeps the first valid member and combines the rest.
 impl fn reduce<V, N, const associative: bool = associative(f)>(
     f: fn(V, V) -> V, items: list<V, N>, zero: V? = null) -> V
     requires associative && N != 0
 {
-    var acc = items[0]
-    for i in 1..<N { acc = f(acc, items[i]) }
-    return acc
+    var accumulated = items[0]
+    for i in 1..<N { accumulated = reduce_tree_pair(f, accumulated, items[i]) }
+    return if reduction_is_valid(accumulated) {
+        accumulated
+    } else { tree_reduction_zero(zero) }
 }
 
-# Ordered, over a list of a fixed size: written in HGL, from the zero.
+fn ordered_reduction_ready<L, R>(accumulated: L, member: R) -> bool {
+    when valid([]) { return valid(accumulated) && valid(member) }
+}
+
+fn reduce_ordered_member<L, R>(f: fn(L, R) -> L, accumulated: L, member: R) -> L {
+    return if ordered_reduction_ready(accumulated, member) {
+        f(accumulated, member)
+    } else { accumulated }
+}
+
+# A fixed-size ordered fold starts at zero and skips invalid members.
 impl fn reduce<L, R, N, const associative: bool = associative(f)>(
     f: fn(L, R) -> L, items: list<R, N>, zero: L) -> L
     requires !associative
 {
-    var acc = zero
-    for item in items { acc = f(acc, item) }
-    return acc
+    var accumulated = zero
+    for member in items { accumulated = reduce_ordered_member(f, accumulated, member) }
+    return accumulated
+}
+
+fn nullable_ordered_inputs<L, R>(accumulated: L, member: R) -> tuple<bool, R?> {
+    when valid([]) {
+        if !valid(accumulated) { return (false, null) }
+        if valid(member) { return (true, member) }
+        return (true, null)
+    }
+}
+
+fn reduce_ordered_nullable_member<L, R>(f: fn(L, R?) -> L, accumulated: L, member: R) -> L {
+    let inputs = nullable_ordered_inputs(accumulated, member)
+    return if inputs[0] { f(accumulated, inputs[1]) } else { accumulated }
+}
+
+# A nullable combiner over nonnullable members receives every position.
+impl fn reduce<L, R, N, const associative: bool = associative(f)>(
+    f: fn(L, R?) -> L, items: list<R, N>, zero: L) -> L
+    requires !associative
+{
+    var accumulated = zero
+    for member in items {
+        accumulated = reduce_ordered_nullable_member(f, accumulated, member)
+    }
+    return accumulated
+}
+
+fn nullable_reduction_member<V>(member: V, items: signal) -> V? {
+    when valid([]) {
+        if valid(member) { return member }
+        return null
+    }
+}
+
+fn reduce_tree_nullable_pair<V>(f: fn(V?, V?) -> V?, left: V?, right: V?) -> V? {
+    # The next pair waits for the preceding pair to publish, including null.
+    return if reduction_is_valid(left) { f(left, right) } else { left }
+}
+
+impl fn reduce<V, N, const associative: bool = associative(f)>(
+    f: fn(V?, V?) -> V?, items: list<V, N>, zero: V? = null
+) -> V?
+    requires associative && N != 0
+{
+    # A list tick supplies a null even for a position that has never published.
+    var accumulated = nullable_reduction_member(items[0], items)
+    for i in 1..<N {
+        accumulated = reduce_tree_nullable_pair(f, accumulated, nullable_reduction_member(items[i], items))
+    }
+    return accumulated
 }
 
 # The laws `reduce` reads (the language's GEN-9), added to the operators

@@ -104,19 +104,27 @@ test fixed_reduce_selects_tree_and_ordered_folds {
     ) == [123]
 }
 
-fn take_last(accumulated: i64, item: i64) -> i64 => item
+fn fixed_sparse_ordered(items: list<i64, 3>, seed: i64) -> i64 =>
+    reduce(append_digit, items, seed)
 
-fn fixed_ordered_last(items: list<i64, 2>) -> i64 => reduce(take_last, items, 0)
+fn fixed_sparse_tree(items: list<i64, 3>) -> i64 =>
+    reduce(add_, items)
 
-fn fixed_tree_last(items: list<i64, 2>) -> i64 =>
-    reduce{associative: true}(take_last, items)
+fn fixed_sparse_tree_with_zero(items: list<i64, 3>) -> i64 =>
+    reduce(add_, items, 0)
+
+fn observe_reduction_validity(value: i64, tick: i64) -> bool {
+    when valid(tick) { return valid(value) }
+}
+
+fn fixed_sparse_tree_validity(items: list<i64, 3>, tick: i64) -> bool =>
+    observe_reduction_validity(fixed_sparse_tree(items), tick)
 
 /**
-A fixed-size reduction follows its callback's input dependencies.
+Fixed-size reductions skip invalid positions and recompute when a member is withdrawn.
 
-Here the callback ignores the accumulator. The last position can
-publish before the first position, and a later tick of the unused
-first position leaves the output silent.
+Only the valid members contribute, in position order. With no members the
+ordered fold gives its seed. A tree without a zero then has no valid value.
 
 Rules:
     RED-2, RED-3, RED-5
@@ -125,16 +133,163 @@ Status:
     agreed
 */
 test fixed_reduction_follows_the_callbacks_validity {
-    assert eval fixed_ordered_last([
-        delta<list<i64, 2>>(updated: [1: 2]),
-        _,
-        delta<list<i64, 2>>(updated: [0: 1]),
-        delta<list<i64, 2>>(updated: [1: 3]),
-    ]) == [2, _, _, 3]
-    assert eval fixed_tree_last([
-        delta<list<i64, 2>>(updated: [1: 2]),
-        _,
-        delta<list<i64, 2>>(updated: [0: 1]),
-        delta<list<i64, 2>>(updated: [1: 3]),
-    ]) == [2, _, _, 3]
+    assert eval fixed_sparse_ordered(
+        items: [
+            delta<list<i64, 3>>(updated: [0: 2, 2: 7]),
+            delta<list<i64, 3>>(updated: [1: 4]),
+            delta<list<i64, 3>>(removed: [0]),
+            delta<list<i64, 3>>(removed: [2]),
+            delta<list<i64, 3>>(removed: [1]),
+        ],
+        seed: [1],
+    ) == [127, 1247, 147, 14, 1]
+    assert eval fixed_sparse_tree(items: [
+        delta<list<i64, 3>>(updated: [2: 7]),
+        delta<list<i64, 3>>(updated: [0: 2]),
+        delta<list<i64, 3>>(updated: [1: 4]),
+        delta<list<i64, 3>>(removed: [0]),
+        delta<list<i64, 3>>(removed: [1]),
+    ]) == [7, 9, 13, 11, 7]
+    assert eval fixed_sparse_tree_validity(
+        items: [
+            delta<list<i64, 3>>(),
+            delta<list<i64, 3>>(updated: [1: 6]),
+            delta<list<i64, 3>>(removed: [1]),
+        ],
+        tick: [1, 2, 3],
+    ) == [false, true, false]
+}
+
+/**
+A fixed-size tree with no valid members gives its identity.
+
+Once a member publishes, the tree forwards that member.
+
+Rules:
+    RED-2, RED-3, RED-6
+
+Status:
+    agreed
+*/
+test fixed_tree_reduction_uses_its_zero_when_no_member_is_valid {
+    assert eval fixed_sparse_tree_with_zero(items: [
+        delta<list<i64, 3>>(updated: [1: 7]),
+        delta<list<i64, 3>>(removed: [1]),
+        delta<list<i64, 3>>(updated: [2: 11]),
+        delta<list<i64, 3>>(removed: [2]),
+    ]) == [7, 0, 11, 0]
+}
+
+fn take_last(accumulated: i64, member: i64) -> i64 => member
+
+fn fixed_ordered_last(items: list<i64, 1>, seeds: list<i64, 1>) -> i64 =>
+    reduce(take_last, items, seeds[0])
+
+/**
+The ordered fold requires a valid zero even when its callback ignores it.
+
+The only member can publish before the seed. Withdrawal of the seed
+leaves the fold invalid even if the member ticks again.
+
+Rules:
+    RED-5
+
+Status:
+    agreed
+*/
+test fixed_ordered_reduction_requires_a_valid_seed {
+    assert eval fixed_ordered_last(
+        items: [
+            delta<list<i64, 1>>(updated: [0: 2]),
+            delta<list<i64, 1>>(updated: [0: 3]),
+            delta<list<i64, 1>>(updated: [0: 7]),
+            delta<list<i64, 1>>(updated: [0: 9]),
+            _,
+        ],
+        seeds: [
+            _,
+            delta<list<i64, 1>>(updated: [0: 1]),
+            delta<list<i64, 1>>(removed: [0]),
+            _,
+            delta<list<i64, 1>>(updated: [0: 1]),
+        ],
+    ) == [_, 3, _, _, 9]
+}
+
+const fn append_nullable_digit(accumulated: i64, member: i64?) -> i64 {
+    if member == null { return accumulated * 10 + 5 }
+    return accumulated * 10 + member
+}
+
+const fn sum_nullable_digits(left: i64?, right: i64?) -> i64? {
+    let lhs = if left == null { 5 } else { left }
+    let rhs = if right == null { 5 } else { right }
+    return lhs + rhs
+}
+
+fn fixed_nullable_ordered(items: list<i64, 3>, seed: i64) -> i64 =>
+    reduce(append_nullable_digit, items, seed)
+
+fn fixed_nullable_tree(items: list<i64, 3>) -> i64? =>
+    reduce{associative: true}(sum_nullable_digits, items)
+
+/**
+A nullable combiner over nonnullable members receives null for each invalid position.
+
+The ordered callback writes a five for each null. The tree callback
+adds five for each null, including both initially invalid positions.
+
+Rules:
+    RED-2, RED-3, RED-5, ERR-14
+
+Status:
+    agreed
+*/
+test fixed_reduction_passes_null_to_a_nullable_combiner {
+    assert eval fixed_nullable_ordered(
+        items: [
+            delta<list<i64, 3>>(updated: [0: 2, 2: 7]),
+            _,
+            delta<list<i64, 3>>(updated: [1: 4]),
+            delta<list<i64, 3>>(removed: [1]),
+        ],
+        seed: [_, 1],
+    ) == [_, 1257, 1247, 1257]
+    assert eval fixed_nullable_tree(items: [
+        delta<list<i64, 3>>(updated: [2: 7]),
+        delta<list<i64, 3>>(updated: [1: 4]),
+        delta<list<i64, 3>>(removed: [1]),
+        delta<list<i64, 3>>(removed: [2]),
+    ]) == [17, 16, 17, 15]
+}
+
+fn fixed_ordered_nullable_list(items: list<i64?, 3>) -> i64 =>
+    reduce(append_nullable_digit, items, 1)
+
+fn fixed_tree_nullable_list(items: list<i64?, 3>) -> i64? =>
+    reduce{associative: true}(sum_nullable_digits, items)
+
+/**
+A held null is a valid member of a list of nullable values.
+
+The callback receives that null and skips a member once its endpoint
+becomes invalid.
+
+Rules:
+    RED-2, ERR-14
+
+Status:
+    agreed
+*/
+test fixed_reduction_distinguishes_a_null_from_an_invalid_nullable_member {
+    assert eval fixed_ordered_nullable_list(items: [
+        delta<list<i64?, 3>>(updated: [0: 2, 1: delta<i64?>()]),
+        delta<list<i64?, 3>>(removed: [1]),
+        delta<list<i64?, 3>>(updated: [1: delta<i64?>()]),
+    ]) == [125, 12, 125]
+    assert eval fixed_tree_nullable_list(items: [
+        delta<list<i64?, 3>>(updated: [2: 7]),
+        delta<list<i64?, 3>>(updated: [1: delta<i64?>()]),
+        delta<list<i64?, 3>>(removed: [1]),
+    ]) == [7, 12, 7]
 }
