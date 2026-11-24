@@ -1,7 +1,8 @@
 # Mapping and reduction
 
 Status: MAP-1 through MAP-10, RED-1 through RED-7 and SET-1 through SET-2
-are agreed. `hgl/` declares `map` and `reduce` and defines their fixed-size
+are agreed, but for the sentence of MAP-2 that begins "Proposed:".
+`hgl/` declares `map` and `reduce` and defines their fixed-size
 candidates. The other candidates declare native implementation obligations.
 The properties of `add_` and `mul_` are declared under RED-7.
 
@@ -151,9 +152,15 @@ exported (the language's UNIT-3).
   positional or named (the language's FN-8). One whose type is its
   parameter's type is given whole to every child. One that is a
   `dict<K, P>`, a `list<P>`, or a `list<P, N>`, for a parameter of type `P` is split: each
-  child reads the entry of its own key, or position. A generic `f` is
-  given with its generic arguments: the function type takes any signature
-  and decides none of them (FN-17).
+  child reads the entry of its own key, or position. An operator given
+  bare as `f` is selected by the types the arguments give `f`'s
+  parameters, a dictionary or a list argument giving its member type and
+  any other argument its own (the language's FN-17 and GEN-3):
+  `map(add_, a, b)` over two `list<i64, N>` selects `add_`'s candidate
+  for two `i64`. To give a list whole to every child of an operator, the
+  call writes the operator's generic arguments. Proposed: a generic `f`
+  given bare takes its generic arguments from the same types (FN-17), and
+  is given with them to give a list whole.
 - **MAP-3.** At least one argument is split, which each candidate's `any`
   requires. A call in which every argument is whole has no candidate,
   with `keys` given or not.
