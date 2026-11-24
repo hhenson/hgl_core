@@ -209,9 +209,14 @@ exported (the language's UNIT-3).
   gives that side, and `f` combines two that are valid. With no valid
   member, the result is `zero`, where given, and is otherwise not valid.
   When a member ceases to be valid, the result is that of the members
-  that remain. A function that takes a member as nullable,
-  `fn(L, R?) -> L` or `fn(V?, V?) -> V?`, is given every position, one
-  that is not valid as null, and nothing is passed over for it.
+  that remain. A function that takes the member type as nullable,
+  `fn(L, R?) -> L` over a list of `R` or `fn(V?, V?) -> V?` over a list
+  of `V`, is given every position, one that is not valid as null, and
+  nothing is passed over for it: `fn(i64, i64?) -> i64` so reduces a
+  `list<i64, 3>`. Over a list whose members are themselves nullable,
+  `list<i64?, 3>`, the function takes the member type as it is: a member
+  that holds null is valid and is given, and a position that is not valid
+  is passed over.
 - **RED-3.** The tree form combines the members in whatever grouping the
   implementation chooses. Its candidates take a function of one type,
   `fn(V, V) -> V`, and require `associative`. That option is
