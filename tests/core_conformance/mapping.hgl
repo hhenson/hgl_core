@@ -70,6 +70,83 @@ test fixed_map_propagates_child_failure {
     assert raises("numeric.division_by_zero") { eval map_fixed_quotients(divisors: [[2, 0]]) }
 }
 
+fn keyed_counter(offset: i64, slot: i64, member: i64) -> i64 {
+    state visits: i64 = 0
+    when {
+        visits += 1
+        return slot * 1000 + visits * 100 + member * 10 + offset
+    }
+}
+
+fn map_one_dictionary(items: dict<i64, i64>, offset: i64) -> dict<i64, i64> =>
+    map{key: "slot"}(keyed_counter, offset, items)
+
+fn map_one_selected_dictionary(items: dict<i64, i64>, offset: i64, selected: set<i64>) -> dict<i64, i64> =>
+    map{keys: selected, key: "slot"}(keyed_counter, member: items, offset: offset)
+
+/**
+Each dictionary entry receives its key and the current whole argument.
+
+An update keeps the child's count. Removing the key and adding it in a
+later cycle starts the count again.
+
+Rules:
+    MAP-1, MAP-2, MAP-4, MAP-5, MAP-7, MAP-9
+
+Status:
+    agreed
+*/
+test keyed_map_keeps_child_state_until_a_key_leaves {
+    assert eval map_one_dictionary(
+        items: [
+            [1: 2, 2: 3],
+            delta<dict<i64, i64>>(updated: [1: 4]),
+            _,
+            delta<dict<i64, i64>>(removed: [1]),
+            delta<dict<i64, i64>>(updated: [1: 5]),
+        ],
+        offset: [1, _, 2],
+    ) == [
+        [1: 1121, 2: 2131],
+        [1: 1241],
+        [1: 1342, 2: 2232],
+        delta<dict<i64, i64>>(removed: [1]),
+        [1: 1152],
+    ]
+}
+
+/**
+An explicit key can start a child before its split input has an entry.
+
+That input stays invalid until the entry arrives. Removing the explicit
+key stops the child even if the dictionary still contains the entry.
+
+Rules:
+    MAP-2, MAP-5, MAP-7, MAP-8, MAP-9
+
+Status:
+    agreed
+*/
+test keyed_map_uses_explicit_keys_with_missing_entries {
+    assert eval map_one_selected_dictionary(
+        items: [
+            [1: 2],
+            delta<dict<i64, i64>>(updated: [2: 3]),
+            _,
+            delta<dict<i64, i64>>(updated: [1: 8]),
+            _,
+        ],
+        offset: [1],
+        selected: [[1, 2], _, delta<set<i64>>(removed: [1]), _, delta<set<i64>>(added: [1])],
+    ) == [
+        [1: 1121],
+        [2: 2131],
+        delta<dict<i64, i64>>(removed: [1]),
+        _,
+        [1: 1181],
+    ]
+}
+
 fn fixed_tree_sum(values: list<i64, 2>) -> i64 => reduce(add_, values)
 
 const fn append_digit(accumulated: i64, digit: i64) -> i64 => accumulated * 10 + digit
