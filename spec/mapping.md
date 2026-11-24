@@ -64,6 +64,20 @@ impl fn map<R, N, ...Ps, ...As, const key: str = "key">{
             else if arg in arg_keys(As) { at_position<Ps[arg]>(args[arg], i) }})]
 }
 
+# A child with no result still runs at every fixed position (MAP-10).
+impl fn map<const N: i64, ...Ps, ...As, const key: str = "key">{
+    const join: Join = .inner,
+}(f: fn(...{Ps}), args: ...{As for f without key})
+    requires any arg in arg_keys(As) { As[arg] == list<Ps[arg], N> }
+          && each arg in arg_keys(As) { As[arg] in {Ps[arg], list<Ps[arg], N>} }
+{
+    for i in 0..<N {
+        f(...{for arg in arg_keys(Ps):
+            if arg == key { i }
+            else if arg in arg_keys(As) { at_position<Ps[arg]>(args[arg], i) }})
+    }
+}
+
 # One argument at one position: its entry where it is split, itself where
 # it is whole. The candidates are selected by type. Not exported.
 operator at_position<P, A>(arg: A, const at: i64) -> P
@@ -141,7 +155,7 @@ exported (the language's UNIT-3).
 
 ### Mapping
 
-- **MAP-1.** `map` has three candidates. In the keyed form every argument
+- **MAP-1.** `map` has three collection forms. In the keyed form every argument
   that is split is a dictionary, and the result is a `dict<K, R>`. In the
   form by position every argument that is split is a list, and the result
   is a `list<R>`; where the lists are of one fixed size, `list<P, N>`, the
