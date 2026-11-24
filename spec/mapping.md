@@ -1,9 +1,9 @@
 # Mapping and reduction
 
 Status: MAP-1 through MAP-10, RED-1 through RED-7 and SET-1 through SET-2
-are agreed. Of what is here, `hgl/` declares the properties of `add_` and of
-`mul_` (RED-7): the other declarations below wait for a compiler that reads
-their forms.
+are agreed. `hgl/` declares `map` and `reduce` and defines their fixed-size
+candidates. The other candidates declare native implementation obligations.
+The properties of `add_` and `mul_` are declared under RED-7.
 
 ## Scope and API
 
@@ -100,7 +100,7 @@ native impl fn reduce<L, R, const associative: bool = associative(f)>(
 # Tree, over a list of a fixed size: written in HGL, from the first member.
 impl fn reduce<V, N, const associative: bool = associative(f)>(
     f: fn(V, V) -> V, items: list<V, N>, zero: V? = null) -> V
-    requires associative
+    requires associative && N != 0
 {
     var acc = items[0]
     for i in 1..<N { acc = f(acc, items[i]) }

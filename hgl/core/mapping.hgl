@@ -1,0 +1,189 @@
+module core part mapping
+
+# Fixed-size mapping and reduction (spec/mapping.md).
+
+/**
+Choose which keys or positions a map takes from its split inputs.
+
+Rules:
+    MAP-5, MAP-6
+*/
+export enum Join {
+    /**
+    Take the keys or positions present in every split input.
+
+    Rules:
+        MAP-5, MAP-6
+    */
+    inner,
+    /**
+    Take the keys or positions present in any split input.
+
+    Rules:
+        MAP-5, MAP-6
+    */
+    outer,
+    /**
+    Take the keys or positions of the first split input in parameter order.
+
+    Rules:
+        MAP-5, MAP-6
+    */
+    left,
+}
+
+/**
+Apply a function to each key or position as its own child graph.
+
+An argument of the corresponding parameter's type goes whole to every
+child. A collection of that type is split so each child receives only
+the entry at its key or position. At least one argument must be split.
+
+| Split arguments | Result |
+| --- | --- |
+| Dictionaries sharing a key type | A dictionary with the same key type |
+| Lists of one fixed size | A list of that size |
+| Lists whose sizes can change | A list whose size can change |
+
+Type Args:
+    R: The child's result type.
+    C: The mapped result's collection type.
+    Ps: The types of the child's parameters, under their names or positions.
+    As: The types of the arguments given to the child.
+    key: The name of the parameter that receives the child's key or position.
+        Its default is `"key"`. Leave that parameter out of the call.
+
+Args:
+    f: The child function, with its generic arguments where it needs them.
+    args: The child's other arguments, given by name or position.
+
+Options:
+    - `join`: Which keys or positions to take, `.inner` by default. For lists of one fixed size the joins give the same positions.
+    - `keys`: The keys to use for a dictionary map. When omitted the join chooses them.
+
+Returns:
+    One entry for each child that has published. If `f` gives no result,
+    `map` gives none. A failure leaving a child leaves the map.
+
+Ticks:
+    An entry ticks when its child publishes and is removed when its child stops.
+
+Validity:
+    An entry is valid after its child publishes. In a non-inner join, a split
+    input that lacks a child's key or position is invalid until its entry arrives.
+
+Raises:
+    - `operator.no_candidate`: No argument splits, or the split arguments have incompatible collection types.
+
+Examples:
+    ~~~hgl
+    fn scaled(price: f64, factor: f64) -> f64 => price * factor
+    fn scaled_pair(prices: list<f64, 2>, factor: f64) -> list<f64, 2> =>
+        map(scaled, prices, factor)
+    assert eval scaled_pair(prices: [[2.0, 3.0]], factor: [4.0]) == [[8.0, 12.0]]
+    ~~~
+
+Rules:
+    MAP-1, MAP-2, MAP-3, MAP-4, MAP-5, MAP-6, MAP-7, MAP-8, MAP-9, MAP-10
+*/
+export operator map<R, C, ...Ps, ...As, const key: str = "key">{
+    const join: Join = .inner,
+}(f: fn(...{Ps}) -> R, args: ...{As for f without key}) -> C
+
+# By position, over lists of one fixed size: written in HGL. One call of
+# `f` for each position, each given a pack made from `f`'s own parameters.
+impl fn map<R, N, ...Ps, ...As, const key: str = "key">{
+    const join: Join = .inner,
+}(f: fn(...{Ps}) -> R, args: ...{As for f without key}) -> list<R, N>
+    requires any arg in arg_keys(As) { As[arg] == list<Ps[arg], N> }
+          && each arg in arg_keys(As) { As[arg] in {Ps[arg], list<Ps[arg], N>} }
+{
+    return [for i in 0..<N:
+        f(...{for arg in arg_keys(Ps):
+            if arg == key { i }
+            else if arg in arg_keys(As) { at_position<Ps[arg]>(args[arg], i) }})]
+}
+
+# One argument at one position: its entry where it is split, itself where
+# it is whole. The candidates are selected by type. Not exported.
+operator at_position<P, A>(arg: A, const at: i64) -> P
+impl fn at_position<P, N>(arg: list<P, N>, const at: i64) -> P => arg[at]
+impl fn at_position<P>(arg: P, const at: i64) -> P => arg
+
+/**
+Combine a collection's valid members into one value.
+
+The tree form takes a function of one type and may group members in any
+order allowed by the collection and its laws. Over a fixed-size list it
+folds in position order from the first entry. The ordered form folds a
+list from `zero`, in position order, and can accumulate a different type.
+
+| Items | Forms |
+| --- | --- |
+| List, including one of fixed size | Tree and ordered |
+| Set or dictionary | Tree, when the function is commutative as well |
+
+Type Args:
+    L: The accumulator and result type.
+    R: The member type.
+    C: The collection type.
+    associative: Whether the tree form is permitted.
+    commutative: Whether the tree form may change the order of members.
+
+Args:
+    f: The function of an accumulator and a member that returns an accumulator.
+    items: The collection to reduce. A dictionary supplies its values.
+    zero: The ordered form's required starting value. A non-null value given to
+        the tree form must be an identity of `f`.
+
+Options:
+    - `associative`: Select the tree form when true and the ordered form when false. Defaults to the law declared for `f`.
+    - `commutative`: Required for sets and dictionaries. Defaults to the law declared for `f`.
+
+Returns:
+    The reduction. If a collection has no valid members it gives `zero` when
+    supplied and otherwise has no valid value. The fixed-size tree form reads
+    every position and rejects a list of size zero.
+
+Ticks:
+    The result follows the publications of the inputs the reduction reads.
+
+Validity:
+    Over a fixed-size list every position must be valid for the result to be valid.
+
+Raises:
+    - `operator.no_candidate`: An ordered reduction omits its zero or a set or dictionary lacks the required tree laws.
+
+Examples:
+    ~~~hgl
+    fn pair_sum(items: list<i64, 2>) -> i64 => reduce(add_, items)
+    assert eval pair_sum(items: [[2, 3], [4, 5]]) == [5, 9]
+    ~~~
+
+Rules:
+    RED-1, RED-2, RED-3, RED-4, RED-5, RED-6, RED-7
+*/
+export operator reduce<L, R, C,
+    const associative: bool = associative(f),
+    const commutative: bool = commutative(f),
+>(f: fn(L, R) -> L, items: C, zero: L? = null) -> L
+
+# Tree, over a list of a fixed size: written in HGL, from the first member.
+impl fn reduce<V, N, const associative: bool = associative(f)>(
+    f: fn(V, V) -> V, items: list<V, N>, zero: V? = null) -> V
+    requires associative && N != 0
+{
+    var acc = items[0]
+    for i in 1..<N { acc = f(acc, items[i]) }
+    return acc
+}
+
+# Ordered, over a list of a fixed size: written in HGL, from the zero.
+impl fn reduce<L, R, N, const associative: bool = associative(f)>(
+    f: fn(L, R) -> L, items: list<R, N>, zero: L) -> L
+    requires !associative
+{
+    var acc = zero
+    for item in items { acc = f(acc, item) }
+    return acc
+}
