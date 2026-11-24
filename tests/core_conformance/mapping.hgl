@@ -375,6 +375,42 @@ test fixed_reduction_passes_null_to_a_nullable_combiner {
     ]) == [17, 16, 17, 15]
 }
 
+/**
+The ordered nullable fold preserves separate member and accumulator ticks.
+
+The seed enables the callback and supplies null for an invalid member. An
+update to a valid seed wakes only a callback that subscribes to it.
+
+Rules:
+    RED-2, RED-5, FN-11, TIME-3
+
+Status:
+    agreed
+*/
+test fixed_nullable_ordered_keeps_member_and_seed_ticks_separate {
+    fn read_member(accumulated: i64, member: i64?) -> i64 {
+        when modified(member) {
+            if member == null { return 0 }
+            return member
+        }
+    }
+
+    fn read_seed(accumulated: i64, member: i64?) -> i64 {
+        when modified(accumulated) {
+            if member == null { return accumulated }
+            return accumulated + member
+        }
+    }
+
+    fn by_member(items: list<i64, 1>, seed: i64) -> i64 => reduce(read_member, items, seed)
+    fn by_seed(items: list<i64, 1>, seed: i64) -> i64 => reduce(read_seed, items, seed)
+
+    assert eval by_member(items: [[7], _], seed: [1, 2]) == [7, _]
+    assert eval by_member(items: [_, _], seed: [1, 2]) == [0, _]
+    assert eval by_member(items: [[7], _], seed: [_, 2]) == [_, 7]
+    assert eval by_seed(items: [[7], _], seed: [1, 2]) == [8, 9]
+}
+
 fn count_nullable_pair(left: i64?, right: i64?) -> i64? {
     state visits: i64 = 0
     when {

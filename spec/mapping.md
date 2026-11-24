@@ -157,17 +157,9 @@ impl fn reduce<L, R, N, const associative: bool = associative(f)>(
     return accumulated
 }
 
-fn nullable_ordered_inputs<L, R>(accumulated: L, member: R) -> tuple<bool, R?> {
-    when valid([]) {
-        if !valid(accumulated) { return (false, null) }
-        if valid(member) { return (true, member) }
-        return (true, null)
-    }
-}
-
 fn reduce_ordered_nullable_member<L, R>(f: fn(L, R?) -> L, accumulated: L, member: R) -> L {
-    let inputs = nullable_ordered_inputs(accumulated, member)
-    return if inputs[0] { f(accumulated, inputs[1]) } else { accumulated }
+    let value = nullable_reduction_member(member, accumulated)
+    return if reduction_is_valid(accumulated) { f(accumulated, value) } else { accumulated }
 }
 
 # A nullable combiner over nonnullable members receives every position.
@@ -182,13 +174,13 @@ impl fn reduce<L, R, N, const associative: bool = associative(f)>(
     return accumulated
 }
 
-fn nullable_reduction_member<V>(member: V, items: signal) -> V? {
+fn nullable_reduction_member<V>(member: V, wake: signal) -> V? {
     state was_valid: bool = false
     inject out
     when valid([]) {
         let present = valid(member)
-        # The list wakes a position for its first publication. A later tick
-        # of a different position leaves this value alone.
+        # The other input can wake a position for its first publication.
+        # A later tick of that input alone leaves the member idle.
         if !valid(out) || present != was_valid || (present && modified(member)) {
             was_valid = present
             if valid(member) { return member }
