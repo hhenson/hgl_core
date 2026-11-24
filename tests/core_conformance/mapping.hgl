@@ -70,6 +70,84 @@ test fixed_map_propagates_child_failure {
     assert raises("numeric.division_by_zero") { eval map_fixed_quotients(divisors: [[2, 0]]) }
 }
 
+fn accumulate_mapped_value(position: i64, amount: i64, offset: i64, scale: i64 = 2) {
+    inject global_state
+    when {
+        var total = amount * scale + offset
+        if position == 0 {
+            if has(global_state, "map.first") { total = total + get<i64>(global_state, "map.first") }
+            put(global_state, "map.first", total)
+        } else {
+            if has(global_state, "map.second") { total = total + get<i64>(global_state, "map.second") }
+            put(global_state, "map.second", total)
+        }
+    }
+}
+
+fn accumulate_mapped_key(key: i64, amount: i64, offset: i64, scale: i64 = 2) {
+    accumulate_mapped_value(key, amount, offset, scale)
+}
+
+fn mapped_totals(probe: bool) -> list<i64, 2> {
+    inject global_state
+    when { return [get<i64>(global_state, "map.first"), get<i64>(global_state, "map.second")] }
+}
+
+fn map_resultless_positional(values: list<i64, 2>, offset: i64, probe: bool) -> list<i64, 2> {
+    map(accumulate_mapped_key, values, offset)
+    return mapped_totals(probe)
+}
+
+fn map_resultless_named(values: list<i64, 2>, offset: i64, probe: bool) -> list<i64, 2> {
+    map{key: "position"}(accumulate_mapped_value, offset: offset, amount: values)
+    return mapped_totals(probe)
+}
+
+/**
+A resultless fixed-size map runs one child at each position.
+
+Each child receives its split amount, the whole offset and its default
+scale. The second input update wakes only the second position. A probe
+on the next cycle reads both accumulated totals from the run store.
+
+Rules:
+    MAP-2, MAP-7, MAP-9, MAP-10, UNIT-8
+
+Status:
+    agreed
+*/
+test fixed_map_runs_resultless_children {
+    assert eval map_resultless_positional(
+        values: [[2, 3], _, delta<list<i64, 2>>(updated: [1: 5]), _],
+        offset: [1, _, _, _], probe: [_, true, _, true],
+    ) == [_, [5, 7], _, [5, 18]]
+    assert eval map_resultless_named(
+        values: [[2, 3], _, delta<list<i64, 2>>(updated: [1: 5]), _],
+        offset: [1, _, _, _], probe: [_, true, _, true],
+    ) == [_, [5, 7], _, [5, 18]]
+}
+
+fn check_mapped_divisor(divisor: i64) {
+    when { let quotient = 12 // divisor }
+}
+
+fn map_resultless_quotients(divisors: list<i64, 2>) {
+    map(check_mapped_divisor, divisors)
+}
+
+/**
+A failure from a resultless mapped child leaves the map.
+
+Rules:
+    MAP-10, NUM-12
+
+Status:
+    agreed
+*/
+test fixed_map_propagates_resultless_child_failure {
+    assert raises("numeric.division_by_zero") { eval map_resultless_quotients(divisors: [[2, 0]]) }
+}
+
 fn fixed_tree_sum(values: list<i64, 2>) -> i64 => reduce(add_, values)
 
 const fn append_digit(accumulated: i64, digit: i64) -> i64 => accumulated * 10 + digit
