@@ -191,3 +191,22 @@ Status:
 test growing_ordered_fold_wires_the_selected_temporal_instance {
     assert eval ordered_growing_sum(items: [[], [8, 2], [3]]) == [5, 15, 8]
 }
+
+fn ordered_growing_last(items: list<i64>, seed: i64) -> i64 =>
+    reduce(take_last, items, seed)
+
+/**
+An ordered growing fold waits for its seed to publish.
+
+The first member is already valid when the seed arrives. The callback
+ignores the accumulator and publishes the member on that cycle.
+
+Rules:
+    RED-5
+
+Status:
+    agreed
+*/
+test growing_ordered_fold_waits_for_its_seed {
+    assert eval ordered_growing_last(items: [[7], _, [9]], seed: [_, 0, _]) == [_, 7, 9]
+}
