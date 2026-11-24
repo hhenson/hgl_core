@@ -42,6 +42,7 @@ native impl fn map<K, R, ...Ps, ...As, const key: str = "key">{
 }(f: fn(...{Ps}) -> R, args: ...{As for f without key}) -> dict<K, R>
     requires any arg in arg_keys(As) { As[arg] == dict<K, Ps[arg]> }
           && each arg in arg_keys(As) { As[arg] in {Ps[arg], dict<K, Ps[arg]>} }
+          && (!(key in arg_keys(Ps)) || Ps[key] == K)
 
 # By position: the same of a list.
 native impl fn map<R, ...Ps, ...As, const key: str = "key">{
@@ -173,6 +174,8 @@ exported (the language's UNIT-3).
   Otherwise it is the join of the split dictionaries' key sets: `.inner`,
   the keys every one has; `.outer`, the keys any has; `.left`, the keys of
   the first, in the order of `f`'s parameters. The default is `.inner`.
+  Proposed: An invalid supplied `keys` connection gives no keys, and a
+  published null uses the join until the connection next publishes a set.
 - **MAP-6.** In the form by position the positions are `0` to `n - 1`,
   where `n` is the join of the split lists' lengths: `.inner`, the
   shortest; `.outer`, the longest; `.left`, the first's. Lists of a fixed
