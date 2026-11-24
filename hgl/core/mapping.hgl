@@ -62,8 +62,8 @@ Options:
     - `keys`: The keys to use for a dictionary map. When omitted the join chooses them.
 
 Returns:
-    One entry for each child that has published. If `f` gives no result,
-    `map` gives none. A failure leaving a child leaves the map.
+    One entry for each child that has published. A failure leaving a child
+    leaves the map.
 
 Ticks:
     An entry ticks when its child publishes and is removed when its child stops.
