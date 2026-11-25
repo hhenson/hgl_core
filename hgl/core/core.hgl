@@ -1013,7 +1013,11 @@ when the dictionary or fallback supplies one.
 Rules:
     ERR-6
 */
-native impl const fn get<K, T>(store: dict<K, T>, key: K, fallback: T) -> T
+impl const fn get<K, T>(store: dict<K, T>, key: K, fallback: T) -> T {
+    let found: result<T, error> = get<T>(store, key)
+    if is_ok(found) { return found.value }
+    return fallback
+}
 
 /**
 Whether a key of the run's store holds a value.
