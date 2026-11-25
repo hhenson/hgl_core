@@ -276,8 +276,8 @@ exported (the language's UNIT-3).
   Otherwise it is the join of the split dictionaries' key sets: `.inner`,
   the keys every one has; `.outer`, the keys any has; `.left`, the keys of
   the first, in the order of `f`'s parameters. The default is `.inner`.
-  Proposed: An invalid supplied `keys` connection gives no keys, and a
-  published null uses the join until the connection next publishes a set.
+  Proposed: A supplied `keys` connection that is not valid gives no keys,
+  and one that publishes null uses the join until it next publishes a set.
 - **MAP-6.** In the form by position the positions are `0` to `n - 1`,
   where `n` is the join of the split lists' lengths: `.inner`, the
   shortest; `.outer`, the longest; `.left`, the first's. Lists of a fixed

@@ -236,7 +236,8 @@ fn map_with_delayed_keys(items: dict<i64, i64>, selected: set<i64>) -> dict<i64,
 /**
 A written null uses the single dictionary's keys.
 
-The callback receives the key under its default parameter name.
+A written null is the option's default, so no key set is given. The
+callback receives the key under its default parameter name.
 
 Rules:
     MAP-5, MAP-9
