@@ -2961,17 +2961,19 @@ Join strings in order with a separator between consecutive strings.
 | Input | Order |
 | --- | --- |
 | One `list<str>` | List order |
-| A positional pack of `str` (proposed trial) | Argument order |
+| A positional pack of `str` | Argument order |
 
-Pass `separator` by name in either form under the trial. With zero strings,
-the result is empty text. One string gives that string.
+With zero strings, the result is empty text. One string gives that string.
 
 Type Args:
     As: The fitted types of the pieces, inferred from the call.
 
 Args:
     pieces: A list of strings or the strings themselves.
-    separator: The text written between pieces.
+
+Options:
+    - `separator`: Text written between pieces. The default is one space.
+      Write `join{separator: ", "}(pieces)` to supply a separator.
 
 Returns:
     The joined string.
@@ -2985,17 +2987,17 @@ Validity:
 
 Examples:
     ~~~hgl
-    assert join(["a", "b"], separator: ", ") == "a, b"
-    assert join("one", "two", "three", separator: " ") == "one two three"
-    assert join(separator: "/") == ""
+    assert join{separator: ", "}(["a", "b"]) == "a, b"
+    assert join("one", "two", "three") == "one two three"
+    assert join{separator: "/"}() == ""
     ~~~
 
 Rules:
-    OPS-11, EXPR-2, FN-6, FN-8, GEN-6
+    OPS-11, EXPR-14, FN-6, FN-8, FN-18, GEN-6
 */
-export operator join<...As>(pieces: ...As, separator: str) -> str
+export operator join<...As>{separator: str = " "}(pieces: ...As) -> str
 
-impl const fn join(pieces: ...list<str>{1}, separator: str) -> str {
+impl const fn join{separator: str = " "}(pieces: ...list<str>{1}) -> str {
     var text = ""
     var prefix = ""
     for piece in pieces[0] {
@@ -3006,7 +3008,7 @@ impl const fn join(pieces: ...list<str>{1}, separator: str) -> str {
     return text
 }
 
-impl const fn join(pieces: ...str, separator: str) -> str {
+impl const fn join{separator: str = " "}(pieces: ...str) -> str {
     var text = ""
     var prefix = ""
     for piece in pieces {
