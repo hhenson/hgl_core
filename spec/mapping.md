@@ -257,13 +257,14 @@ exported (the language's UNIT-3).
   parameter's type is given whole to every child. One that is a
   `dict<K, P>`, a `list<P>`, or a `list<P, N>`, for a parameter of type `P` is split: each
   child reads the entry of its own key, or position. A function given
-  bare as `f`, an operator or a generic function, takes its types from
-  what the arguments give `f`'s parameters, a dictionary or a list
-  argument giving its member type and any other argument its own (the
-  language's FN-17 and GEN-3): `map(add_, a, b)` over two `list<i64, N>`
-  selects `add_`'s candidate for two `i64`. To give a dictionary or a
-  list whole to every child, the call writes the function's generic
-  arguments.
+  bare as `f`, an operator or a generic function, prefers the member type
+  of a dictionary or list and the whole type of any other argument
+  (FN-17, GEN-3). `map(add_, a, b)` over two `list<i64, N>` therefore
+  selects `add_`'s candidate for two `i64`. Where a more specific member
+  choice contradicts the call's known types, the best compatible choice
+  may pass a collection whole. At least one argument still splits (MAP-3).
+  A caller can also select a whole argument directly by writing the
+  function's generic arguments.
 - **MAP-3.** At least one argument is split, which each candidate's `any`
   requires. A call in which every argument is whole has no candidate,
   with `keys` given or not.
@@ -399,6 +400,14 @@ fn by_position(prices: list<f64>, factor: f64) -> list<f64> =>
 fn three_scaled(prices: list<f64, 3>, factor: f64) -> list<f64, 3> =>
     map(scaled, prices, factor)
 
+const fn take_second<B>(flag: bool, b: B) -> B => b
+
+fn members(flags: list<bool, 2>, xs: list<i64, 2>) -> list<i64, 2> =>
+    map(take_second, flags, xs)
+
+fn copies(flags: list<bool, 2>, xs: list<i64, 2>) -> list<list<i64, 2>, 2> =>
+    map(take_second, flags, xs)
+
 fn total(prices: dict<str, f64>) -> f64 => reduce(add_, prices, 0.0)
 
 struct Event { size: i64 }
@@ -410,7 +419,12 @@ fn position_after(events: list<Event>) -> i64 => reduce(applied, events, 0)
 
 In `all_scaled`, `prices` is a `dict<str, f64>` for the parameter `price`,
 an `f64`, so it is split, and `factor` is given whole: there is a child of
-`scaled` for each key of `prices` (MAP-2, MAP-7). `all_labelled` gives
+`scaled` for each key of `prices` (MAP-2, MAP-7). For `flags = [true, false]`
+and `xs = [3, 4]`, `members` splits both inputs and publishes `[3, 4]`.
+`copies` also splits `flags`. Splitting `xs` would give `take_second` an
+`i64` result and contradict the requested list of lists, so `xs` is given
+whole and `copies` publishes `[[3, 4], [3, 4]]` (MAP-2, MAP-3).
+`all_labelled` gives
 `labelled` nothing for `key`, which is each child's key (MAP-9). `spreads`
 has a child for each key both dictionaries have (MAP-5), and
 `wanted_spreads` one for each member of `wanted`, where a child whose key
