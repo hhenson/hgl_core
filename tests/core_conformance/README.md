@@ -12,6 +12,7 @@ source is `hgl/`.
 | `scalar_operator_wrappers` | Operand order, numeric precision, tolerance options, special values and text repeated a count |
 | `identity_arithmetic` | Addition and subtraction under the identity policy, ordinary lifting and generic candidates |
 | `lists` | Append, extend, independence of an earlier list value, and an index outside a list |
+| `join` | Separator placement in the list and proposed positional-pack forms |
 | `mapping` | Fixed-size mapping and reduction, growing ordered folds, callback arguments and required seeds |
 | `dense_traces` | Empty frames, leading and trailing silence, and recording through the last publication |
 | `recorded_ticks` | Absolute recording times for published nullable deltas |
