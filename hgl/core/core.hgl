@@ -2298,6 +2298,7 @@ NaN, or two tenors that are not ordered, make all four false.
 | --- | --- |
 | Two `i64`, two `f64`, or an `i64` and an `f64` | By number. The `i64` is not rounded to an `f64` first. `0.0` and `-0.0` are neither below the other; a NaN is unordered with everything |
 | Two of one type among `date`, `time`, `datetime`, `civil_datetime` and `duration`, two `str`, or two `bool` | Their type's order |
+| Two `bytes` | Lexicographically by unsigned octets |
 | Two `tenor` | Count by count: one is below another of its form where no count of it is greater and one is less. Two of different forms, or where one count is less and another greater, are unordered |
 
 Type Args:
@@ -2336,13 +2337,14 @@ Examples:
     let nan: f64 = 0.0 /{zero: .nan} 0.0
     assert !(nan < 1.0) && !(1.0 < nan)
 
+    assert convert<bytes>("\u{7f}") < convert<bytes>("\u{80}")
     assert 1M < 2M1D && !(1M < 1B) && !(1M3D < 2M)
 
     assert eval below(left: [1, _, 5], right: [2, _, _]) == [true, _, false]
     ~~~
 
 Rules:
-    OPS-1, OPS-2, NUM-2, NUM-5, NUM-6, TEN-3, EXPR-1, TYPE-2, FN-6, FN-11
+    OPS-1, OPS-2, NUM-2, NUM-5, NUM-6, TEN-3, EXPR-1, TYPE-1, TYPE-2, FN-6, FN-11
 */
 export operator lt_<L, R>(lhs: L, rhs: R) -> bool
 
@@ -2350,7 +2352,7 @@ export operator lt_<L, R>(lhs: L, rhs: R) -> bool
 Whether the left operand is below or equal to the right: `a <= b` is
 `le_(a, b)`.
 
-It compares two values of one ordered type, `i64`, `f64`, `str`,
+It compares two values of one ordered type, `i64`, `f64`, `str`, `bytes`,
 `bool`, `date`, `time`, `datetime`, `civil_datetime`, `duration` or
 `tenor`, or an `i64` and an `f64` in either order, ordered as `lt_`'s
 table says; tenors are only partly ordered. Any other
@@ -2392,19 +2394,20 @@ Examples:
     assert -0.0 <= 0.0
     let nan: f64 = 0.0 /{zero: .nan} 0.0
     assert !(nan <= nan) && !(nan > nan)
+    assert convert<bytes>("\u{7f}") <= convert<bytes>("\u{80}")
     assert 1M <= 1M1D && !(1M <= 1B)
     assert eval at_most(left: [2, 3], right: [2, _]) == [true, false]
     ~~~
 
 Rules:
-    OPS-1, OPS-2, NUM-2, NUM-5, NUM-6, TEN-3, FN-6, FN-11
+    OPS-1, OPS-2, NUM-2, NUM-5, NUM-6, TEN-3, TYPE-1, FN-6, FN-11
 */
 export operator le_<L, R>(lhs: L, rhs: R) -> bool
 
 /**
 Whether the left operand is above the right: `a > b` is `gt_(a, b)`.
 
-It compares two values of one ordered type, `i64`, `f64`, `str`,
+It compares two values of one ordered type, `i64`, `f64`, `str`, `bytes`,
 `bool`, `date`, `time`, `datetime`, `civil_datetime`, `duration` or
 `tenor`, or an `i64` and an `f64` in either order, ordered as `lt_`'s
 table says; tenors are only partly ordered. Any other
@@ -2443,12 +2446,13 @@ Examples:
     assert count > price && !(price > count)
     let nan: f64 = 0.0 /{zero: .nan} 0.0
     assert !(nan > 1.0) && !(1.0 > nan)
+    assert convert<bytes>("\u{80}") > convert<bytes>("\u{7f}")
     assert 2M > 1M && !(1M > 1B)
     assert eval above(left: [3.0, 1.0], right: [2.0, _]) == [true, false]
     ~~~
 
 Rules:
-    OPS-1, OPS-2, NUM-2, NUM-5, NUM-6, TEN-3, FN-6, FN-11
+    OPS-1, OPS-2, NUM-2, NUM-5, NUM-6, TEN-3, TYPE-1, FN-6, FN-11
 */
 export operator gt_<L, R>(lhs: L, rhs: R) -> bool
 
@@ -2456,7 +2460,7 @@ export operator gt_<L, R>(lhs: L, rhs: R) -> bool
 Whether the left operand is above or equal to the right: `a >= b` is
 `ge_(a, b)`.
 
-It compares two values of one ordered type, `i64`, `f64`, `str`,
+It compares two values of one ordered type, `i64`, `f64`, `str`, `bytes`,
 `bool`, `date`, `time`, `datetime`, `civil_datetime`, `duration` or
 `tenor`, or an `i64` and an `f64` in either order, ordered as `lt_`'s
 table says; tenors are only partly ordered. Any other
@@ -2497,12 +2501,13 @@ Examples:
     assert price >= count && !(count >= price)
     let nan: f64 = 0.0 /{zero: .nan} 0.0
     assert !(nan >= 1.0) && !(nan < 1.0)
+    assert convert<bytes>("\u{80}") >= convert<bytes>("\u{7f}")
     assert 2M1D >= 1M && !(1M3D >= 2M)
     assert eval at_least(left: [2, 1], right: [2, _]) == [true, false]
     ~~~
 
 Rules:
-    OPS-1, OPS-2, NUM-2, NUM-5, NUM-6, TEN-3, FN-6, FN-11
+    OPS-1, OPS-2, NUM-2, NUM-5, NUM-6, TEN-3, TYPE-1, FN-6, FN-11
 */
 export operator ge_<L, R>(lhs: L, rhs: R) -> bool
 
@@ -2510,7 +2515,7 @@ export operator ge_<L, R>(lhs: L, rhs: R) -> bool
 The full outcome of comparing two values, a `CmpResult`: `a <=> b` is
 `compare_(a, b)`.
 
-It compares two values of one ordered type, `i64`, `f64`, `str`,
+It compares two values of one ordered type, `i64`, `f64`, `str`, `bytes`,
 `bool`, `date`, `time`, `datetime`, `civil_datetime`, `duration` or
 `tenor`, or an `i64` and an `f64` in either order, ordered as `lt_`'s
 table says; tenors are only partly ordered. Any other
@@ -2566,13 +2571,18 @@ Examples:
     assert (0.0 <=> -0.0) == .equivalent
     let nan: f64 = 0.0 /{zero: .nan} 0.0
     assert (nan <=> nan) == .unordered
+    let low = convert<bytes>("\u{7f}")
+    let high = convert<bytes>("\u{80}")
+    assert (low <=> high) == .less
+    assert (high <=> high) == .equivalent
+    assert (high <=> low) == .greater
     assert (1M <=> 2M1D) == .less
     assert (1M <=> 1B) == .unordered
     assert eval order(left: [1.0, 3.0], right: [2.0, _]) == [CmpResult.less, .greater]
     ~~~
 
 Rules:
-    OPS-1, OPS-2, OPS-3, NUM-5, NUM-6, NUM-7, TEN-3, EXPR-11, FN-6, FN-11
+    OPS-1, OPS-2, OPS-3, NUM-5, NUM-6, NUM-7, TEN-3, EXPR-11, TYPE-1, FN-6, FN-11
 */
 export operator compare_<L, R>(lhs: L, rhs: R) -> CmpResult
 
