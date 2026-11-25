@@ -22,9 +22,20 @@ test cold_node_type_query {
     assert eval cold_type_label(value: [_, 7, _], probe: [true, true, true]) == ["i64", "i64", "i64"]
 }
 
+fn cold_type_assignment(value: i64) -> i64 {
+    var x: i64
+    let known = type({
+        x = value
+        x
+    })
+    x = 1
+    return x
+}
+
 /**
 A graph's type query produces a constant without evaluating the input's payload.
 The input's later publication adds no publication to this constant graph.
+An assignment inside a cold operand does not set the surrounding var's category.
 
 Rules:
     TYPE-18, FMT-5
@@ -34,4 +45,5 @@ Status:
 */
 test cold_graph_type_query {
     assert eval graph_type_label(value: [_, 7, _]) == ["i64"]
+    assert eval cold_type_assignment(value: [2, 3]) == [1]
 }
