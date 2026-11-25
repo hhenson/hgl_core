@@ -22,11 +22,12 @@ source is `hgl/`.
 | `formatting` | Direct formatting and the formatting reference examples |
 | `structural_conversion` | Collection text, component conversions and iteration order |
 | `output` | Output to each process stream and publications from a writing handler |
+| `diagnostics` | Value-code diagnostic bytes, explicit marks, wall time and handler publications |
 | `tenors` | Tenor arithmetic, text, calendar extension and rolling rules |
 | `zoned_datetimes` | A duration added to a zoned datetime, and equality by instant and zone or as UTC |
 
 Run `hgl test hgl tests/core_conformance --target hgraph` from the core checkout
 with that target installed. Shared runtime observations live in
 [the conformance suite](../conformance/README.md). The output cases describe
-the expected stream bytes for an external harness. A trace assertion in
-those cases observes the publications.
+the expected stream bytes for an external harness, as do the diagnostic
+cases. A trace assertion in those cases observes the publications.
