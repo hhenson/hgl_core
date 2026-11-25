@@ -156,6 +156,22 @@ const fn empty_conversion_failed(value: result<NoConversionMembers, error>) -> b
 fn observe_empty_conversion(number: i64) -> bool =>
     empty_conversion_failed(read_empty_enum(number))
 
+fn require_empty_enum(number: i64) -> NoConversionMembers =>
+    convert<NoConversionMembers>(number, invalid: .fail)
+
+fn show_required_empty(number: i64) -> str =>
+    convert<str>(require_empty_enum(number))
+
+fn nullable_empty_enum(number: i64) -> NoConversionMembers? =>
+    convert<NoConversionMembers>(number)
+
+fn is_null_empty(value: NoConversionMembers?) -> bool {
+    when modified(value) { return value == null }
+}
+
+fn observe_nullable_empty(number: i64) -> bool =>
+    is_null_empty(nullable_empty_enum(number))
+
 const conversion_side_key: str = "side"
 const fn accepts_conversion_side(side: ConversionSide) -> i64 => convert<i64>(side)
 
@@ -285,6 +301,36 @@ Status:
 */
 test lifted_empty_enum_conversion {
     assert eval observe_empty_conversion(number: [7, _, -8]) == [true, _, true]
+}
+
+/**
+A forced conversion to an empty enum raises on its input's tick,
+including when another conversion consumes its result.
+
+Rules:
+    TYPE-7, OPS-7, OPS-8, FN-6
+
+Status:
+    proposed
+*/
+test lifted_empty_enum_failure_escapes {
+    assert raises("convert.invalid") { eval require_empty_enum(number: [17]) }
+    assert raises("convert.invalid") { eval show_required_empty(number: [-8]) }
+}
+
+/**
+A failed conversion into a nullable empty enum publishes null, which
+the next node sees as a value on each input tick.
+
+Rules:
+    TYPE-7, TYPE-14, TYPE-15, OPS-7, FN-6
+
+Status:
+    proposed
+*/
+test lifted_nullable_empty_enum_publishes_null {
+    assert eval nullable_empty_enum(number: [7, _, -8]) == [null, _, null]
+    assert eval observe_nullable_empty(number: [7, _, -8]) == [true, _, true]
 }
 
 /**
