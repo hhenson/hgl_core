@@ -147,6 +147,27 @@ const fn side_outcome(value: result<ConversionSide, error>) -> str {
 
 fn traced_side(number: i64) -> str => side_outcome(read_side(number))
 
+fn read_empty_enum(number: i64) -> result<NoConversionMembers, error> =>
+    convert<NoConversionMembers>(number)
+
+const fn empty_conversion_failed(value: result<NoConversionMembers, error>) -> bool =>
+    is_err(value)
+
+fn observe_empty_conversion(number: i64) -> bool =>
+    empty_conversion_failed(read_empty_enum(number))
+
+const conversion_side_key: str = "side"
+const fn accepts_conversion_side(side: ConversionSide) -> i64 => convert<i64>(side)
+
+const fn checked_reflected_enum<...Ps>(callback: const fn(...{Ps}) -> i64, number: i64)
+    -> result<Ps[conversion_side_key], error>
+    requires Ps[conversion_side_key] in enum => convert<Ps[conversion_side_key]>(number)
+
+const fn forced_reflected_enum<...Ps>(callback: const fn(...{Ps}) -> i64, number: i64)
+    -> Ps[conversion_side_key]
+    requires Ps[conversion_side_key] in enum =>
+        convert<Ps[conversion_side_key]>(number, invalid: .fail)
+
 /**
 An enum converts to its member's name and to its signed number.
 Implicit numbering follows the previous member's number.
@@ -250,4 +271,35 @@ test lifted_enum_conversions {
     assert eval traced_side(number: [-4, _, 0, 7]) == ["left", _, "convert.invalid", "right"]
     assert eval require_side(number: [-4, 7]) == [ConversionSide.left, ConversionSide.right]
     assert raises("convert.invalid") { eval require_side(number: [-4, 0]) }
+}
+
+/**
+A lifted conversion to an enum without members publishes an Err for each
+input tick.
+
+Rules:
+    TYPE-7, OPS-7, FN-6
+
+Status:
+    proposed
+*/
+test lifted_empty_enum_conversion {
+    assert eval observe_empty_conversion(number: [7, _, -8]) == [true, _, true]
+}
+
+/**
+A reflected member constrained to the enum category can be the
+destination of either numeric conversion policy.
+
+Rules:
+    GEN-3, GEN-7, GEN-17, OPS-4, OPS-6, OPS-8
+
+Status:
+    agreed
+*/
+test reflected_enum_destination {
+    let checked = checked_reflected_enum(accepts_conversion_side, -4)
+    assert is_ok(checked)
+    if is_ok(checked) { assert checked.value == .left }
+    assert forced_reflected_enum(accepts_conversion_side, 7) == .right
 }

@@ -16,8 +16,9 @@ The outcome of a full comparison, `a <=> b`: less, equivalent, greater or unorde
 
 `compare_`, which `<=>` stands for, returns one; `<`, `<=`, `>`, `>=`,
 `==` and `!=` return a bool. Only a numeric comparison and a tenor's give
-`unordered`. An outcome converts to no bool and no number: it is compared
-with a member, `(a <=> b) == CmpResult.less`.
+`unordered`. An outcome has no implicit bool or numeric conversion.
+Compare it with a member, `(a <=> b) == CmpResult.less`. An explicit
+`convert<i64>` gives the member's number.
 
 Of two numbers, each comparison that gives a bool is true for these
 outcomes:
@@ -36,6 +37,7 @@ Examples:
     assert (1.0 <=> 2.0) == CmpResult.less
     assert ("b" <=> "a") == CmpResult.greater
     assert (0.0 <=> -0.0) == CmpResult.equivalent
+    assert convert<i64>(CmpResult.unordered) == 3
     ~~~
 
     A NaN has no order, and nor have two tenors of different forms.
@@ -46,7 +48,7 @@ Examples:
     ~~~
 
 Rules:
-    OPS-2, OPS-3, NUM-6, TEN-3
+    OPS-2, OPS-3, OPS-6, NUM-6, TEN-3, TYPE-7
 */
 export enum CmpResult {
     /**
