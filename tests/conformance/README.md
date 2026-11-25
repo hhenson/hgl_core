@@ -31,7 +31,8 @@ marker and leave the probe out of its subscriptions.
 | Branch selection and failure propagation | [Conditional graphs](conditional_graphs.hgl) and [captured failures](captured_failures.hgl) |
 | Wakes and source suspension | [Scheduling](scheduled_wakes.hgl) and [source timing](source_timing.hgl) |
 | What a reader of a reference observes, and what wakes a node holding one | [References](reference_ticks.hgl) |
-| Source rejections | [Collection children](rejections/collection_children.hgl), [references](rejections/references.hgl), [generic instances](rejections/generic_instances.hgl), [scheduled wakes](rejections/scheduled_wakes.hgl), [window reads](rejections/window_reads.hgl), [a test's value code](rejections/test_value_code.hgl), [delta constructors](rejections/delta_constructors.hgl) and [the run's configuration and the store's keys](rejections/run_configuration.hgl), [format strings](rejections/formatting.hgl), [collection conversion](rejections/structural_conversion.hgl) and [enum conversion](rejections/enum_conversion.hgl) |
+| Type queries | [Cold node and graph metadata](type_queries.hgl) |
+| Source rejections | [Collection children](rejections/collection_children.hgl), [references](rejections/references.hgl), [generic instances](rejections/generic_instances.hgl), [scheduled wakes](rejections/scheduled_wakes.hgl), [window reads](rejections/window_reads.hgl), [a test's value code](rejections/test_value_code.hgl), [delta constructors](rejections/delta_constructors.hgl) and [the run's configuration and the store's keys](rejections/run_configuration.hgl), [format strings](rejections/formatting.hgl), [collection conversion](rejections/structural_conversion.hgl), [enum conversion](rejections/enum_conversion.hgl) and [type values](rejections/type_values.hgl) |
 
 ## Writing a case
 

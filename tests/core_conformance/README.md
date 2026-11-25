@@ -19,6 +19,7 @@ source is `hgl/`.
 | `recorded_ticks` | Absolute recording times for published nullable deltas |
 | `record_eval` | Empty recordings and retention of earlier recorded deltas |
 | `conversions` | Rounding, scalar text and number conversions, enum names and numbers, and conversion failures |
+| `type_values` | Canonical type text, identity, cold defaults and ordinary Type fields |
 | `formatting` | Direct formatting and the formatting reference examples |
 | `structural_conversion` | Collection text, component conversions and iteration order |
 | `output` | Output to each process stream and publications from a writing handler |
