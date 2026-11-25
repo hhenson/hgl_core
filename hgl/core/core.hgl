@@ -16,8 +16,9 @@ The outcome of a full comparison, `a <=> b`: less, equivalent, greater or unorde
 
 `compare_`, which `<=>` stands for, returns one; `<`, `<=`, `>`, `>=`,
 `==` and `!=` return a bool. Only a numeric comparison and a tenor's give
-`unordered`. An outcome converts to no bool and no number: it is compared
-with a member, `(a <=> b) == CmpResult.less`.
+`unordered`. An outcome has no implicit bool or numeric conversion.
+Compare it with a member, `(a <=> b) == CmpResult.less`. An explicit
+`convert<i64>` gives the member's number.
 
 Of two numbers, each comparison that gives a bool is true for these
 outcomes:
@@ -36,6 +37,7 @@ Examples:
     assert (1.0 <=> 2.0) == CmpResult.less
     assert ("b" <=> "a") == CmpResult.greater
     assert (0.0 <=> -0.0) == CmpResult.equivalent
+    assert convert<i64>(CmpResult.unordered) == 3
     ~~~
 
     A NaN has no order, and nor have two tenors of different forms.
@@ -46,7 +48,7 @@ Examples:
     ~~~
 
 Rules:
-    OPS-2, OPS-3, NUM-6, TEN-3
+    OPS-2, OPS-3, OPS-6, NUM-6, TEN-3, TYPE-7
 */
 export enum CmpResult {
     /**
@@ -2589,7 +2591,8 @@ is written.
 
 | From | To |
 | --- | --- |
-| `i64` | `f64`, `bool`, `str` |
+| `i64` | `f64`, `bool`, `str`, an enum |
+| An enum | `i64`, `str` |
 | `f64` | `i64`, `bool`, `str` |
 | `bool` | `i64`, `f64`, `str` |
 | `str` | `i64`, `f64`, `bool`, `bytes` |
@@ -2604,7 +2607,8 @@ is written.
 A conversion can fail where its value has no `T`: an `f64` that is a
 NaN, an infinity, or outside `i64` once rounded; a text that is not what
 the table under `Returns:` reads as the type asked for; bytes that are
-not well-formed UTF-8.
+not well-formed UTF-8. Proposed (OPS-7): an integer that is no member's
+number fails its conversion to an enum.
 
 Type Args:
     T: The type to convert to. The call writes it.
@@ -2639,6 +2643,9 @@ Returns:
     | Conversion | Gives |
     | --- | --- |
     | `i64` to `f64` | The nearest `f64` |
+    | An enum to `str` | The member's name |
+    | An enum to `i64` | The member's number |
+    | `i64` to an enum | The member of that number |
     | `f64` to `i64` | The integer `rounding` selects |
     | `i64` or `f64` to `bool` | False for zero, true otherwise; a NaN is true |
     | `bool` to `i64` or `f64` | 0 or 1 |
@@ -2686,6 +2693,8 @@ Examples:
         radius: f64
     }
 
+    enum Side { buy = -2, sell = 7 }
+
     fn whole(value: f64) -> i64 => convert<i64>(value, invalid: .fail)
 
     assert convert<f64>(3) == 3.0
@@ -2724,6 +2733,9 @@ Examples:
     assert convert<str>(18M) == "1Y6M"
     assert convert<str>(1M - 1D) == "1M-1D"
 
+    assert convert<str>(Side.buy) == "buy"
+    assert convert<i64>(Side.sell) == 7
+
     let circles: list<Circle> = [Circle(radius: 1.0)]
     let shapes: list<Shape> = convert<list<Shape>>(circles)
     assert shapes == [Circle(radius: 1.0)]
@@ -2731,9 +2743,24 @@ Examples:
     assert eval whole(value: [2.9, -2.9]) == [2, -2]
     ~~~
 
+    Proposed (OPS-7): an integer-to-enum conversion uses the checked
+    result or the `.fail` form. A number with no member follows the
+    selected policy.
+
+    ~~~hgl
+    enum Side { buy = -2, sell = 7 }
+    let checked = convert<Side>(-2)
+    assert is_ok(checked)
+    if is_ok(checked) { assert checked.value == Side.buy }
+    assert convert<Side>(7, invalid: .fail) == Side.sell
+
+    assert is_err(convert<Stream>(2))
+    assert raises("convert.invalid") { convert<Stream>(2, invalid: .fail) }
+    ~~~
+
 Rules:
     OPS-4, OPS-6, OPS-7, OPS-8, NUM-10, TEN-9, FMT-5, EXPR-5, EXPR-12, ERR-11,
-    ERR-15, TYPE-3, FN-6, FN-11
+    ERR-15, TYPE-3, TYPE-7, FN-6, FN-11
 */
 export operator convert<T, V, O>(value: V) -> O
     requires O in {T, result<T, error>}

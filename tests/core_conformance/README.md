@@ -17,7 +17,7 @@ source is `hgl/`.
 | `dense_traces` | Empty frames, leading and trailing silence, and recording through the last publication |
 | `recorded_ticks` | Absolute recording times for published nullable deltas |
 | `record_eval` | Empty recordings and retention of earlier recorded deltas |
-| `conversions` | Each conversion: rounding, a number as text and text as a number, and what fails |
+| `conversions` | Rounding, scalar text and number conversions, enum names and numbers, and conversion failures |
 | `type_values` | Canonical type text, identity, cold defaults and ordinary Type fields |
 | `formatting` | Direct formatting and the formatting reference examples |
 | `structural_conversion` | Collection text, component conversions and iteration order |
