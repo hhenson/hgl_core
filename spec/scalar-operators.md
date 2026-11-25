@@ -145,6 +145,7 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 | `date` | `datetime` |
 | `datetime` | `date` |
 | `tenor` | `str` |
+| `Type` | `str` |
 | An enum | `i64`, `str` |
 | A list, a set, a dictionary, a tuple, a struct | `str` |
 
@@ -164,6 +165,7 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 | `date` to `datetime` | The start of that date, in UTC |
 | `datetime` to `date` | The date of the instant, in UTC |
 | `tenor` to `str` | Its text, in its largest units (TEN-9) |
+| `Type` to `str` | Its canonical diagnostic spelling (TYPE-18, FMT-5) |
 | An enum to `str` | The member's name: `"buy"` for `Side.buy` (the language's TYPE-7) |
 | An enum to `i64` | The member's number |
 | `i64` to an enum | The member of that number |

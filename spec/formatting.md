@@ -99,7 +99,10 @@ impl fn format<...As, ...Ks>{
   there rejects (`format.specifier`).
 - **FMT-5.** With no specifier a `str` is written as its characters, with
   no quotes, and an `i64`, an `f64` and a `bool` as `convert<str>` of each
-  gives ([scalar operators](scalar-operators.md), OPS-6). A `date`, a
+  gives ([scalar operators](scalar-operators.md), OPS-6). A `Type` is
+  written by its native value `convert<str>` as its canonical spelling,
+  the spelling a diagnostic writes: `list<i64, 2>`, `dict<str, f64>`,
+  `i64?`, and a struct by its name (TYPE-18). A `date`, a
   `time` and a `datetime` with no specifier are written in their ISO 8601
   form: `2026-11-22`; `09:30:00`, and where
   the fraction of a second is not zero with its six digits,

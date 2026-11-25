@@ -1,0 +1,37 @@
+module conformance part type_queries
+
+fn cold_type_label(value: i64, probe: bool) -> str {
+    state label: Type = type(value)
+    start { let known = type(value) }
+    when valid([]) { return convert<str>(label) }
+}
+
+fn graph_type_label(value: i64) -> str => convert<str>(type(value))
+
+/**
+An input's type is available at start and in a handler without admitting its payload.
+Only the probe publishes at every step; the silent value input is never read.
+
+Rules:
+    TYPE-18, FMT-5
+
+Status:
+    agreed
+*/
+test cold_node_type_query {
+    assert eval cold_type_label(value: [_, 7, _], probe: [true, true, true]) == ["i64", "i64", "i64"]
+}
+
+/**
+A graph's type query produces a constant without evaluating the input's payload.
+The input's later publication adds no publication to this constant graph.
+
+Rules:
+    TYPE-18, FMT-5
+
+Status:
+    agreed
+*/
+test cold_graph_type_query {
+    assert eval graph_type_label(value: [_, 7, _]) == ["i64"]
+}
