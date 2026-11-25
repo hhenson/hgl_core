@@ -163,13 +163,45 @@ test enum_name_and_number {
     assert convert<i64>(ConversionSide.next) == -3
     assert convert<i64>(ConversionSide.lowest) == -9223372036854775808
     assert convert<i64>(ConversionSide.largest) == 9223372036854775807
-    assert convert<str>(CmpResult.less) == "less"
-    assert convert<i64>(CmpResult.unordered) == 3
-    assert convert<CmpResult>(3, invalid: .fail) == .unordered
     assert named_member(ConversionSide.next) == "next"
     assert named_member(CmpResult.greater) == "greater"
     assert ConversionSide("right") == .right
     assert ConversionSide(-3) == .next
+}
+
+/**
+Core enums have the same named and numbered members in both directions of
+conversion.
+
+Rules:
+    TYPE-7, OPS-4, OPS-6
+
+Status:
+    agreed
+*/
+test runtime_owned_enum_conversions {
+    assert convert<str>(Stream.out) == "out" && convert<str>(Stream.err) == "err"
+    assert convert<i64>(Stream.out) == 0 && convert<i64>(Stream.err) == 1
+    assert convert<Stream>(0) == Stream.out
+    assert convert<Stream>(1) == Stream.err
+    assert convert<Stream>(0, invalid: .fail) == Stream.out
+    assert convert<Stream>(1, invalid: .fail) == Stream.err
+
+    assert convert<str>(CmpResult.unordered) == "unordered"
+    assert convert<i64>(CmpResult.unordered) == 3
+    assert convert<CmpResult>(3, invalid: .fail) == .unordered
+    assert convert<str>(ZeroPolicy.fail) == "fail"
+    assert convert<i64>(ZeroPolicy.fail) == 3
+    assert convert<ZeroPolicy>(3, invalid: .fail) == .fail
+    assert convert<str>(Rounding.half_down) == "half_down"
+    assert convert<i64>(Rounding.half_down) == 5
+    assert convert<Rounding>(5, invalid: .fail) == .half_down
+    assert convert<str>(InvalidPolicy.fail) == "fail"
+    assert convert<i64>(InvalidPolicy.fail) == 1
+    assert convert<InvalidPolicy>(1, invalid: .fail) == .fail
+    assert convert<str>(LogLevel.error) == "error"
+    assert convert<i64>(LogLevel.error) == 3
+    assert convert<LogLevel>(3, invalid: .fail) == .error
 }
 
 /**

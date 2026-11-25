@@ -2604,7 +2604,8 @@ is written.
 A conversion can fail where its value has no `T`: an `f64` that is a
 NaN, an infinity, or outside `i64` once rounded; a text that is not what
 the table under `Returns:` reads as the type asked for; bytes that are
-not well-formed UTF-8; an integer that is no member's number.
+not well-formed UTF-8. Proposed (OPS-7): an integer that is no member's
+number fails its conversion to an enum.
 
 Type Args:
     T: The type to convert to. The call writes it.
@@ -2734,14 +2735,19 @@ Examples:
     assert is_ok(checked)
     if is_ok(checked) { assert checked.value == Side.buy }
     assert convert<Side>(7, invalid: .fail) == Side.sell
-    assert is_err(convert<Side>(0))
-    assert raises("convert.invalid") { convert<Side>(0, invalid: .fail) }
 
     let circles: list<Circle> = [Circle(radius: 1.0)]
     let shapes: list<Shape> = convert<list<Shape>>(circles)
     assert shapes == [Circle(radius: 1.0)]
 
     assert eval whole(value: [2.9, -2.9]) == [2, -2]
+    ~~~
+
+    Proposed (OPS-7): a number with no member follows the `invalid` policy.
+
+    ~~~hgl
+    assert is_err(convert<Stream>(2))
+    assert raises("convert.invalid") { convert<Stream>(2, invalid: .fail) }
     ~~~
 
 Rules:
