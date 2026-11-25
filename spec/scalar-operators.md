@@ -5,8 +5,9 @@ rounding and range of a duration or an instant result, the comparison
 outcome type, the domains of the conversion operator, what each conversion
 yields, its options, and generic temporal identity handling. Runtime
 conformance execution and the native ABI remain pending. The sentences of
-OPS-2 and OPS-7 that begin "Proposed:" are proposed. The order of `bytes`
-and the conversions of an enum are not declared in `hgl/` yet.
+OPS-2, OPS-7 and OPS-11 that begin "Proposed:" are proposed. List `join` is
+agreed. The order of `bytes` and the conversions of an enum are not declared
+in `hgl/` yet.
 
 ## Contract
 
@@ -106,6 +107,12 @@ owns symbol syntax, precedence, and phase checking. An instant is a
   `duration` added or taken away is the instant that far away, in the same
   zone: its wall clock and offset are the zone's at that instant (the
   language's TYPE-2).
+- **OPS-11.** `join` with a `list<str>` joins its strings in list order,
+  with `separator` between consecutive strings. With zero strings, the result
+  is empty text. One string gives that string. A lifted call follows FN-6,
+  ticking when an input ticks and every input is valid. Proposed: `join` also
+  takes a positional pack of strings in argument order, and the shared operator
+  takes `separator` by name alone in both forms (FN-8, EXPR-2, GEN-6).
 
 | Operator | Operands | Result |
 | --- | --- | --- |
@@ -176,6 +183,16 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 | Neither | Invalidate the output | Invalidate the output |
 
 ## Examples
+
+The first call joins a list. The second uses the proposed positional-pack
+form (OPS-11).
+
+```hgl
+join(["a", "b"], separator: ", ")
+join("a", "b", "c", separator: " ")
+```
+
+They give `"a, b"` and `"a b c"` respectively.
 
 The [wired identity example](temporal-arithmetic.md) shows OPS-9 through
 publication, invalidation, silence, and recovery.
