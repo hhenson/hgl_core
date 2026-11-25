@@ -208,13 +208,14 @@ test enum_name_and_number {
 
 /**
 Core enums have the same named and numbered members in both directions of
-conversion.
+conversion. Checks of `.fail` and the checked return use the proposed
+OPS-7 failure profile.
 
 Rules:
-    TYPE-7, OPS-4, OPS-6
+    TYPE-7, OPS-4, OPS-6, OPS-7, OPS-8
 
 Status:
-    agreed
+    proposed
 */
 test runtime_owned_enum_conversions {
     assert convert<str>(Stream.out) == "out" && convert<str>(Stream.err) == "err"
@@ -243,7 +244,7 @@ test runtime_owned_enum_conversions {
 
 /**
 An integer that has no enum member is an Err by default and escapes under
-`.fail`.
+`.fail` under the proposed OPS-7 failure profile.
 
 Rules:
     TYPE-7, OPS-4, OPS-6, OPS-7, OPS-8
@@ -273,7 +274,7 @@ test enum_numbers_use_the_conversion_policy {
 /**
 Lifted enum conversions publish names, numbers, successes and failures.
 A quiet input stays quiet, and a checked error leaves the next cycle free
-to publish a success.
+to publish a success under the proposed OPS-7 failure profile.
 
 Rules:
     TYPE-7, OPS-6, OPS-7, OPS-8, FN-6
@@ -291,7 +292,7 @@ test lifted_enum_conversions {
 
 /**
 A lifted conversion to an enum without members publishes an Err for each
-input tick.
+input tick under the proposed OPS-7 failure profile.
 
 Rules:
     TYPE-7, OPS-7, FN-6
@@ -305,7 +306,8 @@ test lifted_empty_enum_conversion {
 
 /**
 A forced conversion to an empty enum raises on its input's tick,
-including when another conversion consumes its result.
+including when another conversion consumes its result, under the
+proposed OPS-7 failure profile.
 
 Rules:
     TYPE-7, OPS-7, OPS-8, FN-6
@@ -320,7 +322,8 @@ test lifted_empty_enum_failure_escapes {
 
 /**
 A failed conversion into a nullable empty enum publishes null, which
-the next node sees as a value on each input tick.
+the next node sees as a value on each input tick. This case uses the
+proposed OPS-7 failure profile.
 
 Rules:
     TYPE-7, TYPE-14, TYPE-15, OPS-7, FN-6
@@ -335,13 +338,14 @@ test lifted_nullable_empty_enum_publishes_null {
 
 /**
 A reflected member constrained to the enum category can be the
-destination of either numeric conversion policy.
+destination of either numeric conversion policy. Both result forms
+use the proposed OPS-7 failure profile.
 
 Rules:
-    GEN-3, GEN-7, GEN-17, OPS-4, OPS-6, OPS-8
+    GEN-3, GEN-7, GEN-17, OPS-4, OPS-6, OPS-7, OPS-8
 
 Status:
-    agreed
+    proposed
 */
 test reflected_enum_destination {
     let checked = checked_reflected_enum(accepts_conversion_side, -4)

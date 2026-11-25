@@ -2733,10 +2733,6 @@ Examples:
 
     assert convert<str>(Side.buy) == "buy"
     assert convert<i64>(Side.sell) == 7
-    let checked = convert<Side>(-2)
-    assert is_ok(checked)
-    if is_ok(checked) { assert checked.value == Side.buy }
-    assert convert<Side>(7, invalid: .fail) == Side.sell
 
     let circles: list<Circle> = [Circle(radius: 1.0)]
     let shapes: list<Shape> = convert<list<Shape>>(circles)
@@ -2745,9 +2741,17 @@ Examples:
     assert eval whole(value: [2.9, -2.9]) == [2, -2]
     ~~~
 
-    Proposed (OPS-7): a number with no member follows the `invalid` policy.
+    Proposed (OPS-7): an integer-to-enum conversion uses the checked
+    result or the `.fail` form. A number with no member follows the
+    selected policy.
 
     ~~~hgl
+    enum Side { buy = -2, sell = 7 }
+    let checked = convert<Side>(-2)
+    assert is_ok(checked)
+    if is_ok(checked) { assert checked.value == Side.buy }
+    assert convert<Side>(7, invalid: .fail) == Side.sell
+
     assert is_err(convert<Stream>(2))
     assert raises("convert.invalid") { convert<Stream>(2, invalid: .fail) }
     ~~~
