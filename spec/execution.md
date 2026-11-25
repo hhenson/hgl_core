@@ -70,7 +70,7 @@ ends, and what it gives back.
   and what was published. An entry with no result has no output. The run
   wires `record` to the entry's result under the key `"run.output"`, and its
   output is the value under that key once the run has stopped. That key is
-  the run's: a program that names it is rejected when its graph is built.
+  the run's: a program that names it is rejected (CAP-6).
 
 ## Replay and record
 
