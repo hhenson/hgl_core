@@ -32,10 +32,18 @@ fn cold_type_assignment(value: i64) -> i64 {
     return x
 }
 
+fn unwired_type_operand(value: i64) -> i64 {
+    start { assert false }
+    when valid(value) { return value }
+}
+
+fn unwired_type_label() -> str => convert<str>(type(unwired_type_operand(1)))
+
 /**
 A graph's type query produces a constant without evaluating the input's payload.
 The input's later publication adds no publication to this constant graph.
 An assignment inside a cold operand does not set the surrounding var's category.
+A queried node is not wired: its failing start hook is never run.
 
 Rules:
     TYPE-18, FMT-5
@@ -46,4 +54,5 @@ Status:
 test cold_graph_type_query {
     assert eval graph_type_label(value: [_, 7, _]) == ["i64"]
     assert eval cold_type_assignment(value: [2, 3]) == [1]
+    assert eval unwired_type_label() == ["i64"]
 }
