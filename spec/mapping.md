@@ -301,6 +301,8 @@ exported (the language's UNIT-3).
   removed in the cycle its child stops. Where `f` gives no result, `map`
   gives none. A failure that leaves a child is a failure of the `map`, as
   one that leaves any node of its graph is.
+  Proposed: When a child invalidates its result, its entry is removed
+  until the child next publishes.
 
 ### Reduction
 

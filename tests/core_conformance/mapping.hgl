@@ -384,6 +384,118 @@ test keyed_map_keeps_state_after_replacement_within_one_cycle {
         [[1: 1121], delta<dict<i64, i64>>(updated: [1: 1251])]
 }
 
+fn publish_positive_member(member: i64) -> i64 {
+    inject out
+    when {
+        if member < 0 { invalidate(out) }
+        if member > 0 { return member * 2 }
+    }
+}
+
+fn map_publishing_members(items: dict<i64, i64>, selected: set<i64>) -> dict<i64, i64> =>
+    map{keys: selected}(publish_positive_member, items)
+
+fn map_published_keys(items: dict<i64, i64>, selected: set<i64>) -> set<i64> =>
+    keys(map_publishing_members(items, selected))
+
+fn map_result_wakes(book: dict<i64, i64>) -> bool {
+    when valid([]) { return valid(book) }
+}
+
+fn map_publication_wakes(items: dict<i64, i64>, selected: set<i64>) -> bool =>
+    map_result_wakes(map_publishing_members(items, selected))
+
+/**
+Only a published entry changes the valid map result or its key set.
+
+The first empty result is valid. Keys 1 and 2 start in the next cycle,
+but key 1's child publishes nothing from zero and key 2 has no input
+entry. Key 1 becomes visible after it publishes. Removing key 2 wakes
+no subscriber because it never published.
+
+Rules:
+    MAP-7, MAP-8, MAP-10, SET-1, TIME-7
+
+Status:
+    agreed
+*/
+test keyed_map_ignores_unpublished_children {
+    assert eval map_publishing_members(
+        items: [_, [1: 0], delta<dict<i64, i64>>(updated: [1: 2])],
+        selected: [[], delta<set<i64>>(added: [1, 2]), _, delta<set<i64>>(removed: [2])],
+    ) == [[], _, [1: 4], _]
+    assert eval map_published_keys(
+        items: [_, [1: 0], delta<dict<i64, i64>>(updated: [1: 2])],
+        selected: [[], delta<set<i64>>(added: [1, 2]), _, delta<set<i64>>(removed: [2])],
+    ) == [[], _, [1], _]
+    assert eval map_publication_wakes(
+        items: [_, [1: 0], delta<dict<i64, i64>>(updated: [1: 2])],
+        selected: [[], delta<set<i64>>(added: [1, 2]), _, delta<set<i64>>(removed: [2])],
+    ) == [true, _, true, _]
+}
+
+/**
+An invalidated child disappears from the result until it publishes again.
+
+The other entry stays valid when key 1's child invalidates its output.
+The child keeps its lifecycle key and can publish the entry again.
+
+Rules:
+    MAP-7, MAP-10, SET-1, END-4
+
+Status:
+    proposed
+*/
+test keyed_map_removes_a_child_result_on_invalidation {
+    assert eval map_publishing_members(
+        items: [
+            [1: 2, 2: 3],
+            delta<dict<i64, i64>>(updated: [1: -1]),
+            delta<dict<i64, i64>>(updated: [1: 9]),
+        ],
+        selected: [[1, 2]],
+    ) == [[1: 4, 2: 6], delta<dict<i64, i64>>(removed: [1]), delta<dict<i64, i64>>(updated: [1: 18])]
+    assert eval map_published_keys(
+        items: [
+            [1: 2, 2: 3],
+            delta<dict<i64, i64>>(updated: [1: -1]),
+            delta<dict<i64, i64>>(updated: [1: 9]),
+        ],
+        selected: [[1, 2]],
+    ) == [[1, 2], delta<set<i64>>(removed: [1]), delta<set<i64>>(added: [1])]
+}
+
+fn publish_book_member(step: i64) -> dict<str, i64> {
+    when {
+        if step == 1 { return ["x": 2, "y": 7] }
+        if step == 2 { return delta<dict<str, i64>>(updated: ["y": 9]) }
+        return delta<dict<str, i64>>(removed: ["x"])
+    }
+}
+
+fn map_books(steps: dict<i64, i64>) -> dict<i64, dict<str, i64>> =>
+    map(publish_book_member, steps)
+
+/**
+A keyed map forwards the changes within a child dictionary.
+
+The outer key stays present when the child updates one entry and later
+removes another.
+
+Rules:
+    MAP-10, TIME-7, TYPE-16
+
+Status:
+    agreed
+*/
+test keyed_map_keeps_nested_result_deltas {
+    assert eval map_books(steps: [[1: 1], [1: 2], [1: 3]]) == [
+        [1: ["x": 2, "y": 7]],
+        delta<dict<i64, dict<str, i64>>>(updated: [1: delta<dict<str, i64>>(updated: ["y": 9])]),
+        delta<dict<i64, dict<str, i64>>>(updated: [1: delta<dict<str, i64>>(removed: ["x"])]),
+    ]
+}
+
 fn fixed_tree_sum(values: list<i64, 2>) -> i64 => reduce(add_, values)
 
 const fn append_digit(accumulated: i64, digit: i64) -> i64 => accumulated * 10 + digit
