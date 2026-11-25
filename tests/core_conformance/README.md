@@ -10,6 +10,7 @@ source is `hgl/`.
 | Part | What it checks |
 | --- | --- |
 | `scalar_operator_wrappers` | Operand order, numeric precision, tolerance options, special values and text repeated a count |
+| `scalar_ordering` | Unsigned octet order, text code points, Boolean order and signed durations |
 | `identity_arithmetic` | Addition and subtraction under the identity policy, ordinary lifting and generic candidates |
 | `lists` | Append, extend, independence of an earlier list value, and an index outside a list |
 | `join` | Separator configuration in the list and positional-pack forms |
