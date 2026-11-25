@@ -1,4 +1,4 @@
-module core_conformance
+module core_conformance part type_values
 
 struct TypeSpellingPoint {
     x: i64
