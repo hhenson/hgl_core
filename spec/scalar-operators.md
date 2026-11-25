@@ -6,7 +6,7 @@ outcome type, the domains of the conversion operator, what each conversion
 yields, its options, and generic temporal identity handling. Runtime
 conformance execution and the native ABI remain pending. The sentences of
 OPS-2 and OPS-7 that begin "Proposed:" are proposed. The order of `bytes`
-and the conversions of an enum are not declared in `hgl/` yet.
+is not declared in `hgl/` yet.
 
 ## Contract
 

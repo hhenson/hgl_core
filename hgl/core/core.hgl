@@ -2547,7 +2547,7 @@ is written.
 
 | From | To |
 | --- | --- |
-| `i64` | `f64`, `bool`, `str` |
+| `i64` | `f64`, `bool`, `str`, an enum |
 | `f64` | `i64`, `bool`, `str` |
 | `bool` | `i64`, `f64`, `str` |
 | `str` | `i64`, `f64`, `bool`, `bytes` |
@@ -2555,13 +2555,14 @@ is written.
 | `date` | `datetime` |
 | `datetime` | `date` |
 | `tenor` | `str` |
+| An enum | `i64`, `str` |
 | A list, a set, a dictionary, a tuple, a struct | `str` |
 | `list<A>`, of a struct `A` that inherits from the abstract struct `B` | `list<B>` |
 
 A conversion can fail where its value has no `T`: an `f64` that is a
 NaN, an infinity, or outside `i64` once rounded; a text that is not what
 the table under `Returns:` reads as the type asked for; bytes that are
-not well-formed UTF-8.
+not well-formed UTF-8; an integer that is no member's number.
 
 Type Args:
     T: The type to convert to. The call writes it.
@@ -2609,6 +2610,9 @@ Returns:
     | `date` to `datetime` | The start of that date, in UTC |
     | `datetime` to `date` | The date of the instant, in UTC |
     | `tenor` to `str` | Its text, in its largest units, a unit whose count is zero not written, and `-` before the units of a count below zero: `1Y6M`, `2W`, `0D`, `1M-1D` |
+    | An enum to `str` | The member's name |
+    | An enum to `i64` | The member's number |
+    | `i64` to an enum | The member of that number |
     | A list, a set, a dictionary, a tuple or a struct to `str` | The value as a program writes it, a `str` among its parts in quotes: `[1, 2]`, `["a": 1]`, `(1, "a")`, `Point(x: 1.0, y: 2.0)` |
     | `list<A>` to `list<B>` | The same elements |
 
@@ -2641,6 +2645,8 @@ Examples:
     struct Circle : Shape {
         radius: f64
     }
+
+    enum Side { buy = -2, sell = 7 }
 
     fn whole(value: f64) -> i64 => convert<i64>(value, invalid: .fail)
 
@@ -2680,6 +2686,15 @@ Examples:
     assert convert<str>(18M) == "1Y6M"
     assert convert<str>(1M - 1D) == "1M-1D"
 
+    assert convert<str>(Side.buy) == "buy"
+    assert convert<i64>(Side.sell) == 7
+    let checked = convert<Side>(-2)
+    assert is_ok(checked)
+    if is_ok(checked) { assert checked.value == Side.buy }
+    assert convert<Side>(7, invalid: .fail) == Side.sell
+    assert is_err(convert<Side>(0))
+    assert raises("convert.invalid") { convert<Side>(0, invalid: .fail) }
+
     let circles: list<Circle> = [Circle(radius: 1.0)]
     let shapes: list<Shape> = convert<list<Shape>>(circles)
     assert shapes == [Circle(radius: 1.0)]
@@ -2689,7 +2704,7 @@ Examples:
 
 Rules:
     OPS-4, OPS-6, OPS-7, OPS-8, NUM-10, TEN-9, FMT-5, EXPR-5, EXPR-12, ERR-11,
-    ERR-15, TYPE-3, FN-6, FN-11
+    ERR-15, TYPE-3, TYPE-7, FN-6, FN-11
 */
 export operator convert<T, V, O>(value: V) -> O
     requires O in {T, result<T, error>}
