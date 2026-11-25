@@ -2548,6 +2548,7 @@ is written.
 | From | To |
 | --- | --- |
 | `i64` | `f64`, `bool`, `str`, an enum |
+| An enum | `i64`, `str` |
 | `f64` | `i64`, `bool`, `str` |
 | `bool` | `i64`, `f64`, `str` |
 | `str` | `i64`, `f64`, `bool`, `bytes` |
@@ -2555,7 +2556,6 @@ is written.
 | `date` | `datetime` |
 | `datetime` | `date` |
 | `tenor` | `str` |
-| An enum | `i64`, `str` |
 | A list, a set, a dictionary, a tuple, a struct | `str` |
 | `list<A>`, of a struct `A` that inherits from the abstract struct `B` | `list<B>` |
 
@@ -2597,6 +2597,9 @@ Returns:
     | Conversion | Gives |
     | --- | --- |
     | `i64` to `f64` | The nearest `f64` |
+    | An enum to `str` | The member's name |
+    | An enum to `i64` | The member's number |
+    | `i64` to an enum | The member of that number |
     | `f64` to `i64` | The integer `rounding` selects |
     | `i64` or `f64` to `bool` | False for zero, true otherwise; a NaN is true |
     | `bool` to `i64` or `f64` | 0 or 1 |
@@ -2610,9 +2613,6 @@ Returns:
     | `date` to `datetime` | The start of that date, in UTC |
     | `datetime` to `date` | The date of the instant, in UTC |
     | `tenor` to `str` | Its text, in its largest units, a unit whose count is zero not written, and `-` before the units of a count below zero: `1Y6M`, `2W`, `0D`, `1M-1D` |
-    | An enum to `str` | The member's name |
-    | An enum to `i64` | The member's number |
-    | `i64` to an enum | The member of that number |
     | A list, a set, a dictionary, a tuple or a struct to `str` | The value as a program writes it, a `str` among its parts in quotes: `[1, 2]`, `["a": 1]`, `(1, "a")`, `Point(x: 1.0, y: 2.0)` |
     | `list<A>` to `list<B>` | The same elements |
 

@@ -122,7 +122,13 @@ test the_other_conversions {
     assert convert<date>(@2026-03-01T23:59:59Z) == @2026-03-01
 }
 
-enum ConversionSide { left = -4, next, right = 7, largest = 9223372036854775807 }
+enum ConversionSide {
+    left = -4,
+    next,
+    right = 7,
+    lowest = -9223372036854775808,
+    largest = 9223372036854775807,
+}
 enum NoConversionMembers {}
 
 const fn named_member<E>(value: E) -> str requires E in enum => convert<str>(value)
@@ -155,6 +161,7 @@ test enum_name_and_number {
     assert convert<str>(ConversionSide.next) == "next"
     assert convert<i64>(ConversionSide.left) == -4
     assert convert<i64>(ConversionSide.next) == -3
+    assert convert<i64>(ConversionSide.lowest) == -9223372036854775808
     assert convert<i64>(ConversionSide.largest) == 9223372036854775807
     assert convert<str>(CmpResult.less) == "less"
     assert convert<i64>(CmpResult.unordered) == 3
@@ -185,6 +192,7 @@ test enum_numbers_use_the_conversion_policy {
     assert is_err(convert<NoConversionMembers>(0))
     assert is_ok(numbered_member<ConversionSide>(7))
     assert is_err(numbered_member<CmpResult>(7))
+    assert convert<ConversionSide>(-9223372036854775808, invalid: .fail) == .lowest
     assert convert<ConversionSide>(7, invalid: .fail) == .right
     let plain: ConversionSide = convert<ConversionSide>(-3)
     assert plain == .next
