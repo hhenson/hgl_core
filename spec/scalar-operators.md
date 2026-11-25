@@ -5,9 +5,8 @@ rounding and range of a duration or an instant result, the comparison
 outcome type, the domains of the conversion operator, what each conversion
 yields, its options, and generic temporal identity handling. Runtime
 conformance execution and the native ABI remain pending. The sentences of
-OPS-2, OPS-7 and OPS-11 that begin "Proposed:" are proposed. List `join` is
-agreed. The order of `bytes` and the conversions of an enum are not declared
-in `hgl/` yet.
+OPS-2 and OPS-7 that begin "Proposed:" are proposed. The order of `bytes`
+and the conversions of an enum are not declared in `hgl/` yet.
 
 ## Contract
 
@@ -107,12 +106,13 @@ owns symbol syntax, precedence, and phase checking. An instant is a
   `duration` added or taken away is the instant that far away, in the same
   zone: its wall clock and offset are the zone's at that instant (the
   language's TYPE-2).
-- **OPS-11.** `join` with a `list<str>` joins its strings in list order,
-  with `separator` between consecutive strings. With zero strings, the result
-  is empty text. One string gives that string. A lifted call follows FN-6,
-  ticking when an input ticks and every input is valid. Proposed: `join` also
-  takes a positional pack of strings in argument order, and the shared operator
-  takes `separator` by name alone in both forms (FN-8, EXPR-2, GEN-6).
+- **OPS-11.** `join` takes a `list<str>` in list order or a positional pack
+  of strings in argument order (FN-8). It inserts `separator` between
+  consecutive strings. The separator is a configuration parameter (FN-18)
+  that defaults to one space. A connection given as the separator rejects
+  (`connection.as_constant`, EXPR-14). With zero strings, the result is
+  empty text. One string gives that string. A lifted call follows FN-6,
+  ticking when an input ticks and every input is valid.
 
 | Operator | Operands | Result |
 | --- | --- | --- |
@@ -184,12 +184,12 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 
 ## Examples
 
-The first call joins a list. The second uses the proposed positional-pack
-form (OPS-11).
+The first call joins a list with a supplied separator. The second joins
+positional strings with the default separator (OPS-11).
 
 ```hgl
-join(["a", "b"], separator: ", ")
-join("a", "b", "c", separator: " ")
+join{separator: ", "}(["a", "b"])
+join("a", "b", "c")
 ```
 
 They give `"a, b"` and `"a b c"` respectively.
