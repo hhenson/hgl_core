@@ -118,8 +118,11 @@ form, `get(dictionary, key, fallback)` (ERR-6), which is not declared in
   after it, and the language's TIME-2 leaves the order of two nodes of one
   rank undefined. What one of them sees of the other's `put` in the same
   cycle is undefined. The key `"run.output"` is the run's (CRUN-8): a
-  program that names it is rejected when its graph is built, with code
-  `store.reserved_key`.
+  program that names it is rejected, with code `store.reserved_key`.
+  Proposed, with the language's TIME-8: in source where the program's
+  text fixes the key, when its graph is built where a computation does,
+  and as the call that uses it is evaluated where a cycle of calls
+  leaves the key to the run.
 - **CAP-7.** `run_config` is the configuration of the run (CRUN-2), as it
   is supplied to the run (the language's RUN-6). It has three properties:
   `start` and `end`, each a `datetime?`, and `length`, a `duration?`. A
