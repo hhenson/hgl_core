@@ -1,7 +1,8 @@
 # Diagnostics
 
-Status: DBG-1 through DBG-9 are agreed. Nothing here is declared in `hgl/`
-yet.
+Status: DBG-1 through DBG-9 are agreed. The operator and its value
+candidate are declared in `hgl/core/diagnostics.hgl`. The graph candidate
+below is its reference declaration.
 
 ## Scope and API
 
@@ -53,8 +54,9 @@ impl const fn debug_print<...As, ...Ks>(
 - **DBG-3.** Called in a node's handler or in a value function, it writes
   its line where it is executed, as a print does in any language, with the
   values its arguments have there. Its format string asks for
-  `{wall_time}` there, and for neither `{engine_time}` nor a mark, which
-  are of a graph (FMT-9).
+  `{wall_time}` there. It asks for neither `{engine_time}` nor a mark,
+  which are of a graph. A mark on an argument that is itself a
+  `Marked` is written as `format` writes it (FMT-9).
 - **DBG-4.** In a graph a call takes options. `sample` writes one line in
   every that many: `{sample: 10}` the tenth, the twentieth, and so on; it
   is 1 or more. `print_delta` says whether a collection that ticked is
@@ -120,6 +122,6 @@ In `mid`, the first call writes a line whenever `bid` or `ask` ticks: with
 evaluation time before it and a `*` where it ticked (DBG-4, DBG-6). In
 `watched` a line is written when `beat` ticks and at no other time, with
 the book whole as it stands then (DBG-8). In `counted` the call is in a
-handler, and writes its line each time the handler runs it (DBG-3). No
-conformance case observes the lines: a trace does not see standard
-output.
+handler, and writes its line each time the handler runs it (DBG-3). The
+value-code cases describe the expected stream bytes for the target's
+external harness. Their trace assertions observe the publications.
