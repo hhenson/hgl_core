@@ -129,3 +129,29 @@ test empty_and_nested_collection_text {
     assert format("{}", entries) == "[\"next\": null]"
     assert convert<str>(outer) == "[custom members]"
 }
+
+struct CollectionSample { number: i64 }
+
+impl const fn convert(value: Marked<CollectionSample>) -> str {
+    if value.ticked { return "changed" }
+    return "quiet"
+}
+
+/**
+A marked collection member uses its whole-value conversion, even when its
+payload is absent or the payload type has no text conversion.
+
+Rules:
+    OPS-4, FMT-5, FMT-7
+
+Status:
+    agreed
+*/
+test collection_text_uses_the_whole_marked_member {
+    let changed = Marked<CollectionSample>(value: CollectionSample(number: 8), ticked: true)
+    let quiet = Marked<CollectionSample>(value: null, ticked: false)
+    let members: list<Marked<CollectionSample>?, 3> = [changed, quiet, null]
+    let entries: dict<str, Marked<CollectionSample>> = ["sample": quiet]
+    assert convert<str>(members) == "[changed, quiet, null]"
+    assert format("{}", entries) == "[\"sample\": quiet]"
+}

@@ -4,6 +4,11 @@ module core part collection_text
 # scalar text or selected conversion as a whole value in a format place.
 operator collection_text_member<T>(value: T) -> str
 impl const fn collection_text_member(value: str) -> str => format("{:?}", value)
+# FMT-7 unwraps a Marked argument once. Give it the whole member as the
+# payload so FMT-5 selects and checks the member's own str conversion.
+impl const fn collection_text_member<T>(value: Marked<T>) -> str
+    requires convert(Marked<T>) -> str =>
+    format("{}", Marked<Marked<T>>(value: value, ticked: false))
 impl const fn collection_text_member<T>(value: T) -> str
     requires T in {date, time, datetime, duration} || convert(T) -> str => format("{}", value)
 
