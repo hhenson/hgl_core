@@ -153,4 +153,4 @@ export struct Marked<T> {
 native const fn _format<...As, ...Ks>{
     const not_valid: str = "<not valid>",
     const ticked: str = "*",
-}(const fmt_str: str, clock: Clock, args: ...As, kwargs: ...{Ks}) -> str
+}(const fmt_str: str, engine_time: Clock, args: ...As, kwargs: ...{Ks}) -> str
