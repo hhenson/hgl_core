@@ -6,22 +6,21 @@ operator collection_text_member<T>(value: T) -> str
 impl const fn collection_text_member(value: str) -> str => format("{:?}", value)
 # FMT-7 unwraps a Marked argument once. Give it the whole member as the
 # payload so FMT-5 selects and checks the member's own str conversion.
-impl const fn collection_text_member<T>(value: Marked<T>) -> str
-    requires convert(Marked<T>) -> str =>
+impl const fn collection_text_member<T>(value: Marked<T>) -> str =>
     format("{}", Marked<Marked<T>>(value: value, ticked: false))
-impl const fn collection_text_member<T>(value: T) -> str
-    requires T in {date, time, datetime, duration} || convert(T) -> str => format("{}", value)
+impl const fn collection_text_member<T>(value: T) -> str => format("{}", value)
 
-const fn collection_text_nullable<T>(value: T?) -> str
-    requires collection_text_member(T) -> str {
+const fn collection_text_nullable<T>(value: T?) -> str {
     if value != null { return collection_text_member(value) }
     return "null"
 }
 
 # OPS-4, FMT-5: every body traverses its original collection and appends
-# directly to the output string, including for fixed lists.
+# directly to the output string, including for fixed lists. The candidates
+# require their component conversions directly so nested values need one
+# conversion requirement at each collection level.
 impl const fn convert<T>(value: list<T>) -> str
-    requires collection_text_member(T) -> str {
+    requires T in {str, date, time, datetime, duration} || convert(T) -> str {
     var text = "["
     var separator = ""
     for item in value {
@@ -34,7 +33,7 @@ impl const fn convert<T>(value: list<T>) -> str
 }
 
 impl const fn convert<T, N>(value: list<T, N>) -> str
-    requires collection_text_member(T) -> str {
+    requires T in {str, date, time, datetime, duration} || convert(T) -> str {
     var text = "["
     var separator = ""
     for item in value {
@@ -47,7 +46,7 @@ impl const fn convert<T, N>(value: list<T, N>) -> str
 }
 
 impl const fn convert<T>(value: list<T?>) -> str
-    requires collection_text_member(T) -> str {
+    requires T in {str, date, time, datetime, duration} || convert(T) -> str {
     var text = "["
     var separator = ""
     for item in value {
@@ -60,7 +59,7 @@ impl const fn convert<T>(value: list<T?>) -> str
 }
 
 impl const fn convert<T, N>(value: list<T?, N>) -> str
-    requires collection_text_member(T) -> str {
+    requires T in {str, date, time, datetime, duration} || convert(T) -> str {
     var text = "["
     var separator = ""
     for item in value {
@@ -73,7 +72,7 @@ impl const fn convert<T, N>(value: list<T?, N>) -> str
 }
 
 impl const fn convert<T>(value: set<T>) -> str
-    requires collection_text_member(T) -> str {
+    requires T in {str, date, time, datetime, duration} || convert(T) -> str {
     var text = "["
     var separator = ""
     for item in value {
@@ -86,7 +85,8 @@ impl const fn convert<T>(value: set<T>) -> str
 }
 
 impl const fn convert<K, V>(value: dict<K, V>) -> str
-    requires collection_text_member(K) -> str && collection_text_member(V) -> str {
+    requires (K in {str, date, time, datetime, duration} || convert(K) -> str)
+        && (V in {str, date, time, datetime, duration} || convert(V) -> str) {
     var text = "["
     var separator = ""
     for key, item in value {
@@ -101,7 +101,8 @@ impl const fn convert<K, V>(value: dict<K, V>) -> str
 }
 
 impl const fn convert<K, V>(value: dict<K, V?>) -> str
-    requires collection_text_member(K) -> str && collection_text_member(V) -> str {
+    requires (K in {str, date, time, datetime, duration} || convert(K) -> str)
+        && (V in {str, date, time, datetime, duration} || convert(V) -> str) {
     var text = "["
     var separator = ""
     for key, item in value {
