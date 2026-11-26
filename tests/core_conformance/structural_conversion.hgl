@@ -107,3 +107,51 @@ test collection_conversion_preserves_selection {
     assert convert<str>(members) == "custom members"
     assert format("{}", members) == convert<str>(members)
 }
+
+/**
+Empty collections use brackets. Nullable dictionary values write null,
+and nested lists retain the conversion selected for the entire inner list.
+
+Rules:
+    OPS-4, FMT-5, GEN-5
+
+Status:
+    agreed
+*/
+test empty_and_nested_collection_text {
+    let empty: list<i64, 0> = []
+    let values: set<str> = []
+    let entries: dict<str, CollectionOrderId?> = ["next": null]
+    let inner: list<CustomTextMember> = [CustomTextMember(number: 3)]
+    let outer: list<list<CustomTextMember>> = [inner]
+    assert convert<str>(empty) == "[]"
+    assert format("{}", values) == "[]"
+    assert format("{}", entries) == "[\"next\": null]"
+    assert convert<str>(outer) == "[custom members]"
+}
+
+struct CollectionSample { number: i64 }
+
+impl const fn convert(value: Marked<CollectionSample>) -> str {
+    if value.ticked { return "changed" }
+    return "quiet"
+}
+
+/**
+A marked collection member uses its whole-value conversion, even when its
+payload is absent or the payload type has no text conversion.
+
+Rules:
+    OPS-4, FMT-5, FMT-7
+
+Status:
+    agreed
+*/
+test collection_text_uses_the_whole_marked_member {
+    let changed = Marked<CollectionSample>(value: CollectionSample(number: 8), ticked: true)
+    let quiet = Marked<CollectionSample>(value: null, ticked: false)
+    let members: list<Marked<CollectionSample>?, 3> = [changed, quiet, null]
+    let entries: dict<str, Marked<CollectionSample>> = ["sample": quiet]
+    assert convert<str>(members) == "[changed, quiet, null]"
+    assert format("{}", entries) == "[\"sample\": quiet]"
+}
