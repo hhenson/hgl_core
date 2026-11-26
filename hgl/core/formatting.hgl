@@ -1,26 +1,27 @@
 module core part graph_formatting
 
-# The clock and tick state belong to the node that observes the quotes.
-fn render_bid_ask(bid: f64?, ask: f64?) -> str {
+# An explicit require_valid selects this prototype for scalar input packs.
+impl fn format<...As, ...Ks>{
+    const require_valid: bool,
+    const not_valid: str = "<not valid>",
+    const ticked: str = "*",
+}(const fmt_str: str, args: ...As, kwargs: ...{Ks}) -> str
+    requires each k in arg_keys(As) { As[k] in {i64, f64, bool, str} }
+          && each k in arg_keys(Ks) { Ks[k] in {i64, f64, bool, str} }
+          && (any k in arg_keys(As) { k == k } || any k in arg_keys(Ks) { k == k })
+{
     inject clock
     when valid([]) {
-        if modified(bid) || modified(ask) {
-            let bid_quote = Marked<f64>(
-                value: if valid(bid) { bid } else { null }, ticked: modified(bid))
-            let ask_quote = Marked<f64>(
-                value: if valid(ask) { ask } else { null }, ticked: modified(ask))
-            return render_graph_values{not_valid: "missing", ticked: "!"}(
-                "{engine_time:%S.6} bid={*bid:.2f} ask={*ask:.2f}", clock.evaluation_time,
-                bid: bid_quote, ask: ask_quote)
+        # modified([]) is true when no input published in this cycle.
+        if !modified([]) && (!require_valid || valid()) {
+            return render_graph_values{not_valid: not_valid, ticked: ticked}(
+                fmt_str, clock.evaluation_time,
+                ...{for k in arg_keys(As): Marked(
+                    value: if valid(args[k]) { args[k] } else { null },
+                    ticked: modified(args[k]))},
+                ...{for k in arg_keys(Ks): Marked(
+                    value: if valid(kwargs[k]) { kwargs[k] } else { null },
+                    ticked: modified(kwargs[k]))})
         }
     }
-}
-
-test bid_ask_ticks {
-    assert eval render_bid_ask(bid: [101.25, _, 101.75, _], ask: [_, 102.50, _, _]) == [
-        "00.000001 bid=!101.25 ask=missing",
-        "00.000002 bid=101.25 ask=!102.50",
-        "00.000003 bid=!101.75 ask=102.50",
-        _,
-    ]
 }
