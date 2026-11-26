@@ -1,5 +1,44 @@
 module core part delta_text
 
+# FMT-5: quote string parts, use the scalar formatter for temporal scalars,
+# and call every other part's selected text conversion. This operator is private.
+operator delta_text_member<T>(value: T) -> str
+impl const fn delta_text_member(value: str) -> str => format("{:?}", value)
+impl const fn delta_text_member(value: date) -> str => format("{}", value)
+impl const fn delta_text_member(value: time) -> str => format("{}", value)
+impl const fn delta_text_member(value: datetime) -> str => format("{}", value)
+impl const fn delta_text_member(value: duration) -> str => format("{}", value)
+impl const fn delta_text_member<T>(value: T) -> str
+    requires convert(T) -> str => convert<str>(value)
+
+const fn delta_text_set<T>(values: set<T>) -> str
+    requires delta_text_member(T) -> str {
+    var text = "["
+    var separator = ""
+    for value in values {
+        text += separator
+        text += delta_text_member(value)
+        separator = ", "
+    }
+    text += "]"
+    return text
+}
+
+const fn delta_text_dict<K, V>(values: dict<K, V>) -> str
+    requires delta_text_member(K) -> str && delta_text_member(V) -> str {
+    var text = "["
+    var separator = ""
+    for key, value in values {
+        text += separator
+        text += delta_text_member(key)
+        text += ": "
+        text += delta_text_member(value)
+        separator = ", "
+    }
+    text += "]"
+    return text
+}
+
 const fn delta_text_has_updates<K, V>(values: dict<K, V>) -> bool {
     for key, value in values { return true }
     return false
@@ -11,19 +50,19 @@ const fn delta_text_has_members<T>(values: set<T>) -> bool {
 }
 
 const fn delta_text_changes<K, V>(prefix: str, updated: dict<K, V>, removed: set<K>, size_modified: i64?) -> str
-    requires collection_text_member(K) -> str && collection_text_member(V) -> str {
+    requires delta_text_member(K) -> str && delta_text_member(V) -> str {
     var text = prefix
     text += "("
     var separator = ""
     if delta_text_has_updates(updated) {
         text += "updated: "
-        text += collection_text_dict(updated)
+        text += delta_text_dict(updated)
         separator = ", "
     }
     if delta_text_has_members(removed) {
         text += separator
         text += "removed: "
-        text += collection_text_set(removed)
+        text += delta_text_set(removed)
         separator = ", "
     }
     if size_modified != null {
@@ -61,7 +100,7 @@ Rules:
     FMT-5, FMT-8, TYPE-16, TYPE-18
 */
 impl const fn convert<T>(value: delta<list<T>>) -> str
-    requires collection_text_member(delta<T>) -> str {
+    requires delta_text_member(delta<T>) -> str {
     return delta_text_changes(convert<str>(type(value)), value.updated, value.removed, value.size_modified)
 }
 
@@ -90,7 +129,7 @@ Rules:
     FMT-5, FMT-8, TYPE-16, TYPE-18
 */
 impl const fn convert<T, N>(value: delta<list<T, N>>) -> str
-    requires collection_text_member(delta<T>) -> str {
+    requires delta_text_member(delta<T>) -> str {
     return delta_text_changes(convert<str>(type(value)), value.updated, value.removed, value.size_modified)
 }
 
@@ -121,7 +160,7 @@ Rules:
     FMT-5, FMT-8, TYPE-16, TYPE-18, CTRL-12
 */
 impl const fn convert<K, V>(value: delta<dict<K, V>>) -> str
-    requires collection_text_member(K) -> str && collection_text_member(delta<V>) -> str {
+    requires delta_text_member(K) -> str && delta_text_member(delta<V>) -> str {
     return delta_text_changes(convert<str>(type(value)), value.updated, value.removed, null)
 }
 
@@ -149,19 +188,19 @@ Rules:
     FMT-5, FMT-8, TYPE-16, TYPE-18, CTRL-12
 */
 impl const fn convert<T>(value: delta<set<T>>) -> str
-    requires collection_text_member(T) -> str {
+    requires delta_text_member(T) -> str {
     var text = convert<str>(type(value))
     text += "("
     var separator = ""
     if delta_text_has_members(value.added) {
         text += "added: "
-        text += collection_text_set(value.added)
+        text += delta_text_set(value.added)
         separator = ", "
     }
     if delta_text_has_members(value.removed) {
         text += separator
         text += "removed: "
-        text += collection_text_set(value.removed)
+        text += delta_text_set(value.removed)
     }
     text += ")"
     return text
