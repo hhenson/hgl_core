@@ -1,0 +1,26 @@
+module core part graph_formatting
+
+# The clock and tick state belong to the node that observes the quotes.
+fn render_bid_ask(bid: f64?, ask: f64?) -> str {
+    inject clock
+    when valid([]) {
+        if modified(bid) || modified(ask) {
+            let bid_quote = Marked<f64>(
+                value: if valid(bid) { bid } else { null }, ticked: modified(bid))
+            let ask_quote = Marked<f64>(
+                value: if valid(ask) { ask } else { null }, ticked: modified(ask))
+            return render_graph_values{not_valid: "missing", ticked: "!"}(
+                "{engine_time:%S.6} bid={*bid:.2f} ask={*ask:.2f}", clock.evaluation_time,
+                bid: bid_quote, ask: ask_quote)
+        }
+    }
+}
+
+test bid_ask_ticks {
+    assert eval render_bid_ask(bid: [101.25, _, 101.75, _], ask: [_, 102.50, _, _]) == [
+        "00.000001 bid=!101.25 ask=missing",
+        "00.000002 bid=101.25 ask=!102.50",
+        "00.000003 bid=!101.75 ask=102.50",
+        _,
+    ]
+}
