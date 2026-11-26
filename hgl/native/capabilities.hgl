@@ -588,8 +588,8 @@ export native type RunConfig {
     The duration supplied for the run, or null if it was omitted.
 
     The exclusive end is the resolved start plus this duration, even
-    when the configuration omits `RunConfig.start`. Supply either a
-    length or an explicit `RunConfig.end`.
+    when the configuration omits `RunConfig.start`. Both length and
+    `RunConfig.end` are optional. If you supply a length, omit the end.
 
     Examples:
         A length of two microseconds ends the run before the input's second
