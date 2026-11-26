@@ -148,9 +148,8 @@ export struct Marked<T> {
     ticked: bool
 }
 
-# Private entry to the value formatter for the graph candidate. Its caller
-# passes its injected clock and records validity and ticks in Marked values.
+# The graph supplies its clock and borrows its inputs for this call (FMT-8).
 native const fn _format<...As, ...Ks>{
     const not_valid: str = "<not valid>",
     const ticked: str = "*",
-}(const fmt_str: str, engine_time: Clock, args: ...As, kwargs: ...{Ks}) -> str
+}(const fmt_str: str, engine_time: Clock, args: ...endpoint<As>, kwargs: ...{endpoint<Ks>}) -> str

@@ -15,13 +15,7 @@ impl fn format<...As, ...Ks>{
         # modified([]) is true when no input published in this cycle.
         if !modified([]) && (!require_valid || valid()) {
             return _format{not_valid: not_valid, ticked: ticked}(
-                fmt_str, clock,
-                ...{for k in arg_keys(As): Marked(
-                    value: if valid(args[k]) { args[k] } else { null },
-                    ticked: modified(args[k]))},
-                ...{for k in arg_keys(Ks): Marked(
-                    value: if valid(kwargs[k]) { kwargs[k] } else { null },
-                    ticked: modified(kwargs[k]))})
+                fmt_str, clock, ...args, ...kwargs)
         }
     }
 }
