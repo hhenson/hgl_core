@@ -14,8 +14,8 @@ impl fn format<...As, ...Ks>{
     when valid([]) {
         # modified([]) is true when no input published in this cycle.
         if !modified([]) && (!require_valid || valid()) {
-            return render_graph_values{not_valid: not_valid, ticked: ticked}(
-                fmt_str, clock.evaluation_time,
+            return _format{not_valid: not_valid, ticked: ticked}(
+                fmt_str, clock,
                 ...{for k in arg_keys(As): Marked(
                     value: if valid(args[k]) { args[k] } else { null },
                     ticked: modified(args[k]))},

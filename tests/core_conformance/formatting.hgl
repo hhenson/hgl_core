@@ -397,8 +397,11 @@ test graph_quote_ticks {
         format{require_valid: both, not_valid: "missing", ticked: "!"}(
             "{engine_time:%S.6} bid={*:.2f} ask={*ask:.2f}", bid, ask: ask)
     fn clock_field(value: i64) -> str => format{require_valid: false}(
-        "{engine_time:%S.6} {cycle_time}", cycle_time: value)
-    assert eval clock_field(value: [7, 8]) == ["00.000001 7", "00.000002 8"]
+        "{engine_time:%S.6} {clock} {cycle_time} {engine_time:%S.6}", clock: value, cycle_time: "quote")
+    assert eval clock_field(value: [7, 8]) == [
+        "00.000001 7 quote 00.000001",
+        "00.000002 8 quote 00.000002",
+    ]
     assert eval quote{both: false}(bid: [101.25, _, 101.75, _], ask: [_, 102.50, _, _]) == [
         "00.000001 bid=!101.25 ask=missing",
         "00.000002 bid=101.25 ask=!102.50",

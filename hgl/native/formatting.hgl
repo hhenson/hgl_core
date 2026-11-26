@@ -149,8 +149,8 @@ export struct Marked<T> {
 }
 
 # Private entry to the value formatter for the graph candidate. Its caller
-# supplies the evaluation time and records validity and ticks in Marked values.
-native const fn render_graph_values<...As, ...Ks>{
+# passes its injected clock and records validity and ticks in Marked values.
+native const fn _format<...As, ...Ks>{
     const not_valid: str = "<not valid>",
     const ticked: str = "*",
-}(const fmt_str: str, engine_time: datetime, args: ...As, kwargs: ...{Ks}) -> str
+}(const fmt_str: str, clock: Clock, args: ...As, kwargs: ...{Ks}) -> str
