@@ -107,3 +107,25 @@ test collection_conversion_preserves_selection {
     assert convert<str>(members) == "custom members"
     assert format("{}", members) == convert<str>(members)
 }
+
+/**
+Empty collections use brackets. Nullable dictionary values write null,
+and nested lists retain the conversion selected for the entire inner list.
+
+Rules:
+    OPS-4, FMT-5, GEN-5
+
+Status:
+    agreed
+*/
+test empty_and_nested_collection_text {
+    let empty: list<i64, 0> = []
+    let values: set<str> = []
+    let entries: dict<str, CollectionOrderId?> = ["next": null]
+    let inner: list<CustomTextMember> = [CustomTextMember(number: 3)]
+    let outer: list<list<CustomTextMember>> = [inner]
+    assert convert<str>(empty) == "[]"
+    assert format("{}", values) == "[]"
+    assert format("{}", entries) == "[\"next\": null]"
+    assert convert<str>(outer) == "[custom members]"
+}
