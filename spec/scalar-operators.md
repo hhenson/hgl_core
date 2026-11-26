@@ -147,6 +147,7 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 | `Type` | `str` |
 | An enum | `i64`, `str` |
 | A list, a set, a dictionary, a tuple, a struct | `str` |
+| A list, set or dictionary delta | `str` |
 
 | Conversion | Yields |
 | --- | --- |
@@ -169,6 +170,7 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 | An enum to `i64` | The member's number |
 | `i64` to an enum | The member of that number |
 | A list, a set, a dictionary, a tuple or a struct to `str` | The value as a program writes it, a `str` among its parts in quotes: `[1, 2]`, `["a": 1]`, `(1, "a")`, `Point(x: 1.0, y: 2.0)` ([formatting](formatting.md), FMT-5) |
+| A list, set or dictionary delta to `str` | Its TYPE-16 constructor, omitting empty or null properties (FMT-5) |
 
 | Option | Applies to | Members | Default |
 | --- | --- | --- | --- |
