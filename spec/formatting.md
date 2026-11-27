@@ -3,7 +3,7 @@
 Status: FMT-1 through FMT-9 are agreed. The [reference](#reference)
 lists every form in one place. The operator, its value candidate and `Marked` are declared in
 [`hgl/native/formatting.hgl`](../hgl/native/formatting.hgl).
-The graph candidate is specified for a later implementation step.
+The scalar graph candidate is in [hgl/core/formatting.hgl](../hgl/core/formatting.hgl).
 
 ## Scope and API
 
@@ -148,8 +148,12 @@ impl fn format<...As, ...Ks>{
   it is 1 or more. With a `trigger`, a connection taken as a signal, the
   text ticks in each cycle in which the trigger ticks and in no other,
   with the arguments as they stand, and with no arguments at each tick of
-  the trigger and not when the graph starts. The candidate for a graph is
-  written in HGL: it gives the native each argument as a `Marked`.
+  the trigger and not when the graph starts. The HGL graph candidate controls
+  publication and passes its clock and its positional and named inputs to
+  the native formatter. The formatter borrows each endpoint for that call
+  (FN-8, TIME-9). Its payload type determines which specifiers are valid.
+  The formatter reads the payload only if the endpoint is valid. A constant
+  wired as a temporal input publishes at graph start (FN-3).
 - **FMT-9.** The evaluation time, the time of day, and a mark on what
   ticked are asked for in the format string itself. Where the call is
   compiled they are taken out of it, and the rest is given to the fmt
@@ -168,9 +172,10 @@ impl fn format<...As, ...Ks>{
   them. `{wall_time}` is asked for anywhere. In value code a call that
   asks for `{engine_time}` rejects (`format.argument`), and so does one
   that marks a place whose argument is no `Marked` (`format.specifier`);
-  a mark on a `Marked` is written there where its `ticked` is true,
-  which is how the candidate for a graph gives the native what ticked
-  (FMT-8).
+  a mark on a `Marked` is written there where its `ticked` is true.
+  For a borrowed graph input, the formatter tests whether the endpoint
+  was modified in the current cycle. It reads the supplied clock’s
+  evaluation time once per call that requests `{engine_time}`.
 
 ## Reference
 
