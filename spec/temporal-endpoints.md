@@ -1,6 +1,6 @@
 # Scalar temporal endpoint observations
 
-Status: END-1 through END-10 are agreed.
+Status: END-1 through END-11 are agreed.
 
 ## Scope and API
 
@@ -109,6 +109,11 @@ selectors follow the language contract rather than this one-endpoint table.
   silent. Within a producer evaluation the last action determines the state:
   publish then invalidate leaves the endpoint invalid. Invalidate then publish
   leaves it valid and modified.
+- **END-11.** `invalidate` writes the endpoint it is given, so it takes
+  it as a `var` (the language's FN-15): `out`, or a place in it, and no
+  input. Every other operation here takes a plain `endpoint<T>`. `activate`
+  and `passivate` act on the node's subscription to an input and leave the
+  input as it is. `hgl/` still declares `invalidate` with a plain endpoint.
 - **END-5.** A publication notifies active subscribers, including when its
   value repeats. A delta that names no change, written where the endpoint
   is valid, is no publication (END-3): it marks nothing modified, moves no
