@@ -88,9 +88,8 @@ impl const fn ifloordiv_<const zero: ZeroPolicy>(var lhs: result<i64, error>, rh
   `set<T>`. `append` puts a member a set has not and leaves a set that
   holds it as it was; `extend` puts each member the set has not. A set
   is assigned as LIST-3 says of a list: the call assigns the place, and a
-  value taken from it before is as it was. A fixed-size list is no
-  target of either, and is an operand of `extend` as the list it converts
-  to. Where the right operand's type fits both candidates and nothing
+  value taken from it before is as it was. Proposed: a fixed-size list,
+  `list<T, N>`, is no target of either. Where the right operand's type fits both candidates and nothing
   ranks one first, the empty literal given to a list of lists,
   `rows += []` for a `list<list<i64>>`, or to a set of sets, the
   statement is ambiguous (`operator.ambiguous`), and `append(rows, [])` or
