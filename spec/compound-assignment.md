@@ -116,10 +116,10 @@ impl const fn ifloordiv_<const zero: ZeroPolicy>(var lhs: result<i64, error>, rh
   `duration`. `.error` gives a `result`, so its candidates take a place
   that holds one: for `var ratio: result<f64, error>`,
   `ratio /={zero: .error} step` assigns the checked quotient, a zero
-  divisor's Err included. The right operand is evaluated first (the
-  language's EXPR-18). The candidate then reads the place as an operand
-  (the language's ERR-15): one that holds an Err raises it, and is not
-  divided. For a place that holds the plain type, and for one that holds
+  divisor's Err included. The place is read, and then the right operand
+  is evaluated (the language's EXPR-18). The candidate then takes what
+  the place held as an operand (the language's ERR-15): an Err is raised
+  there, after the right operand, and nothing is divided. For a place that holds the plain type, and for one that holds
   a nullable, `.error` has no candidate (`operator.no_candidate`).
 
 ## Examples
