@@ -1,6 +1,7 @@
 # Scalar operators and conversion
 
-Status: agreed operator domains for the scalar types other than numbers, the
+Status: OPS-12 is agreed; `hgl/` does not declare its default candidates
+yet. Agreed operator domains for the scalar types other than numbers, the
 rounding and range of a duration or an instant result, the comparison
 outcome type, the domains of the conversion operator, what each conversion
 yields, its options, and generic temporal identity handling. Runtime
@@ -112,6 +113,22 @@ owns symbol syntax, precedence, and phase checking. An instant is a
   (`connection.as_constant`, EXPR-14). With zero strings, the result is
   empty text. One string gives that string. A lifted call follows FN-6,
   ticking when an input ticks and every input is valid.
+- **OPS-12.** `<=>` gives a type its order and its equality. Where
+  `compare_` has a candidate for two types, core's default candidates of
+  `eq_`, `lt_`, `le_`, `gt_`, and `ge_` for them read its outcome, as the
+  numeric contract's table has it (NUM-6): `==` is true for `equivalent`,
+  `<` for `less`, `<=` for `less` or `equivalent`, `>` for `greater`, and
+  `>=` for `greater` or `equivalent`. `unordered` makes all five false.
+  `ne_` is the complement of `eq_` wherever `eq_` has a candidate, under
+  the same options: `a != b` is `!(a == b)`. So a type declares
+  `compare_` alone to have all seven, and `eq_` alone to have `==` and
+  `!=` with no order. A more specific candidate of any of them is selected
+  before the default (the language's GEN-5) and keeps the same outcome;
+  core declares such candidates of `eq_` for numbers, which take a
+  tolerance, and for two zoned datetimes, which take `utc`. A type with no
+  candidate of `compare_` takes core's `==` of two values of one type
+  (OPS-2). The defaults are HGL: a provider supplies `compare_` and those
+  candidates of `eq_`, and no other comparison.
 
 | Operator | Operands | Result |
 | --- | --- | --- |
