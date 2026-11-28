@@ -1904,11 +1904,14 @@ infinity or NaN and the divisor is not zero, the remainder is IEEE
 its sign. A zero divisor gives what the `zero` option says: with an
 `f64` operand `7.0 % 0.0` is NaN, while two `i64` raise
 `numeric.division_by_zero`. For the floored quotient, use `floordiv_`.
+Proposed: of two durations it is what `//` leaves, with the divisor's
+sign, and a zero divisor raises as two `i64` do.
 
 | Left | Right | Result |
 | --- | --- | --- |
 | `i64` | `i64` | `i64` |
 | `i64` or `f64` | `i64` or `f64`, one of them `f64` | `f64` |
+| `duration` | `duration` | `duration` (proposed) |
 
 Type Args:
     L: The left operand's type.
@@ -1970,6 +1973,8 @@ Examples:
     let real: f64 = 7.0
     assert count % real == 3.0
     assert real % count == 1.0
+    assert 7m % 3m == 1m
+    assert -7m % 3m == 2m
     ~~~
 
     A zero divisor, under each policy, and an infinity:
@@ -2084,7 +2089,9 @@ order; any other pair is rejected where it is written
 is given. A NaN is equal to nothing, itself included, and so a struct, a
 list, a tuple or a dictionary that holds one is not equal to itself.
 `ne_` is the complement; `compare_` gives the full outcome, and a
-tolerance does not configure it.
+tolerance does not configure it. Of two types that have `compare_` and no
+candidate of `eq_` of their own, `==` is true where that outcome is
+`equivalent` (OPS-12): a type declares `compare_` alone to have `==`.
 
 | Operands | Equal where |
 | --- | --- |
@@ -2221,7 +2228,8 @@ It compares two values of one type, or an `i64` and an `f64` in either
 order; any other pair is rejected where it is written
 (`operator.no_candidate`). It is the complement of `eq_`, with the same
 options, `abs`, `rel` and `utc`: true exactly where `eq_` is false. So a
-NaN is unequal to everything, itself included.
+NaN is unequal to everything, itself included. Core's candidates are
+`!(a == b)` (OPS-12): a type that has `==` has `!=`.
 
 Type Args:
     L: The left operand's type.
@@ -2292,7 +2300,8 @@ have no order. Of numbers and of tenors, `<`, `<=`, `>` and `>=` each
 give `true` for the outcomes of `compare_` that its table shows, so a
 NaN, or two tenors that are not ordered, make all four false.
 `a < b < c` is no range test: it compares the `bool` of `a < b` with
-`c`.
+`c`. Core's candidates of all four read `compare_` (OPS-12): a type that
+declares `compare_` has them.
 
 | Operands | Order |
 | --- | --- |
@@ -3012,8 +3021,47 @@ impl const fn mul_(lhs: i64, rhs: str) -> str => mul_(rhs, lhs)
 # NUM-2, NUM-4, NUM-5, NUM-11: preserve the integer's type and tolerances.
 impl const fn eq_{abs: f64 = 0.0, rel: f64 = 0.0}(lhs: f64, rhs: i64) -> bool =>
     eq_{abs: abs, rel: rel}(rhs, lhs)
+
+# OPS-12: `<=>` gives a type its order and its equality. Each Boolean
+# comparison of two types that have `<=>` reads its outcome, unless a more
+# specific candidate is declared.
+impl const fn eq_<L, R>(lhs: L, rhs: R) -> bool
+    requires compare_(L, R) -> CmpResult =>
+    compare_(lhs, rhs) == CmpResult.equivalent
+impl const fn lt_<L, R>(lhs: L, rhs: R) -> bool
+    requires compare_(L, R) -> CmpResult =>
+    compare_(lhs, rhs) == CmpResult.less
+impl const fn le_<L, R>(lhs: L, rhs: R) -> bool
+    requires compare_(L, R) -> CmpResult {
+    let outcome = compare_(lhs, rhs)
+    return outcome == CmpResult.less || outcome == CmpResult.equivalent
+}
+impl const fn gt_<L, R>(lhs: L, rhs: R) -> bool
+    requires compare_(L, R) -> CmpResult =>
+    compare_(lhs, rhs) == CmpResult.greater
+impl const fn ge_<L, R>(lhs: L, rhs: R) -> bool
+    requires compare_(L, R) -> CmpResult {
+    let outcome = compare_(lhs, rhs)
+    return outcome == CmpResult.greater || outcome == CmpResult.equivalent
+}
+
+# OPS-12: `!=` is the complement of `==`, with its options.
+impl const fn ne_<T>(lhs: T, rhs: T) -> bool
+    requires eq_(T, T) -> bool =>
+    !eq_(lhs, rhs)
+impl const fn ne_<L, R>(lhs: L, rhs: R) -> bool
+    requires L != R && eq_(L, R) -> bool =>
+    !eq_(lhs, rhs)
+impl const fn ne_{abs: f64 = 0.0, rel: f64 = 0.0}(lhs: i64, rhs: i64) -> bool =>
+    !eq_{abs: abs, rel: rel}(lhs, rhs)
+impl const fn ne_{abs: f64 = 0.0, rel: f64 = 0.0}(lhs: f64, rhs: f64) -> bool =>
+    !eq_{abs: abs, rel: rel}(lhs, rhs)
+impl const fn ne_{abs: f64 = 0.0, rel: f64 = 0.0}(lhs: i64, rhs: f64) -> bool =>
+    !eq_{abs: abs, rel: rel}(lhs, rhs)
 impl const fn ne_{abs: f64 = 0.0, rel: f64 = 0.0}(lhs: f64, rhs: i64) -> bool =>
-    ne_{abs: abs, rel: rel}(rhs, lhs)
+    !eq_{abs: abs, rel: rel}(lhs, rhs)
+impl const fn ne_(lhs: zoned_datetime, rhs: zoned_datetime, utc: bool = false) -> bool =>
+    !eq_(lhs, rhs, utc: utc)
 
 # OPS-9: the required option keeps these candidates out of unconfigured calls.
 # The requirements name value operations; a runtime body calls those candidates.

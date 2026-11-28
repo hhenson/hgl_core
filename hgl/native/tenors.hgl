@@ -11,11 +11,7 @@ native impl const fn sub_(lhs: tenor, rhs: tenor) -> tenor
 native impl const fn neg_(value: tenor) -> tenor
 native impl const fn mul_(lhs: tenor, rhs: i64) -> tenor
 
-# TEN-3: the order, count by count.
-native impl const fn lt_(lhs: tenor, rhs: tenor) -> bool
-native impl const fn le_(lhs: tenor, rhs: tenor) -> bool
-native impl const fn gt_(lhs: tenor, rhs: tenor) -> bool
-native impl const fn ge_(lhs: tenor, rhs: tenor) -> bool
+# TEN-3: the order, count by count. The Boolean comparisons read it (OPS-12).
 native impl const fn compare_(lhs: tenor, rhs: tenor) -> CmpResult
 
 # TEN-9: a tenor's text.

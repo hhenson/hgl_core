@@ -41,3 +41,78 @@ test text_boolean_and_duration_order {
     assert false < true
     assert -5m < 0s
 }
+
+struct Version {
+    major: i64
+    minor: i64
+}
+
+impl const fn compare_(lhs: Version, rhs: Version) -> CmpResult {
+    if lhs.major != rhs.major { return lhs.major <=> rhs.major }
+    return lhs.minor <=> rhs.minor
+}
+
+struct Grade {
+    label: str
+    rank: i64
+}
+
+impl const fn compare_(lhs: Grade, rhs: Grade) -> CmpResult => lhs.rank <=> rhs.rank
+
+/**
+A type that declares `<=>` alone has the six Boolean comparisons.
+Equality reads the declared outcome, not the fields.
+
+Rules:
+    OPS-12, OPS-3
+
+Status:
+    agreed
+*/
+test full_comparison_gives_the_boolean_comparisons {
+    let old = Version(major: 1, minor: 9)
+    let new = Version(major: 2, minor: 0)
+    assert old < new && old <= new && new > old && new >= old
+    assert !(new < old) && !(old > new)
+    assert old == old && old != new && !(old == new)
+    assert old <= old && old >= old
+    let pass = Grade(label: "pass", rank: 1)
+    let merit = Grade(label: "merit", rank: 1)
+    assert pass == merit && !(pass != merit)
+}
+
+/**
+An unordered outcome makes every Boolean comparison but `!=` false.
+
+Rules:
+    OPS-12, NUM-5, NUM-6
+
+Status:
+    agreed
+*/
+test unordered_outcome_is_only_unequal {
+    let nan: f64 = 0.0 /{zero: .nan} 0.0
+    assert (nan <=> 1.0) == .unordered
+    assert !(nan < 1.0) && !(nan <= 1.0) && !(nan > 1.0) && !(nan >= 1.0)
+    assert !(nan == nan) && nan != nan
+    assert !(1M < 1B) && !(1M >= 1B) && 1M != 1B
+}
+
+/**
+Proposed: the remainder of two durations is what floor division leaves.
+
+Rules:
+    OPS-13, NUM-12
+
+Status:
+    proposed
+*/
+test duration_remainder_follows_floor_division {
+    assert 7m % 3m == 1m
+    assert -7m % 3m == 2m
+    assert 7m % -3m == -2m
+    assert (7m // 3m) * 3m + 7m % 3m == 7m
+    assert raises("numeric.division_by_zero") { 7m % 0s }
+    let checked: result<duration, error> = 7m %{zero: .error} 0s
+    assert is_err(checked)
+}
