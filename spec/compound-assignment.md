@@ -1,7 +1,7 @@
 # Compound assignment
 
-Status: ASG-1 through ASG-4, ASG-6 and the identities' names are agreed.
-ASG-5, ASG-7, the set candidates of `append` and `extend`, and the
+Status: ASG-1 through ASG-6 and the identities' names are agreed.
+ASG-7, the set candidates of `append` and `extend`, and the
 declarations below are proposed. `hgl/` declares
 none of them yet.
 
@@ -76,7 +76,7 @@ export operator extend<C, T>(var collection: C, items: C)
   `rows += []` for a `list<list<i64>>`, the statement is ambiguous
   (`operator.ambiguous`), and `append(rows, [])` or `extend(rows, [])`
   says which.
-- **ASG-5.** Proposed: for a place in `out`, core's candidate takes
+- **ASG-5.** For a place in `out`, core's candidate takes
   `endpoint<T>` and publishes what the default would assign, as an
   assignment to that place does (the language's TIME-7).
 - **ASG-6.** `text += piece` appends in place, at the cost of the piece
