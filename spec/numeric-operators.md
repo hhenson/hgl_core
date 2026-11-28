@@ -124,7 +124,7 @@ abs(a - b) <= max(abs_tolerance,
 | A division whose result is | Namely | Admits | Default |
 | --- | --- | --- | --- |
 | An `f64` | `/` of numbers; `//` and `%` with an `f64` operand; a `duration` by a `duration` | `.ieee`, `.nan`, `.error`, `.fail` | `.ieee` |
-| An `i64` or a `duration` | `//` and `%` of two `i64`; a `duration` by a number; `//` of two durations | `.error`, `.fail` | `.fail` |
+| An `i64` or a `duration` | `//` and `%` of two `i64`; a `duration` by a number; `//` of two durations, and proposed `%` of two (OPS-13) | `.error`, `.fail` | `.fail` |
 
 ## Examples and conformance observations
 

@@ -1,6 +1,6 @@
 # Scalar operators and conversion
 
-Status: OPS-12 is agreed; `hgl/` does not declare its default candidates
+Status: OPS-13 is proposed. OPS-12 is agreed; `hgl/` does not declare its default candidates
 yet. Agreed operator domains for the scalar types other than numbers, the
 rounding and range of a duration or an instant result, the comparison
 outcome type, the domains of the conversion operator, what each conversion
@@ -129,6 +129,9 @@ owns symbol syntax, precedence, and phase checking. An instant is a
   candidate of `compare_` takes core's `==` of two values of one type
   (OPS-2). The defaults are HGL: a provider supplies `compare_` and those
   candidates of `eq_`, and no other comparison.
+- **OPS-13.** Proposed: `a % b` of two durations is the duration that
+  `a // b` leaves: `a - (a // b) * b`, with the divisor's sign where it is
+  not zero. It takes `zero` as `//` of two durations does (NUM-12).
 
 | Operator | Operands | Result |
 | --- | --- | --- |
@@ -146,6 +149,7 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 | `/` | `duration` by `i64` or `f64` | `duration` |
 | `/` | `duration` by `duration` | `f64` |
 | `//` | `duration` by `duration` | `i64` |
+| `%` | `duration` by `duration` (proposed, OPS-13) | `duration` |
 | `-x` | `duration` | `duration` |
 | `<`, `<=`, `>`, `>=` | Two of one ordered type (OPS-2) | `bool` |
 | `<=>` | Two of one ordered type (OPS-2) | `CmpResult` |
