@@ -1,9 +1,8 @@
 # Compound assignment
 
-Status: ASG-1 through ASG-6 and the identities' names are agreed.
-ASG-7, the set candidates of `append` and `extend`, and the
-declarations below are proposed. `hgl/` declares
-none of them yet.
+Status: ASG-1 through ASG-7 and the identities' names are agreed. The
+declarations below are reference declarations. `hgl/` declares none of
+them yet, and declares `append` and `extend` as native functions of a list.
 
 ## Scope and API
 
@@ -25,7 +24,7 @@ core's candidates.
 Reference declarations, `iadd_` standing for all six:
 
 ```hgl
-export operator iadd_<L, R>(lhs: L, rhs: R)
+export operator iadd_<L, R>(var lhs: L, rhs: R)
 
 # ASG-3: what the symbol gives, assigned.
 impl const fn iadd_<T, R>(var lhs: T, rhs: R)
@@ -34,7 +33,7 @@ impl const fn iadd_<T, R>(var lhs: T, rhs: R)
 }
 
 # ASG-5: a place in `out`.
-native impl const fn iadd_<T, R>(target: endpoint<T>, rhs: R)
+native impl const fn iadd_<T, R>(var target: endpoint<T>, rhs: R)
     requires add_(T, R) -> T
 
 # TYPE-1: text grows in place.
@@ -54,9 +53,10 @@ export operator extend<C, T>(var collection: C, items: C)
 
 ## Rules
 
-- **ASG-1.** Each compound assignment binds its own identity, and every
-  value candidate of one takes its first parameter as a `var` (the
-  language's FN-15): the call assigns the place, and gives no result.
+- **ASG-1.** Each compound assignment binds its own identity, whose
+  declaration marks its first parameter `var` (the language's FN-15): every
+  candidate takes a place, or an output, there. The call assigns it and
+  gives no result.
 - **ASG-2.** A candidate may declare options, given in braces after the
   token (the language's EXPR-10): `count //={zero: .fail} step`.
 - **ASG-3.** Core's default candidate of each identity is the symbol's
@@ -76,12 +76,12 @@ export operator extend<C, T>(var collection: C, items: C)
   `rows += []` for a `list<list<i64>>`, the statement is ambiguous
   (`operator.ambiguous`), and `append(rows, [])` or `extend(rows, [])`
   says which.
-- **ASG-5.** For a place in `out`, core's candidate takes
-  `endpoint<T>` and publishes what the default would assign, as an
+- **ASG-5.** For a place in `out`, core's candidate takes a `var`
+  `endpoint<T>`, an output, and publishes what the default would assign, as an
   assignment to that place does (the language's TIME-7).
 - **ASG-6.** `text += piece` appends in place, at the cost of the piece
   (the language's TYPE-1).
-- **ASG-7.** Proposed: `/=`, `//=` and `%=` take `zero` as their symbol
+- **ASG-7.** `/=`, `//=` and `%=` take `zero` as their symbol
   does (NUM-12), and the default (ASG-3) admits each policy whose result
   is the place's type. So `.error`, which gives a `result`, is taken by
   a place that holds one: for `var ratio: result<f64, error>`,
