@@ -87,9 +87,14 @@ impl const fn extend<C, T>(var collection: C, items: C)
 - **ASG-6.** `text += piece` appends in place, at the cost of the piece
   (the language's TYPE-1).
 - **ASG-7.** Proposed: `/=`, `//=` and `%=` take `zero` as their symbol
-  does (NUM-12), with the policies whose result is the place's type. A
-  policy that gives a `result`, `.error`, has no candidate: the statement
-  has nowhere to put it.
+  does (NUM-12), and the default (ASG-3) admits each policy whose result
+  is the place's type. So `.error`, which gives a `result`, is taken by
+  a place that holds one: for `var ratio: result<f64, error>`,
+  `ratio /={zero: .error} step` assigns the checked quotient, a zero
+  divisor's Err included. Its left operand is read as any operand is (the
+  language's ERR-15): a place that holds an Err raises it there, and is
+  not divided. For a place that holds the plain type, `.error` has no
+  candidate (`operator.no_candidate`).
 
 ## Examples
 
