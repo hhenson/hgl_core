@@ -124,7 +124,7 @@ abs(a - b) <= max(abs_tolerance,
 | A division whose result is | Namely | Admits | Default |
 | --- | --- | --- | --- |
 | An `f64` | `/` of numbers; `//` and `%` with an `f64` operand; a `duration` by a `duration` | `.ieee`, `.nan`, `.error`, `.fail` | `.ieee` |
-| An `i64` or a `duration` | `//` and `%` of two `i64`; a `duration` by a number; `//` of two durations, and proposed `%` of two (OPS-13) | `.error`, `.fail` | `.fail` |
+| An `i64` or a `duration` | `//` and `%` of two `i64`; a `duration` by a number; `//` and `%` of two durations (OPS-13) | `.error`, `.fail` | `.fail` |
 
 ## Examples and conformance observations
 
@@ -154,7 +154,8 @@ NaN/infinity names in the table describe outcomes, not source literal syntax.
 | NaN divided by a nonzero value with `zero: .error` | Ok containing NaN |
 | NaN divided by zero with `zero: .error` | Err with code `numeric.division_by_zero` |
 | `1.0 /{zero: .fail} 0.0` | HGL error with code `numeric.division_by_zero` |
-| `7 // 0`; `7 % 0`; `5m / 0`; `5m // 0s` | HGL error with code `numeric.division_by_zero` in each case |
+| `7 // 0`; `7 % 0`; `5m / 0`; `5m // 0s`; `5m % 0s` | HGL error with code `numeric.division_by_zero` in each case |
+| `7m % 3m`; `-7m % 3m`; `7m % -3m`; `5m %{zero: .error} 0s` | `1m`; `2m`; `-2m`; Err with code `numeric.division_by_zero` |
 | `7 //{zero: .error} 2`; `7 //{zero: .error} 0` | `ok(3)`; Err with code `numeric.division_by_zero` |
 | `7 //{zero: .nan} 2`; `5m /{zero: .ieee} 2` | Source rejection in both cases: the result holds no NaN or infinity |
 | `7.0 // 0.0`; `7.0 % 0.0`; `5m / 0s` | Positive infinity; NaN; positive infinity |
