@@ -40,7 +40,8 @@ owns symbol syntax, precedence, and phase checking. An instant is a
   candidates of `eq_` and `ne_` for two zoned datetimes. A `tenor`'s
   order is its own (TEN-3). Numbers
   compare as the numeric contract says, an `i64` with an `f64` included.
-  Two structs are equal when they are of one struct with the same generic
+  Two structs that declare no `compare_` and no `eq_` of their own
+  (OPS-12) are equal when they are of one struct with the same generic
   arguments (the language's TYPE-3), and each field is equal as `==` of the
   field's type has it. Two lists, and two tuples, are equal when they are
   of one length and each position is equal; two dictionaries when they have
@@ -49,8 +50,8 @@ owns symbol syntax, precedence, and phase checking. An instant is a
   dictionary that holds a NaN is not equal to itself.
 - **OPS-3.** `CmpResult` is the enum of comparison outcomes, with the members
   `less`, `equivalent`, `greater`, and `unordered`. `<=>` returns one
-  (NUM-6). Only a numeric comparison and a tenor's (TEN-3) yield
-  `unordered`. The other comparison forms return a bool.
+  (NUM-6). Of core's own types, only a numeric comparison and a tenor's
+  (TEN-3) yield `unordered`; a candidate a program declares may. The other comparison forms return a bool.
 - **OPS-4.** `convert<T>(value)` converts a value to the type T. An integer
   literal is an `f64` where one is expected; no other value changes type
   without it. It admits the conversions of the second table below and
@@ -119,16 +120,42 @@ owns symbol syntax, precedence, and phase checking. An instant is a
   numeric contract's table has it (NUM-6): `==` is true for `equivalent`,
   `<` for `less`, `<=` for `less` or `equivalent`, `>` for `greater`, and
   `>=` for `greater` or `equivalent`. `unordered` makes all five false.
-  `ne_` is the complement of `eq_` wherever `eq_` has a candidate, under
-  the same options: `a != b` is `!(a == b)`. So a type declares
-  `compare_` alone to have all seven, and `eq_` alone to have `==` and
-  `!=` with no order. A more specific candidate of any of them is selected
-  before the default (the language's GEN-5) and keeps the same outcome;
-  core declares such candidates of `eq_` for numbers, which take a
-  tolerance, and for two zoned datetimes, which take `utc`. A type with no
-  candidate of `compare_` takes core's `==` of two values of one type
-  (OPS-2). The defaults are HGL: a provider supplies `compare_` and those
-  candidates of `eq_`, and no other comparison.
+  `ne_` is the complement of `eq_` wherever `eq_` has a candidate:
+  `a != b` is `!(a == b)`. So a type declares `compare_` alone to have all
+  seven, and `eq_` alone to have `==` and `!=` with no order. A more
+  specific candidate of any of them is selected before the default (the
+  language's GEN-5), and its own contract says what it gives. Core
+  declares three kinds of `eq_` more specific than the default: for
+  numbers, which with no tolerance given is the outcome of `<=>` and with
+  one is NUM-4's closeness; for two zoned datetimes, which have no
+  `compare_` and take `utc` (OPS-2); and for two values of one type that
+  has no candidate of `compare_`, OPS-2's `==`. Core's `ne_` carries the
+  options core's `eq_` declares, `abs`, `rel`, and `utc`, and no other: a
+  candidate of `eq_` that declares an option of its own has a configured
+  `!=` only where a matching candidate of `ne_` is declared. The defaults
+  are HGL. A provider supplies `compare_` for core's ordered types and
+  those three kinds of `eq_`, and no other comparison.
+
+  Accepted illustration, a fragment; conformance planned:
+
+  ```hgl
+  struct Grade { label: str, rank: i64? }
+
+  impl const fn compare_(lhs: Grade, rhs: Grade) -> CmpResult {
+      if lhs.rank == null || rhs.rank == null { return .unordered }
+      return lhs.rank <=> rhs.rank
+  }
+
+  test declared_order {
+      let pass = Grade(label: "pass", rank: 1)
+      let merit = Grade(label: "merit", rank: 1)
+      let absent = Grade(label: "absent", rank: null)
+      assert pass == merit && !(pass != merit)     # the outcome, not the fields
+      assert pass <= merit && !(pass < merit)
+      assert !(absent == absent) && absent != absent
+      assert !(absent < pass) && !(absent >= pass)
+  }
+  ```
 
 | Operator | Operands | Result |
 | --- | --- | --- |
