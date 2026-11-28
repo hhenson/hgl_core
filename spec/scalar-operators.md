@@ -46,8 +46,11 @@ owns symbol syntax, precedence, and phase checking. An instant is a
   field's type has it. Two lists, and two tuples, are equal when they are
   of one length and each position is equal; two dictionaries when they have
   the same keys and each value is equal; two sets when they have the same
-  members. NUM-5 holds inside a value: a struct, a list, a tuple, or a
-  dictionary that holds a NaN is not equal to itself.
+  members. NUM-5 holds inside a value wherever this structural comparison
+  reaches it: a struct, a list, a tuple, or a dictionary that holds a NaN
+  is then not equal to itself. A part whose type declares its own
+  `compare_` or `eq_` is compared by that (OPS-12), which may not examine
+  the NaN.
 - **OPS-3.** `CmpResult` is the enum of comparison outcomes, with the members
   `less`, `equivalent`, `greater`, and `unordered`. `<=>` returns one
   (NUM-6). Of core's own types, only a numeric comparison and a tenor's
