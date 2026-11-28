@@ -12,6 +12,7 @@ portable implementations, required native support, and runtime conformance.
 - [Scalar temporal endpoints](spec/temporal-endpoints.md)
 - [Capabilities](spec/capabilities.md)
 - [List operations](spec/list-operations.md)
+- [Compound assignment](spec/compound-assignment.md)
 - [Mapping and reduction](spec/mapping.md)
 - [Output](spec/output.md)
 - [Formatting](spec/formatting.md)
