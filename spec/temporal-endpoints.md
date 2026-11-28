@@ -30,8 +30,8 @@ owns endpoint interpretation, handler selection, and phase admission.
 `valid`, `all_valid`, `modified`, `delta_value`, `removed_value`, `last_modified`,
 `invalidate`, `is_active`, `activate`, and `passivate` are declared in `hgl/native/endpoints.hgl` as
 native value functions that take the endpoint and not its payload, an
-`endpoint<T>` (the language's TIME-9), which `invalidate` alone takes as a
-`var` (END-11). Runtime metadata reads create no graph
+`endpoint<T>` (the language's TIME-9). END-11 requires `invalidate` to
+take it as a `var`. Runtime metadata reads create no graph
 nodes. Composition forms and empty/multi-argument handler
 selectors follow the language contract rather than this one-endpoint table.
 
