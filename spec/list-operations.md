@@ -1,6 +1,8 @@
 # List operations
 
-Status: LIST-1 through LIST-3 are agreed.
+Status: LIST-1 through LIST-3 are agreed. Each operation is to become the
+`+=` it names ([compound assignment](compound-assignment.md), ASG-4); `hgl/`
+still declares the two as native functions.
 
 ## Scope and API
 

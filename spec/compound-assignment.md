@@ -1,8 +1,8 @@
 # Compound assignment
 
-Status: ASG-1, ASG-2 and ASG-6 are agreed. ASG-3, ASG-4, ASG-5 and ASG-7,
-the identities' names and every declaration below are proposed. `hgl/`
-declares none of them yet.
+Status: ASG-1 through ASG-4, ASG-6 and the identities' names are agreed.
+ASG-5, ASG-7 and the declarations below are proposed. `hgl/` declares
+none of them yet.
 
 ## Scope and API
 
@@ -39,14 +39,21 @@ native impl const fn iadd_<T, R>(target: endpoint<T>, rhs: R)
 # TYPE-1: text grows in place.
 native impl const fn iadd_(var lhs: str, rhs: str)
 
-# ASG-4: one more entry.
-impl const fn iadd_<C, T>(var lhs: C, rhs: T)
-    requires C in {list<T>, set<T>} {
-    append(lhs, rhs)
-}
+# ASG-4: one more entry, and every entry of another collection.
+native impl const fn iadd_<C, T>(var lhs: C, rhs: T)
+    requires C in {list<T>, set<T>}
+native impl const fn iadd_<C, T>(var lhs: C, rhs: C)
+    requires C in {list<T>, set<T>}
 
+# ASG-4: the two named, each the `+=` it names.
 export operator append<C, T>(var collection: C, item: T)
     requires C in {list<T>, set<T>}
+export operator extend<C, T>(var collection: C, items: C)
+    requires C in {list<T>, set<T>}
+impl const fn append<C, T>(var collection: C, item: T)
+    requires C in {list<T>, set<T>} { collection += item }
+impl const fn extend<C, T>(var collection: C, items: C)
+    requires C in {list<T>, set<T>} { collection += items }
 ```
 
 ## Rules
@@ -56,19 +63,24 @@ export operator append<C, T>(var collection: C, item: T)
   language's FN-15): the call assigns the place, and gives no result.
 - **ASG-2.** A candidate may declare options, given in braces after the
   token (the language's EXPR-10): `count //={zero: .fail} step`.
-- **ASG-3.** Proposed: core's default candidate of each identity is the
-  symbol's result assigned, for two types whose symbol gives the place's
-  type. So a type that declares `add_(T, R) -> T` has `+=`, and a more
-  specific candidate is selected before the default (the language's GEN-5).
-  Where the symbol gives another type there is no candidate: `count /= 2`
-  for an `i64` rejects (`operator.no_candidate`), `/` giving an `f64`.
-- **ASG-4.** Proposed: `+=` on a list or a set is `append`: one entry, the
-  right operand. `append<C, T>(var collection: C, item: T)` is an operator
-  with a candidate for a `list<T>` ([list operations](list-operations.md))
-  and one for a `set<T>`, which leaves a set that holds the member as it
-  was. The one shape leaves nothing to choose between: `rows += []` for a
-  `list<list<i64>>` appends an empty row. A list is not appended to a list
-  of its own type by `+=`, which rejects; `extend` does that.
+- **ASG-3.** Core's default candidate of each identity is the symbol's
+  result assigned, `a = a op b`, for two types whose symbol gives the
+  place's type. It is selected where no more specific candidate of the
+  identity is declared (the language's GEN-5). So a type that declares
+  `add_(T, R) -> T` has `+=`. Where the symbol gives another type there
+  is no candidate: `count /= 2` for an `i64` rejects
+  (`operator.no_candidate`), `/` giving an `f64`.
+- **ASG-4.** `+=` on a list or a set has two candidates. Given an entry,
+  it puts that entry: after the last of a list, or into a set, which is
+  left as it was where it holds the member. Given a collection of the
+  place's own type, it puts each of its entries, a list's in order.
+  `append` and `extend` are operators that name the two and add no
+  behavior: each is the `+=` it names, and
+  [list operations](list-operations.md) gives what a list holds
+  afterwards. Proposed: where the right operand's type fits both, the
+  empty literal given to a collection of collections, `rows += []` for a
+  `list<list<i64>>`, the statement is ambiguous (`operator.ambiguous`),
+  and `append(rows, [])` or `extend(rows, [])` says which.
 - **ASG-5.** Proposed: for a place in `out`, core's candidate takes
   `endpoint<T>` and publishes what the default would assign, as an
   assignment to that place does (the language's TIME-7).
@@ -95,7 +107,7 @@ const fn tally(words: list<str>) -> str {
 }
 ```
 
+`seen += ["x", "y"]` there would put two entries, as `extend` does.
 Deliberate source rejections: `count /= 2` for `var count: i64`
-(`operator.no_candidate`); `seen += seen` for a `list<str>`, a list given
-where an entry is taken (`operator.no_candidate`); `fixed += 1` for
-`let fixed = 0` (`binding.immutable`).
+(`operator.no_candidate`); `fixed += 1` for `let fixed = 0`
+(`binding.immutable`).
