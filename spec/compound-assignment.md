@@ -1,7 +1,8 @@
 # Compound assignment
 
 Status: ASG-1 through ASG-4, ASG-6 and the identities' names are agreed.
-ASG-5, ASG-7 and the declarations below are proposed. `hgl/` declares
+ASG-5, ASG-7, the set candidates of `append` and `extend`, and the
+declarations below are proposed. `hgl/` declares
 none of them yet.
 
 ## Scope and API
@@ -39,21 +40,16 @@ native impl const fn iadd_<T, R>(target: endpoint<T>, rhs: R)
 # TYPE-1: text grows in place.
 native impl const fn iadd_(var lhs: str, rhs: str)
 
-# ASG-4: one more entry, and every entry of another collection.
-native impl const fn iadd_<C, T>(var lhs: C, rhs: T)
-    requires C in {list<T>, set<T>}
-native impl const fn iadd_<C, T>(var lhs: C, rhs: C)
-    requires C in {list<T>, set<T>}
+# ASG-4: an entry is appended, a collection of the place's type extends it.
+impl const fn iadd_<C, T>(var lhs: C, rhs: T)
+    requires C in {list<T>, set<T>} { append(lhs, rhs) }
+impl const fn iadd_<C, T>(var lhs: C, rhs: C)
+    requires C in {list<T>, set<T>} { extend(lhs, rhs) }
 
-# ASG-4: the two named, each the `+=` it names.
 export operator append<C, T>(var collection: C, item: T)
     requires C in {list<T>, set<T>}
 export operator extend<C, T>(var collection: C, items: C)
     requires C in {list<T>, set<T>}
-impl const fn append<C, T>(var collection: C, item: T)
-    requires C in {list<T>, set<T>} { collection += item }
-impl const fn extend<C, T>(var collection: C, items: C)
-    requires C in {list<T>, set<T>} { collection += items }
 ```
 
 ## Rules
@@ -71,16 +67,15 @@ impl const fn extend<C, T>(var collection: C, items: C)
   is no candidate: `count /= 2` for an `i64` rejects
   (`operator.no_candidate`), `/` giving an `f64`.
 - **ASG-4.** `+=` on a list or a set has two candidates. Given an entry,
-  it puts that entry: after the last of a list, or into a set, which is
-  left as it was where it holds the member. Given a collection of the
-  place's own type, it puts each of its entries, a list's in order.
-  `append` and `extend` are operators that name the two and add no
-  behavior: each is the `+=` it names, and
-  [list operations](list-operations.md) gives what a list holds
-  afterwards. Proposed: where the right operand's type fits both, the
-  empty literal given to a collection of collections, `rows += []` for a
-  `list<list<i64>>`, the statement is ambiguous (`operator.ambiguous`),
-  and `append(rows, [])` or `extend(rows, [])` says which.
+  it is `append`. Given a collection of the place's own type, it is
+  `extend`. `append` and `extend` are operators, each with a candidate
+  for a list ([list operations](list-operations.md)) and one for a set:
+  `append` leaves a set that holds the member as it was, and `extend`
+  puts each member the set has not. Where the right operand's type fits
+  both, the empty literal given to a collection of collections,
+  `rows += []` for a `list<list<i64>>`, the statement is ambiguous
+  (`operator.ambiguous`), and `append(rows, [])` or `extend(rows, [])`
+  says which.
 - **ASG-5.** Proposed: for a place in `out`, core's candidate takes
   `endpoint<T>` and publishes what the default would assign, as an
   assignment to that place does (the language's TIME-7).
