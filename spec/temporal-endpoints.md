@@ -1,13 +1,15 @@
 # Scalar temporal endpoint observations
 
-Status: END-1 through END-10 are agreed.
+Status: END-1 through END-11 are agreed. `hgl/` still declares
+`invalidate` with a plain endpoint.
 
 ## Scope and API
 
 This slice covers owned scalar outputs and fixed, directly bound scalar
 inputs during evaluation. Nullable scalar values are included. END-7 gives
 the validity of a collection, END-8 the read of its child, END-9 a window's
-readiness and what it holds, and END-10 when a reference ticks. Other collection
+readiness and what it holds, END-10 when a reference ticks, and END-11
+which operation writes its endpoint. Other collection
 observations, the rest of a reference's contract, sampled/rebound inputs,
 and source scheduling have their separate contracts. The [language temporal model](https://github.com/hhenson/hgl_spec/blob/main/spec/language/temporal-model.md)
 owns endpoint interpretation, handler selection, and phase admission.
@@ -28,7 +30,8 @@ owns endpoint interpretation, handler selection, and phase admission.
 `valid`, `all_valid`, `modified`, `delta_value`, `removed_value`, `last_modified`,
 `invalidate`, `is_active`, `activate`, and `passivate` are declared in `hgl/native/endpoints.hgl` as
 native value functions that take the endpoint and not its payload, an
-`endpoint<T>` (the language's TIME-9). Runtime metadata reads create no graph
+`endpoint<T>` (the language's TIME-9). END-11 requires `invalidate` to
+take it as a `var`. Runtime metadata reads create no graph
 nodes. Composition forms and empty/multi-argument handler
 selectors follow the language contract rather than this one-endpoint table.
 
@@ -278,6 +281,30 @@ selectors follow the language contract rather than this one-endpoint table.
   cover a read of a `ref` parameter's value and of its `delta_value`, an
   assignment to a part of a `ref` result's `out`, a `signal` parameter
   marked `ref`, and a window parameter marked `ref`.
+- **END-11.** `invalidate` writes the endpoint it is given, so it takes
+  it as a `var` (the language's FN-15): `out`, whole, and nothing else. It
+  is whole-output invalidation (the language's TIME-7): a place in `out`,
+  `invalidate(out.bid)` or `invalidate(out[0])`, rejects, and no rule
+  gives a part of an output an invalidation of its own. A temporal input
+  rejects, being read-only (`binding.immutable`), and so does a call
+  outside a `when`, as any write of `out` does (`out.lifecycle`). Every
+  other operation here takes a plain `endpoint<T>`. `activate` and
+  `passivate` act on the node's subscription to an input and leave the
+  input as it is.
+
+  Accepted fragment, in a node `fn gate(price: f64, open: bool) -> f64`
+  that injects `out`; conformance planned:
+
+  ```hgl
+  when valid(price, open) {
+      if open { return price }
+      invalidate(out)               # the output, whole
+      passivate(price)              # an action on the subscription
+  }
+  ```
+
+  Deliberate source rejections there: `invalidate(price)`
+  (`binding.immutable`); `invalidate(out)` in `stop` (`out.lifecycle`).
 
 ## Publication and silence
 
