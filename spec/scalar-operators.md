@@ -1,7 +1,7 @@
 # Scalar operators and conversion
 
-Status: OPS-12 is agreed; `hgl/` does not declare its default candidates
-yet. Agreed operator domains for the scalar types other than numbers, the
+Status: OPS-12 and OPS-13 are agreed; `hgl/` declares neither OPS-12's
+default candidates nor `mod_` of two durations yet. Agreed operator domains for the scalar types other than numbers, the
 rounding and range of a duration or an instant result, the comparison
 outcome type, the domains of the conversion operator, what each conversion
 yields, its options, and generic temporal identity handling. Runtime
@@ -159,6 +159,14 @@ owns symbol syntax, precedence, and phase checking. An instant is a
       assert !(absent < pass) && !(absent >= pass)
   }
   ```
+- **OPS-13.** `a % b` of two durations is the duration left by the floor
+  of their quotient, which rounds toward negative infinity as `//` of two
+  durations does: `a - q * b`, for that whole number q. Where the
+  remainder is not zero it has the divisor's sign. It is defined by the
+  exact quotient and not by `a // b` as an `i64`: the least duration
+  `% -1us` is `0us`, though `//` of the two is out of range (NUM-2). It
+  takes `zero` as `//` of two durations does (NUM-12): `.fail`, the
+  default, or `.error`.
 
 | Operator | Operands | Result |
 | --- | --- | --- |
@@ -176,6 +184,7 @@ owns symbol syntax, precedence, and phase checking. An instant is a
 | `/` | `duration` by `i64` or `f64` | `duration` |
 | `/` | `duration` by `duration` | `f64` |
 | `//` | `duration` by `duration` | `i64` |
+| `%` | `duration` by `duration` | `duration` |
 | `-x` | `duration` | `duration` |
 | `<`, `<=`, `>`, `>=` | Two of one ordered type (OPS-2) | `bool` |
 | `<=>` | Two of one ordered type (OPS-2) | `CmpResult` |
