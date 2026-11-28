@@ -46,10 +46,13 @@ impl const fn iadd_<C, T>(var lhs: C, rhs: T)
 impl const fn iadd_<C, T>(var lhs: C, rhs: C)
     requires C in {list<T>, set<T>} { extend(lhs, rhs) }
 
-export operator append<C, T>(var collection: C, item: T)
+export operator append<C, T>(var values: C, item: T)
     requires C in {list<T>, set<T>}
-export operator extend<C, T>(var collection: C, items: C)
+export operator extend<C, T>(var values: C, items: C)
     requires C in {list<T>, set<T>}
+# Proposed: `extend`, and `iadd_` given a collection, take T from the
+# membership of C alone, which rests on a proposed clause of the
+# language's GEN-3.
 
 # ASG-7: one candidate for each result type its symbol has, with that
 # symbol's policies and default.
@@ -106,7 +109,11 @@ impl const fn ifloordiv_<const zero: ZeroPolicy>(var lhs: result<i64, error>, rh
   collection as its change from what the place held. So what `+=` is of
   a `var` it is of an output: a list or a set grows, text is appended to,
   and a type that declares `iadd_` alone has it. The language says where
-  such a statement stands and what it rejects (EXPR-18).
+  such a statement stands and what it rejects (EXPR-18). Proposed: the
+  candidate declares no option of its own. An option given is one the
+  place's type declares for its `var` candidate, and is given on to it:
+  the statement is admitted where that configured call of the `var`
+  candidate is.
 - **ASG-6.** `text += piece` appends in place, at the cost of the piece
   (the language's TYPE-1).
 - **ASG-7.** `/=`, `//=` and `%=` take `zero` as their symbol does
@@ -175,5 +182,5 @@ Deliberate source rejections, each where it is written: `count /= 2` for
 `var rows: list<list<i64>>` (`operator.ambiguous`);
 `price /={zero: .error} 2.0` for `var price: f64`
 (`operator.no_candidate`); `fixed += 1` for `let fixed = 0`
-(`binding.immutable`); `[1] += 2`, whose left is no place
-(`argument.place`).
+(`binding.immutable`); `iadd_([1], 2)`, whose first argument is no
+place (`argument.place`).
