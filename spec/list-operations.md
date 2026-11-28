@@ -1,8 +1,9 @@
 # List operations
 
-Status: LIST-1 through LIST-3 are agreed. `+=` on a list calls these
-([compound assignment](compound-assignment.md), ASG-4), which proposes
-each as an operator; `hgl/` declares the two as native functions.
+Status: LIST-1 through LIST-3 are agreed. `append` and `extend` are
+operators, each with a candidate for a set as well, and `+=` on a list calls
+them ([compound assignment](compound-assignment.md), ASG-4); `hgl/` still
+declares the two as native functions of a list.
 
 ## Scope and API
 
